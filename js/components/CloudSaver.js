@@ -308,27 +308,38 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                     
                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                                         {fileList.map(f => (
-                                            <div key={f.name} className="group relative bg-slate-900 rounded-lg overflow-hidden border border-slate-700 aspect-square">
-                                                <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer" onClick={() => setPreviewFile(f)} />
-                                                <div className="absolute inset-0 bg-slate-900/95 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center p-2 gap-2">
-                                                    <button onClick={() => setPreviewFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 rounded text-xs transition-colors text-white">
-                                                        <window.Icon name="eye" className="w-3 h-3" />
-                                                        <span>Смотреть</span>
-                                                    </button>
-                                                    <button onClick={() => handleCopyLink(f.url)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
-                                                        <window.Icon name="copy" className="w-3 h-3" />
-                                                        <span>Получить ссылку</span>
-                                                    </button>
-                                                    <button onClick={() => window.open(f.url, '_blank')} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
-                                                        <window.Icon name="external-link" className="w-3 h-3" />
-                                                        <span>Открыть</span>
-                                                    </button>
-                                                    <button onClick={() => handleDeleteFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 rounded text-xs transition-colors text-red-200 border border-red-500/30 disabled:opacity-50" disabled={busy.type === 'file' && busy.key === f.url}>
-                                                        {busy.type === 'file' && busy.key === f.url
-                                                            ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" />
-                                                            : <window.Icon name="trash-2" className="w-3 h-3" />}
-                                                        <span>Удалить</span>
-                                                    </button>
+                                            <div key={f.name} className="group relative bg-slate-900 rounded-lg overflow-visible border border-slate-700 flex flex-col">
+                                                <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                                                    <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer" onClick={() => setPreviewFile(f)} />
+                                                    <div className="absolute inset-0 bg-slate-900/95 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center p-2 gap-2">
+                                                        <button onClick={() => setPreviewFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 rounded text-xs transition-colors text-white">
+                                                            <window.Icon name="eye" className="w-3 h-3" />
+                                                            <span>Смотреть</span>
+                                                        </button>
+                                                        <button onClick={() => handleCopyLink(f.url)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
+                                                            <window.Icon name="copy" className="w-3 h-3" />
+                                                            <span>Получить ссылку</span>
+                                                        </button>
+                                                        <button onClick={() => window.open(f.url, '_blank')} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
+                                                            <window.Icon name="external-link" className="w-3 h-3" />
+                                                            <span>Открыть</span>
+                                                        </button>
+                                                        <button onClick={() => handleDeleteFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 rounded text-xs transition-colors text-red-200 border border-red-500/30 disabled:opacity-50" disabled={busy.type === 'file' && busy.key === f.url}>
+                                                            {busy.type === 'file' && busy.key === f.url
+                                                                ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" />
+                                                                : <window.Icon name="trash-2" className="w-3 h-3" />}
+                                                            <span>Удалить</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                {/* Постоянная подпись с артикулом и именем файла */}
+                                                <div className="p-2 bg-slate-800/80 rounded-b-lg border-t border-slate-700">
+                                                    <p className="text-xs font-semibold text-indigo-300 truncate" title={f.article}>
+                                                        {f.article}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400 truncate" title={f.name}>
+                                                        {f.name}
+                                                    </p>
                                                 </div>
                                             </div>
                                         ))}
