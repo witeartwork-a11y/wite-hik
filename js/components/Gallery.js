@@ -112,9 +112,11 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                             </button>
                         </div>
                     )}
-                    
-                    {/* Фильтр по названию */}
-                    <div className="relative group w-full md:w-64">
+                </div>
+                
+                <div className="flex items-center gap-4 w-full md:w-auto justify-end flex-wrap md:flex-nowrap">
+                    {/* Фильтр по названию - перемещен вправо */}
+                    <div className="relative group w-full md:w-64 order-2 md:order-1">
                         <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                         <input
                             type="text"
@@ -124,14 +126,12 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                             className="w-full bg-slate-900 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-indigo-500/50 focus:bg-slate-900/80 transition-all placeholder:text-slate-600"
                         />
                     </div>
-                </div>
-                
-                <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+
                     {/* Кнопка множественного удаления */}
                     {selectedFiles.size > 0 && (
                         <button 
                             onClick={handleBulkDelete}
-                            className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-200 rounded-lg border border-red-500/30 transition-colors animate-pulse-once"
+                            className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-200 rounded-lg border border-red-500/30 transition-colors animate-pulse-once order-1 md:order-2"
                         >
                             <window.Icon name="trash-2" className="w-4 h-4" />
                             <span className="text-sm">Удалить ({selectedFiles.size})</span>
@@ -139,7 +139,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                     )}
 
                     {/* Фильтр по дате */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 order-3">
                         <window.Icon name="calendar" className="w-4 h-4 text-slate-500" />
                         <select
                             value={dateFilter}

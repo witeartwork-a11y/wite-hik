@@ -5,12 +5,46 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     const [previewFile, setPreviewFile] = useState(null);
     const [previewZoom, setPreviewZoom] = useState(1);
     const [busy, setBusy] = useState({ type: null, key: null });
+    const [notification, setNotification] = useState(null);
+    const [filter, setFilter] = useState('');
+    const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
 
-    // Группируем файлы облака по артикулам
+    // Группируем файлы облака по артикулам, учитывая фильтры
     const articles = useMemo(() => {
         const a = {};
+        let hasFilter = filter.trim() !== '' || dateFilter !== 'all';
+        
         files.forEach(f => {
             if (f.type !== 'cloud' || !f.article) return;
+            
+            // Фильтрация по дате (внутри файла)
+            if (dateFilter !== 'all') {
+                const now = Date.now();
+                const fileTime = f.mtime * 1000;
+                const dayInMs = 24 * 60 * 60 * 1000;
+                
+                switch (dateFilter) {
+                    case 'today':
+                        const todayStart = new Date();
+                        todayStart.setHours(0, 0, 0, 0);
+                        if (fileTime < todayStart.getTime()) return;
+                        break;
+                    case 'week':
+                        if (now - fileTime > 7 * dayInMs) return;
+                        break;
+                    case 'month':
+                        if (now - fileTime > 30 * dayInMs) return;
+                        break;
+                }
+            }
+            
+            // Фильтрация по тексту (имя файла или артикул)
+            if (filter.trim() !== '') {
+                const searchLower = filter.toLowerCase();
+                const matchArticle = f.article.toLowerCase().includes(searchLower);
+                const matchFile = f.name.toLowerCase().includes(searchLower);
+                if (!matchArticle && !matchFile) return;
+            }
             
             const article = f.article;
             if (!a[article]) {
@@ -29,13 +63,14 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
             }
             a[article].categories[cat].push(f);
             
+            // Обновляем время артикула, если файл новее
             if (f.mtime > a[article].mtime) a[article].mtime = f.mtime;
         });
         
         return Object.entries(a)
             .map(([key, val]) => ({ key, ...val }))
             .sort((a, b) => b.mtime - a.mtime);
-    }, [files]);
+    }, [files, filter, dateFilter]);
 
     const handleDownloadArticle = async (article) => {
         if (!article || !Object.keys(article.categories).length) return;
@@ -95,7 +130,8 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     const handleCopyLink = (url) => {
         const fullUrl = window.location.origin + url;
         navigator.clipboard.writeText(fullUrl);
-        alert('Ссылка скопирована в буфер обмена');
+        setNotification('Ссылка скопирована');
+        setTimeout(() => setNotification(null), 2000);
     };
 
     const refresh = async () => {
@@ -137,25 +173,57 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     };
 
     const header = (
-        <div className="glass-card rounded-xl p-4 flex gap-4 items-center mb-6">
-             {onSubTabChange && (
-                 <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 shrink-0">
-                     <button 
-                         onClick={() => onSubTabChange('files')} 
-                         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'files' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                     >
-                         Файлы
-                     </button>
-                     <button 
-                         onClick={() => onSubTabChange('cloud')} 
-                         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'cloud' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
-                     >
-                         Облако
-                     </button>
-                 </div>
-             )}
+        <div className="glass-card rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
+             <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-start md:items-center">
+                 {onSubTabChange && (
+                     <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 shrink-0">
+                         <button 
+                             onClick={() => onSubTabChange('files')} 
+                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'files' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                         >
+                             Файлы
+                         </button>
+                         <button 
+                             onClick={() => onSubTabChange('cloud')} 
+                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'cloud' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                         >
+                             Облако
+                         </button>
+                     </div>
+                 )}
+             </div>
+
+             <div className="flex items-center gap-4 w-full md:w-auto justify-end flex-wrap md:flex-nowrap">
+                {/* Фильтр по названию */}
+                <div className="relative group w-full md:w-64 order-2 md:order-1">
+                    <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                    <input
+                        type="text"
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        placeholder="Поиск по артикулу..."
+                        className="w-full bg-slate-900 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-indigo-500/50 focus:bg-slate-900/80 transition-all placeholder:text-slate-600"
+                    />
+                </div>
+
+                {/* Фильтр по дате */}
+                <div className="flex items-center gap-2 order-3">
+                    <window.Icon name="calendar" className="w-4 h-4 text-slate-500" />
+                    <select
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500/50 cursor-pointer hover:bg-slate-800 transition-colors"
+                    >
+                        <option value="all">За все время</option>
+                        <option value="today">Сегодня</option>
+                        <option value="week">За неделю</option>
+                        <option value="month">За месяц</option>
+                    </select>
+                </div>
+            </div>
         </div>
     );
+
 
     if (articles.length === 0) {
         return (
@@ -249,7 +317,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                                     </button>
                                                     <button onClick={() => handleCopyLink(f.url)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
                                                         <window.Icon name="copy" className="w-3 h-3" />
-                                                        <span>Копия</span>
+                                                        <span>Получить ссылку</span>
                                                     </button>
                                                     <button onClick={() => window.open(f.url, '_blank')} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
                                                         <window.Icon name="external-link" className="w-3 h-3" />
@@ -327,7 +395,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                     className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs flex items-center gap-1.5"
                                 >
                                     <window.Icon name="copy" className="w-3 h-3" />
-                                    Копировать ссылку
+                                    Получить ссылку
                                 </button>
                                 <button 
                                     onClick={() => window.open(previewFile.url, '_blank')}
@@ -341,7 +409,14 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                     </div>
                 </div>
             )}
-        </div>
+
+            {/* Notification Toast */}
+            {notification && (
+                <div className="fixed bottom-4 right-4 bg-slate-800 border border-indigo-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 fade-in flex items-center gap-2">
+                    <window.Icon name="check" className="w-4 h-4 text-indigo-400" />
+                    <span className="text-sm font-medium">{notification}</span>
+                </div>
+            )}
         </div>
     );
 };
