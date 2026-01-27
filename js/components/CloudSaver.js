@@ -348,6 +348,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                     )}
                 </div>
             ))}
+            </div>
             
             {/* Modal Preview */}
             {previewFile && (
