@@ -250,7 +250,7 @@ function App() {
                                         }}
                                     >
                                         <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Выберите принт</h3>
-                                        <div className="overflow-y-auto grid md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-2 pr-1 custom-scroll">
+                                        <div className="grid md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-2 pr-1">
                                             <div className="aspect-square rounded border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-700/50 hover:border-indigo-500 transition-all relative bg-slate-900/50">
                                                 <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
                                                 {isUploading ? <i data-lucide="loader-2" className="w-6 h-6 text-indigo-400 animate-spin"></i> : <i data-lucide="plus" className="w-6 h-6 text-slate-500"></i>}

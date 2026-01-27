@@ -101,6 +101,7 @@ window.RenderService = {
             if (mask) {
                 tCtx.globalCompositeOperation = 'destination-in';
                 tCtx.drawImage(mask, 0, 0, width, height);
+                tCtx.globalCompositeOperation = 'source-over'; // СБРАСЫВАЕМ
             }
 
             ctx.globalCompositeOperation = 'source-over';

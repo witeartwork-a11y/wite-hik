@@ -32,6 +32,8 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
         const ctx = canvas.getContext('2d');
         const utils = window.Utils;
 
+        let isMounted = true; // Флаг для отмены операций при размонтировании
+
         const render = async () => {
             try {
                 const baseImg = await utils.loadImage(product.image);
@@ -39,12 +41,16 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
                 const overlayImg = await utils.loadImage(overlayUrl || product.overlay);
                 const printImg = await utils.loadImage(imageUrl);
 
+                // Если компонент размонтирован, не рисуем
+                if (!isMounted) return;
+
                 if (!baseImg && !printImg) return;
 
                 canvas.width = baseImg ? baseImg.width : (product.width || 1000);
                 canvas.height = baseImg ? baseImg.height : (product.height || 1000);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.globalCompositeOperation = 'source-over'; // Гарантируем начальное состояние
 
                 // Рисуем шахматный паттерн для прозрачных областей
                 const checkSize = 20;
@@ -75,6 +81,7 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
                     if (maskImg) {
                         tCtx.globalCompositeOperation = 'destination-in';
                         tCtx.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
+                        tCtx.globalCompositeOperation = 'source-over'; // СБРАСЫВАЕМ!
                     }
 
                     ctx.drawImage(tempCanvas, 0, 0);
@@ -91,9 +98,62 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
         };
 
         render();
+
+        // Очистка при размонтировании
+        return () => {
+            isMounted = false;
+        };
     }, [product, imageUrl, maskUrl, overlayUrl, t.x, t.y, t.scale, t.rotation]);
 
-    // Обработчики мыши
+    const stateRef = useRef({ t, onUpdateTransform, imageUrl, isDragging: isDragging });
+    useEffect(() => {
+        stateRef.current = { t, onUpdateTransform, imageUrl, isDragging };
+    }, [t, onUpdateTransform, imageUrl, isDragging]);
+
+    // Обработчики мыши на всем документе для плавной работы
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            const { t, onUpdateTransform, imageUrl, isDragging } = stateRef.current;
+            if (!isDragging || !imageUrl || !dragStartRef.current) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+
+            const dx = e.clientX - dragStartRef.current.mouseX;
+            const dy = e.clientY - dragStartRef.current.mouseY;
+
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            onUpdateTransform({
+                ...t,
+                x: dragStartRef.current.startX + dx * scaleX,
+                y: dragStartRef.current.startY + dy * scaleY,
+            });
+        };
+
+        const handleMouseUp = () => {
+            setIsDragging(false);
+            dragStartRef.current = null;
+        };
+
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove, { passive: false });
+            document.addEventListener('mouseup', handleMouseUp, { passive: false });
+            
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [isDragging]);
+
+    // Обработчик начала перетаскивания на canvas
     const handleMouseDown = (e) => {
         if (!imageUrl) return;
         setIsDragging(true);
@@ -105,40 +165,11 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
         };
     };
 
-    const handleMouseMove = (e) => {
-        if (!isDragging || !imageUrl || !dragStartRef.current) return;
-        e.preventDefault();
-        e.stopPropagation();
-
-        const rect = canvasRef.current.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-
-        const dx = e.clientX - dragStartRef.current.mouseX;
-        const dy = e.clientY - dragStartRef.current.mouseY;
-
-        const scaleX = canvasRef.current.width / rect.width;
-        const scaleY = canvasRef.current.height / rect.height;
-
-        onUpdateTransform({
-            ...t,
-            x: dragStartRef.current.startX + dx * scaleX,
-            y: dragStartRef.current.startY + dy * scaleY,
-        });
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-        dragStartRef.current = null;
-    };
-
-    const stateRef = useRef({ t, onUpdateTransform, imageUrl });
-    useEffect(() => {
-        stateRef.current = { t, onUpdateTransform, imageUrl };
-    }, [t, onUpdateTransform, imageUrl]);
-
+    // Wheel zoom с правильной очисткой
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
+        
         const onWheel = (e) => {
             e.preventDefault();
             const { t, onUpdateTransform, imageUrl } = stateRef.current;
@@ -148,9 +179,13 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
             const newScale = Math.min(10, Math.max(0.05, t.scale + delta));
             onUpdateTransform({ ...t, scale: newScale });
         };
+        
         // passive: false критически важен, чтобы preventDefault работал
         container.addEventListener('wheel', onWheel, { passive: false });
-        return () => container.removeEventListener('wheel', onWheel);
+        
+        return () => {
+            container.removeEventListener('wheel', onWheel);
+        };
     }, []);
 
     const rotateBy = (deg) => {
@@ -165,9 +200,6 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
                     ref={canvasRef}
                     className="max-h-full max-w-full shadow-2xl cursor-move object-contain"
                     onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
                 />
             </div>
 
