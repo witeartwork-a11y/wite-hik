@@ -7,7 +7,8 @@ window.PrintCollection = ({
     onRemovePrint, 
     onUpdateArticle,
     onSaveToCloud,
-    isSaving
+    isSaving,
+    onSavePreset
 }) => {
     const { useState } = React;
     const [editingId, setEditingId] = useState(null);
@@ -19,8 +20,12 @@ window.PrintCollection = ({
     };
 
     const handleSaveArticle = (print) => {
-        if (editingValue.trim()) {
-            onUpdateArticle(print.id, editingValue.trim());
+        const val = editingValue.trim();
+        if (val) {
+            onUpdateArticle(print.id, val);
+            if (onSavePreset && print.positions) {
+                onSavePreset(val, print.positions);
+            }
         }
         setEditingId(null);
     };
@@ -103,17 +108,6 @@ window.PrintCollection = ({
                                                 {print.article || print.name.split('.')[0]}
                                             </span>
                                             <window.Icon name="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/article:opacity-100 transition-opacity" />
-                                        </div>
-                                    )}
-
-                                    {/* Позиция на канве (если была сохранена) */}
-                                    {print.positions && (
-                                        <div className="text-[10px] text-slate-500 flex flex-wrap gap-2">
-                                            {Object.entries(print.positions).map(([prodId, pos]) => (
-                                                <span key={prodId} className="bg-slate-900/50 px-2 py-0.5 rounded">
-                                                    X={pos.x.toFixed(0)}, Y={pos.y.toFixed(0)}
-                                                </span>
-                                            ))}
                                         </div>
                                     )}
                                 </div>

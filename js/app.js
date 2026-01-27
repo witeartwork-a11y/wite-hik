@@ -40,6 +40,53 @@ function App() {
     const [isCloudSaving, setIsCloudSaving] = useState(false);
     const [cloudProgress, setCloudProgress] = useState({ total: 0, done: 0, current: '' });
     
+    // Presets state
+    const [presets, setPresets] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('user_transform_presets') || '{}');
+        } catch (e) {
+            return {};
+        }
+    });
+
+    const handleSavePreset = useCallback((name, printTransforms) => {
+         // If printTransforms is passed (from PrintCollection), use it.
+         // Otherwise use current 'transforms' state.
+         const dataToSave = printTransforms || transforms;
+         
+         const newPresets = { ...presets, [name]: dataToSave };
+         setPresets(newPresets);
+         localStorage.setItem('user_transform_presets', JSON.stringify(newPresets));
+    }, [presets, transforms]);
+
+    const handleDeletePreset = useCallback((name) => {
+        const newPresets = { ...presets };
+        delete newPresets[name];
+        setPresets(newPresets);
+        localStorage.setItem('user_transform_presets', JSON.stringify(newPresets));
+    }, [presets]);
+
+    const handleApplyPreset = useCallback((name) => {
+        const preset = presets[name];
+        if (!preset) return;
+        
+        // If it's a full map of product_id -> transform
+        if (activeTab === 'products') {
+             setProductTransforms(prev => ({ ...prev, ...preset }));
+        } else {
+             setTransforms(prev => ({ ...prev, ...preset }));
+        }
+        
+        // Update active print positions too if selected
+        if (selectedPrint) {
+             setPrintCollection(prev => prev.map(p => {
+                if (p.id !== selectedPrint.id) return p;
+                return { ...p, positions: { ...(p.positions || {}), ...preset } };
+            }));
+        }
+    }, [presets, activeTab, selectedPrint]);
+
+
     // Состояние для коллекции принтов
     const [printCollection, setPrintCollection] = useState([]);
     const [selectedPrintIds, setSelectedPrintIds] = useState([]);
@@ -529,6 +576,7 @@ function App() {
                                         onUpdateArticle={handleUpdateArticle}
                                         onSaveToCloud={handleSaveCollectionToCloud}
                                         isSaving={isCloudSaving}
+                                        onSavePreset={handleSavePreset}
                                     />
 
                                     {/* Sidebar с товарами */}
@@ -555,26 +603,7 @@ function App() {
                                     ) : (
                                         <>
                                             <div className="flex flex-wrap items-center gap-3">
-                                                {/* Выбор количества мокапов в строку */}
-                                                <div className="flex items-center gap-3 text-slate-400 text-xs bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2">
-                                                    <window.Icon name="layout-grid" className="w-4 h-4" />
-                                                    <span className="whitespace-nowrap">Мокапов в строку:</span>
-                                                    <div className="flex gap-1">
-                                                        {[1, 2, 3].map(num => (
-                                                            <button
-                                                                key={num}
-                                                                onClick={() => setMockupsPerRow(num)}
-                                                                className={`w-8 h-8 rounded border font-medium transition-all ${
-                                                                    mockupsPerRow === num
-                                                                        ? 'bg-indigo-500 border-indigo-400 text-white'
-                                                                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
-                                                                }`}
-                                                            >
-                                                                {num}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
+                                                 {/* Controls moved to right panel */}
                                             </div>
 
                                             {products.filter(p => p.enabled).length === 0 ? (
@@ -651,6 +680,12 @@ function App() {
                                         onDPIChange={(newDPI) => activeProductId && updateProductDPI(activeProductId, newDPI)}
                                         activeProductId={activeProductId}
                                         isActive={!!activeProductId}
+                                        mockupsPerRow={mockupsPerRow}
+                                        setMockupsPerRow={setMockupsPerRow}
+                                        presets={presets}
+                                        onSavePreset={(name) => handleSavePreset(name, null)} 
+                                        onDeletePreset={handleDeletePreset}
+                                        onApplyPreset={handleApplyPreset}
                                     />
                                 </div>
                             </div>
