@@ -153,7 +153,12 @@ if ($action === 'save_prints_config') {
         $currentConfig = $input['config'];
     }
 
-    file_put_contents($PRINTS_CONFIG_FILE, json_encode($currentConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    $result = file_put_contents($PRINTS_CONFIG_FILE, json_encode($currentConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    
+    if ($result === false) {
+        jsonResponse(false, [], 'Failed to write config file. Permissions? Path: ' . $PRINTS_CONFIG_FILE);
+    }
+    
     jsonResponse(true);
 }
 
