@@ -78,16 +78,11 @@ function App() {
                 
                 // Update collection if needed
                 if (selectedPrint && selectedPrint.id) {
-                     setPrintCollection(prev => prev.map(p => {
-                        if (p.id !== selectedPrint.id) return p;
-                        return { 
-                            ...p, 
-                            positions: { 
-                                ...(p.positions || {}), 
-                                [activeProductId]: { ...preset } 
-                            } 
-                        };
-                    }));
+                     const updatedPositions = {
+                        ...(selectedPrint.positions || {}),
+                        [activeProductId]: { ...preset }
+                    };
+                    updatePositions(selectedPrint.id, updatedPositions);
                 }
             } else {
                 alert('Выберите товар для применения пресета');
@@ -101,13 +96,11 @@ function App() {
             }
             
             if (selectedPrint) {
-                 setPrintCollection(prev => prev.map(p => {
-                    if (p.id !== selectedPrint.id) return p;
-                    return { ...p, positions: { ...(p.positions || {}), ...preset } };
-                }));
+                 const updatedPositions = { ...(selectedPrint.positions || {}), ...preset };
+                 updatePositions(selectedPrint.id, updatedPositions);
             }
         }
-    }, [getPreset, isSingleTransformPreset, activeTab, selectedPrint, activeProductId]);
+    }, [getPreset, isSingleTransformPreset, activeTab, selectedPrint, activeProductId, updatePositions]);
 
 
     // Хук для управления коллекцией принтов
@@ -120,7 +113,8 @@ function App() {
         updateArticle,
         removeByFileName,
         getPrintsByIds,
-        removePrintsByIds
+        removePrintsByIds,
+        updatePositions
     } = window.usePrintCollection();
 
     const [activeProductId, setActiveProductId] = useState(null);
@@ -558,16 +552,11 @@ function App() {
 
                             // Сохраняем в коллекцию (для сессии)
                             if (selectedPrint && selectedPrint.id) {
-                                setPrintCollection(prev => prev.map(p => {
-                                    if (p.id !== selectedPrint.id) return p;
-                                    return {
-                                        ...p,
-                                        positions: {
-                                            ...(p.positions || {}),
-                                            [id]: newT
-                                        }
-                                    };
-                                }));
+                                const updatedPositions = {
+                                    ...(selectedPrint.positions || {}),
+                                    [id]: newT
+                                };
+                                updatePositions(selectedPrint.id, updatedPositions);
                             }
 
                             // Вызываем явное сохранение на сервер (debounced)

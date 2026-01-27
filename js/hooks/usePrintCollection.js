@@ -112,6 +112,17 @@ window.usePrintCollection = () => {
     }, []);
 
     /**
+     * Обновить позиции принта (трансформации товаров)
+     * @param {String} printId - ID принта
+     * @param {Object} newPositions - новые позиции
+     */
+    const updatePositions = useCallback((printId, newPositions) => {
+        setPrintCollection(prev => 
+            prev.map(p => p.id === printId ? { ...p, positions: newPositions } : p)
+        );
+    }, []);
+
+    /**
      * Получить все принты в коллекции
      */
     const getAll = useCallback(() => {
@@ -135,6 +146,7 @@ window.usePrintCollection = () => {
         removeByFileName,
         getPrintsByIds,
         removePrintsByIds,
+        updatePositions,
         getAll,
         getSelectedIds
     };
