@@ -132,42 +132,22 @@ function App() {
     const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
 
     // Функция для принудительной загрузки конфига (для дебага)
-    const handleForceLoadConfig = useCallback(async (isAuto = false) => {
+    const handleForceLoadConfig = useCallback(async () => {
         if (!selectedPrint || !auth.isAuth) return;
         
-        if (!isAuto) console.log('🔄 Принудительно загружаю конфиг...');
+        console.log('🔄 Ручная загрузка конфига...');
         const saved = await window.DataService.loadPrintsConfig(selectedPrint.name);
-        if (!isAuto) console.log('Загруженный конфиг:', saved);
         
-        if (saved && saved.transforms && saved.productTransforms) {
+        if (saved && saved.transforms) {
             setTransforms(prev => ({ ...prev, ...saved.transforms }));
             setProductTransforms(prev => ({ ...prev, ...saved.productTransforms }));
-            if (!isAuto) alert('✓ Конфиг загружен успешно!');
-            
-            // Если это автозагрузка - разрешаем автосейв после применения
-            if (isAuto) {
-                setTimeout(() => { isPrintLoadedRef.current = true; }, 500);
-            }
+            alert('✓ Конфиг загружен!');
         } else {
-            console.log('❌ Конфиг для файла не найден (auto: ' + isAuto + ')');
-            if (!isAuto) alert('❌ Конфиг для этого файла не найден');
-            
-            // Если конфига нет, всё равно разрешаем автосейв (для новых файлов)
-            if (isAuto) {
-                 setTimeout(() => { isPrintLoadedRef.current = true; }, 500);
-            }
+            alert('❌ Конфиг не найден');
         }
+        // Разрешаем автосейв
+        isPrintLoadedRef.current = true;
     }, [selectedPrint, auth.isAuth]);
-
-    // Авто-нажатие кнопки через 1 секунду после выбора принта
-    useEffect(() => {
-        if (selectedPrint) {
-            const timer = setTimeout(() => {
-                handleForceLoadConfig(true);
-            }, 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [selectedPrint, handleForceLoadConfig]);
 
     useEffect(() => {
         if (activeProductId === null && products.length > 0) {
@@ -241,63 +221,53 @@ function App() {
         }
     };
 
-    // Flag to prevent auto-save on initial load
-    const isPrintLoadedRef = React.useRef(false);
+    // Таймер для автозагрузки
+    const autoLoadTimerRef = React.useRef(null);
 
     // === ВЫБОР ПРИНТА ===
     const handleSelectPrint = async (file) => {
-        if (!file) {
-            console.warn('handleSelectPrint: файл не передан');
-            return;
-        }
-        
-        // Сбрасываем флаг загрузки, чтобы не срабатывало автосохранение
-        isPrintLoadedRef.current = false;
+        if (!file) return;
 
+        // 1. Сброс состояния
+        isPrintLoadedRef.current = false;
+        if (autoLoadTimerRef.current) clearTimeout(autoLoadTimerRef.current);
+        
         console.log('Выбор принта:', file.name);
+        setSelectedPrint(file);
         
         try {
-            setSelectedPrint(file);
-            
-            if (!window.RenderService) {
-                console.error('RenderService не загружен');
-                alert('Ошибка: RenderService не загружен. Обновите страницу.');
-                return;
-            }
-            
-            let newTransforms = null;
-            let newProductTransforms = null;
+            if (!window.RenderService) throw new Error('RenderService not loaded');
 
-            // Пытаемся загрузить сохраненную конфигурацию (Lazy Load)
-            console.log('Загружаю конфиг для:', file.name);
-            const saved = await window.DataService.loadPrintsConfig(file.name);
+            // 2. Сначала ставим ДЕФОЛТ (чтобы было быстро)
+            const defTransforms = await window.RenderService.initializeTransforms(file, products, 'mockups');
+            const defProdTransforms = await window.RenderService.initializeTransforms(file, products, 'products');
             
-            if (saved && saved.transforms && saved.productTransforms) {
-                newTransforms = saved.transforms;
-                newProductTransforms = saved.productTransforms;
-                console.log('✓ Загружена сохраненная конфигурация принта:', saved);
-            } else {
-                console.log('⚠ Конфиг для файла не найден или пуст');
-            }
+            setTransforms(defTransforms);
+            setProductTransforms(defProdTransforms);
 
-            // Если конфигурации нет или она неполная, инициализируем заново
-            const calculatedTransforms = await window.RenderService.initializeTransforms(file, products, 'mockups');
-            const calculatedProductTransforms = await window.RenderService.initializeTransforms(file, products, 'products');
+            // 3. Запускаем таймер на подгрузку реального конфига
+            autoLoadTimerRef.current = setTimeout(async () => {
+                console.log('🔄 Авто-загрузка конфига для:', file.name);
+                const saved = await window.DataService.loadPrintsConfig(file.name);
+                
+                if (saved && saved.transforms) {
+                    console.log('✅ Конфиг найден, применяю...');
+                    // Аккуратно мержим, чтобы не потерять другие товары
+                    setTransforms(prev => ({ ...prev, ...saved.transforms }));
+                    setProductTransforms(prev => ({ ...prev, ...saved.productTransforms }));
+                } else {
+                    console.log('ℹ️ Конфига нет, оставляем дефолт');
+                }
+                
+                // Включаем автосохранение
+                isPrintLoadedRef.current = true;
+            }, 500); // 0.5 сек
 
-            // Загружаем ДЕФОЛТНЫЕ значения сразу, чтобы пользователь увидел картинку
-            // А через секунду сработает handleForceLoadConfig (см. useEffect) и накатит сохраненные
-            setTransforms(calculatedTransforms);
-            setProductTransforms(calculatedProductTransforms);
-            
-            // Важно: пока не ставим флаг загрузки в true, чтобы автосейв не сработал на дефолтные значения
-            // isPrintLoadedRef.current станет true позже (в другом useEffect или после загрузки конфига)
-            
         } catch (e) {
-            console.error('Ошибка при выборе принта:', e);
-            alert('Ошибка при выборе принта: ' + e.message);
-            
-            // Откатываем состояние
-            setSelectedPrint(null);
+            console.error('Ошибка выбора принта:', e);
+            alert(e.message);
+        }
+    };
             
             if (window.RenderService && window.RenderService.buildDefaultTransforms) {
                 try {
