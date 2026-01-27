@@ -100,7 +100,7 @@ window.CloudSaver = ({ files }) => {
     if (articles.length === 0) {
         return (
             <div className="text-center py-20 text-slate-500">
-                <i data-lucide="folder-open" className="w-16 h-16 mx-auto mb-4 opacity-30"></i>
+                <window.Icon name="folder-open" className="w-16 h-16 mx-auto mb-4 opacity-30" />
                 <p>Нет сохраненных проектов в облаке.</p>
             </div>
         );
@@ -128,7 +128,7 @@ window.CloudSaver = ({ files }) => {
                         </div>
                         
                         {/* Expand arrow */}
-                        <i data-lucide={expandedArticle === article.key ? "chevron-up" : "chevron-down"} className="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                        <window.Icon name={expandedArticle === article.key ? "chevron-up" : "chevron-down"} className="w-5 h-5 text-slate-400 flex-shrink-0" />
                     </button>
 
                     {expandedArticle === article.key && (
@@ -146,7 +146,7 @@ window.CloudSaver = ({ files }) => {
                                                 disabled={isZipping}
                                                 className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors disabled:opacity-50"
                                             >
-                                                {isZipping ? <i data-lucide="loader-2" className="animate-spin w-3 h-3"></i> : <i data-lucide="download" className="w-3 h-3"></i>}
+                                                {isZipping ? <window.Icon name="loader-2" className="animate-spin w-3 h-3" /> : <window.Icon name="download" className="w-3 h-3" />}
                                                 <span>Скачать</span>
                                             </button>
                                         </div>
@@ -158,13 +158,13 @@ window.CloudSaver = ({ files }) => {
                                                 <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer" onClick={() => setPreviewFile(f)} />
                                                 <div className="absolute inset-0 bg-slate-900/90 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1">
                                                     <button onClick={() => setPreviewFile(f)} title="Предпросмотр" className="p-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-white">
-                                                        <i data-lucide="eye" className="w-3 h-3"></i>
+                                                        <window.Icon name="eye" className="w-3 h-3" />
                                                     </button>
                                                     <button onClick={() => handleCopyLink(f.url)} title="Копировать ссылку" className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white">
-                                                        <i data-lucide="copy" className="w-3 h-3"></i>
+                                                        <window.Icon name="copy" className="w-3 h-3" />
                                                     </button>
                                                     <button onClick={() => window.open(f.url, '_blank')} title="Открыть" className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white">
-                                                        <i data-lucide="external-link" className="w-3 h-3"></i>
+                                                        <window.Icon name="external-link" className="w-3 h-3" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -178,7 +178,7 @@ window.CloudSaver = ({ files }) => {
                                 disabled={isZipping}
                                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 text-sm"
                             >
-                                {isZipping ? <i data-lucide="loader-2" className="animate-spin w-4 h-4"></i> : <i data-lucide="download" className="w-4 h-4"></i>}
+                                {isZipping ? <window.Icon name="loader-2" className="animate-spin w-4 h-4" /> : <window.Icon name="download" className="w-4 h-4" />}
                                 <span>Скачать весь проект</span>
                             </button>
                         </div>
@@ -193,7 +193,7 @@ window.CloudSaver = ({ files }) => {
                         <div className="flex items-center justify-between p-4 border-b border-slate-700">
                             <h3 className="font-semibold text-white truncate">{previewFile.name}</h3>
                             <button onClick={() => { setPreviewFile(null); setPreviewZoom(1); }} className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
-                                <i data-lucide="x" className="w-5 h-5"></i>
+                                <window.Icon name="x" className="w-5 h-5" />
                             </button>
                         </div>
                         
@@ -208,7 +208,7 @@ window.CloudSaver = ({ files }) => {
                                     className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 hover:text-white"
                                     title="Уменьшить"
                                 >
-                                    <i data-lucide="zoom-out" className="w-4 h-4"></i>
+                                    <window.Icon name="zoom-out" className="w-4 h-4" />
                                 </button>
                                 <span className="text-xs text-slate-400 w-12 text-center">{Math.round(previewZoom * 100)}%</span>
                                 <button 
@@ -216,7 +216,7 @@ window.CloudSaver = ({ files }) => {
                                     className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 hover:text-white"
                                     title="Увеличить"
                                 >
-                                    <i data-lucide="zoom-in" className="w-4 h-4"></i>
+                                    <window.Icon name="zoom-in" className="w-4 h-4" />
                                 </button>
                                 <button 
                                     onClick={() => setPreviewZoom(1)}
@@ -231,14 +231,14 @@ window.CloudSaver = ({ files }) => {
                                     onClick={() => handleCopyLink(previewFile.url)}
                                     className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs flex items-center gap-1.5"
                                 >
-                                    <i data-lucide="copy" className="w-3 h-3"></i>
+                                    <window.Icon name="copy" className="w-3 h-3" />
                                     Копировать ссылку
                                 </button>
                                 <button 
                                     onClick={() => window.open(previewFile.url, '_blank')}
                                     className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-white text-xs flex items-center gap-1.5"
                                 >
-                                    <i data-lucide="external-link" className="w-3 h-3"></i>
+                                    <window.Icon name="external-link" className="w-3 h-3" />
                                     Открыть
                                 </button>
                             </div>

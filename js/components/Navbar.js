@@ -6,7 +6,7 @@ window.Navbar = ({ activeTab, setActiveTab, onExport, isExporting, onSaveCloud }
         <header className="h-16 border-b border-white/10 bg-slate-900/50 backdrop-blur-md flex items-center px-6 justify-between sticky top-0 z-50">
             <div className="flex items-center gap-3">
                 <div className="bg-indigo-500/20 p-2 rounded-lg border border-indigo-500/30">
-                     <i data-lucide="package" className="text-indigo-400 w-5 h-5"></i>
+                     <window.Icon name="package" className="text-indigo-400 w-5 h-5" />
                 </div>
                 <h1 className="text-xl font-semibold text-white">Wite<span className="text-indigo-400">Hik</span></h1>
             </div>
@@ -21,10 +21,10 @@ window.Navbar = ({ activeTab, setActiveTab, onExport, isExporting, onSaveCloud }
                 {(activeTab === 'mockups' || activeTab === 'products') && (
                     <>
                         <button onClick={onSaveCloud} disabled={isExporting} title="Сохранить в облако" className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700 text-xs font-medium px-3 py-2 rounded-lg transition-all">
-                            <i data-lucide="cloud-upload" className="w-4 h-4"></i>
+                            <window.Icon name="cloud-upload" className="w-4 h-4" />
                         </button>
                         <button onClick={onExport} disabled={isExporting} className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-3 py-2 rounded-lg transition-all">
-                            {isExporting ? <span className="animate-pulse">ZIP...</span> : <><i data-lucide="download" className="w-4 h-4"></i> <span>ZIP</span></>}
+                            {isExporting ? <span className="animate-pulse">ZIP...</span> : <><window.Icon name="download" className="w-4 h-4" /> <span>ZIP</span></>}
                         </button>
                     </>
                 )}

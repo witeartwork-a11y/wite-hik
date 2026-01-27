@@ -49,21 +49,6 @@ function App() {
         setAuth({ isAuth: true, password: pwd });
     }, []);
 
-    // Подгружаем/перерисовываем иконки; защищаемся от падения lucide
-    useEffect(() => {
-        if (!window.lucide) return;
-        // Откладываем вызов до завершения React рендеринга
-        const timer = setTimeout(() => {
-            try {
-                window.lucide.createIcons();
-            } catch (err) {
-                console.error('Не удалось отрисовать иконки Lucide', err);
-            }
-        }, 0);
-        
-        return () => clearTimeout(timer);
-    }, [auth, activeTab, files, products, isUploading, printCollection, selectedPrintIds]);
-
     // Автовход, если пароль уже сохранен в localStorage
     useEffect(() => {
         let cancelled = false;
@@ -444,7 +429,7 @@ function App() {
                                         <div className="grid md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-2 pr-1">
                                             <div className="aspect-square rounded border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-700/50 hover:border-indigo-500 transition-all relative bg-slate-900/50">
                                                 <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
-                                                {isUploading ? <i data-lucide="loader-2" className="w-6 h-6 text-indigo-400 animate-spin"></i> : <i data-lucide="plus" className="w-6 h-6 text-slate-500"></i>}
+                                                {isUploading ? <window.Icon name="loader-2" className="w-6 h-6 text-indigo-400 animate-spin" /> : <window.Icon name="plus" className="w-6 h-6 text-slate-500" />}
                                             </div>
                                             {files.filter(f => f.type === 'upload').map(f => (
                                                 <div 
@@ -490,7 +475,7 @@ function App() {
                                                             className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-400/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-indigo-500/40 hover:border-indigo-400"
                                                             title="Добавить в коллекцию"
                                                         >
-                                                            <i data-lucide="plus" className="w-6 h-6 text-white"></i>
+                                                            <window.Icon name="plus" className="w-6 h-6 text-white" />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -524,7 +509,7 @@ function App() {
                                     {!selectedPrint ? (
                                         <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
                                             <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-slate-800">
-                                                <i data-lucide="image" className="w-8 h-8 opacity-50"></i>
+                                                <window.Icon name="image" className="w-8 h-8 opacity-50" />
                                             </div>
                                             <p>Выберите изображение слева, чтобы начать работу</p>
                                         </div>
@@ -533,7 +518,7 @@ function App() {
                                             <div className="flex flex-wrap items-center gap-3">
                                                 {/* Выбор количества мокапов в строку */}
                                                 <div className="flex items-center gap-3 text-slate-400 text-xs bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2">
-                                                    <i data-lucide="layout-grid" className="w-4 h-4"></i>
+                                                    <window.Icon name="layout-grid" className="w-4 h-4" />
                                                     <span className="whitespace-nowrap">Мокапов в строку:</span>
                                                     <div className="flex gap-1">
                                                         {[1, 2, 3].map(num => (
@@ -556,7 +541,7 @@ function App() {
                                             {products.filter(p => p.enabled).length === 0 ? (
                                                 <div className="col-span-full h-80 flex flex-col items-center justify-center text-slate-500 gap-4">
                                                     <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-slate-800">
-                                                        <i data-lucide="eye-off" className="w-8 h-8 opacity-50"></i>
+                                                        <window.Icon name="eye-off" className="w-8 h-8 opacity-50" />
                                                     </div>
                                                     <p>Все мокапы отключены</p>
                                                     <p className="text-xs">Включите мокапы в списке слева галочкой</p>

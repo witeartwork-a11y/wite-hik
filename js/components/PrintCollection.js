@@ -36,7 +36,7 @@ window.PrintCollection = ({
 
             {prints.length === 0 ? (
                 <div className="text-center py-8 text-slate-500 border border-dashed border-slate-700 rounded-lg">
-                    <i data-lucide="inbox" className="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                    <window.Icon name="inbox" className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Нет добавленных принтов</p>
                 </div>
             ) : (
@@ -102,7 +102,7 @@ window.PrintCollection = ({
                                             <span className="text-sm font-mono bg-slate-900/50 px-2 py-1 rounded text-indigo-300">
                                                 {print.article || print.name.split('.')[0]}
                                             </span>
-                                            <i data-lucide="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/article:opacity-100 transition-opacity"></i>
+                                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/article:opacity-100 transition-opacity" />
                                         </div>
                                     )}
 
@@ -127,7 +127,7 @@ window.PrintCollection = ({
                                     className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-colors flex-shrink-0"
                                     title="Удалить"
                                 >
-                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                    <window.Icon name="trash-2" className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
@@ -150,12 +150,12 @@ window.PrintCollection = ({
                 >
                     {isSaving ? (
                         <div className="flex items-center justify-center gap-2">
-                            <i data-lucide="loader-2" className="w-4 h-4 animate-spin"></i>
+                            <window.Icon name="loader-2" className="w-4 h-4 animate-spin" />
                             Сохранение...
                         </div>
                     ) : (
                         <div className="flex items-center justify-center gap-2">
-                            <i data-lucide="cloud-upload" className="w-4 h-4"></i>
+                            <window.Icon name="cloud-upload" className="w-4 h-4" />
                             Добавить {selectedPrints.length} {selectedPrints.length === 1 ? 'принт' : 'принтов'} в облако
                         </div>
                     )}

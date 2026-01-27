@@ -111,7 +111,7 @@ const ProductCard = ({
                             : 'border-slate-600 hover:border-slate-500 bg-transparent'}
                     `}
                 >
-                    {product.enabled && <span><i data-lucide="check" className="w-3.5 h-3.5"></i></span>}
+                    {product.enabled && <span><window.Icon name="check" className="w-3.5 h-3.5" /></span>}
                 </button>
 
                 {/* Название (Редактируемое) */}
@@ -128,7 +128,7 @@ const ProductCard = ({
                     ) : (
                         <div className="flex items-center gap-2 group/name cursor-pointer" onClick={() => setIsEditing(true)}>
                             <span className="text-sm font-medium text-slate-200 truncate">{product.name}</span>
-                            <i data-lucide="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/name:opacity-100 transition-opacity"></i>
+                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/name:opacity-100 transition-opacity" />
                         </div>
                     )}
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex gap-2 items-center">
@@ -165,7 +165,7 @@ const ProductCard = ({
                         ) : (
                             <span className="cursor-pointer hover:text-slate-300 transition-colors group/res flex items-center gap-1" onClick={() => setIsEditingResolution(true)}>
                                 {product.width}x{product.height}px
-                                <i data-lucide="pencil" className="w-2.5 h-2.5 text-slate-600 opacity-0 group-hover/res:opacity-100 transition-opacity"></i>
+                                <window.Icon name="pencil" className="w-2.5 h-2.5 text-slate-600 opacity-0 group-hover/res:opacity-100 transition-opacity" />
                             </span>
                         )}
                         <span>|</span>
@@ -179,7 +179,7 @@ const ProductCard = ({
                     className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors opacity-0 group-hover:opacity-100"
                     title="Удалить"
                 >
-                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                    <window.Icon name="trash-2" className="w-4 h-4" />
                 </button>
             </div>
 
@@ -195,7 +195,7 @@ const ProductCard = ({
                                 onClick={() => onMove(index, 'up')}
                                 className="p-1.5 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400"
                             >
-                                <i data-lucide="arrow-up" className="w-3.5 h-3.5"></i>
+                                <window.Icon name="arrow-up" className="w-3.5 h-3.5" />
                             </button>
                             <div className="w-px bg-slate-700 my-1"></div>
                             <button 
@@ -203,7 +203,7 @@ const ProductCard = ({
                                 onClick={() => onMove(index, 'down')}
                                 className="p-1.5 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400"
                             >
-                                <i data-lucide="arrow-down" className="w-3.5 h-3.5"></i>
+                                <window.Icon name="arrow-down" className="w-3.5 h-3.5" />
                             </button>
                         </div>
 
@@ -211,7 +211,7 @@ const ProductCard = ({
                             onClick={() => onDuplicate(product)}
                             className="p-1.5 px-2 bg-slate-800 text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 rounded-md text-xs flex items-center gap-1.5 transition-all"
                         >
-                            <i data-lucide="copy" className="w-3.5 h-3.5"></i>
+                            <window.Icon name="copy" className="w-3.5 h-3.5" />
                             <span>Дубль</span>
                         </button>
                         
@@ -239,14 +239,14 @@ const ProductCard = ({
                                     : 'bg-slate-800 border-slate-700 hover:border-slate-500 hover:bg-slate-700'}
                             `}>
                                 <div className="flex items-center gap-1.5 text-xs font-medium">
-                                    <i data-lucide="layers" className={`w-3.5 h-3.5 ${product.mask ? 'text-indigo-400' : 'text-slate-400'}`}></i>
+                                    <window.Icon name="layers" className={`w-3.5 h-3.5 ${product.mask ? 'text-indigo-400' : 'text-slate-400'}`} />
                                     <span className={product.mask ? 'text-indigo-300' : 'text-slate-400'}>Маска</span>
                                 </div>
                                 <input type="file" className="hidden" accept="image/png" onChange={e => handleFileUpload(e, 'mask')} />
                             </label>
                             {product.mask && (
                                 <button onClick={() => handleFileDelete('mask', product.mask)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
-                                    <i data-lucide="x" className="w-3 h-3"></i>
+                                    <window.Icon name="x" className="w-3 h-3" />
                                 </button>
                             )}
                         </div>
@@ -260,14 +260,14 @@ const ProductCard = ({
                                     : 'bg-slate-800 border-slate-700 hover:border-slate-500 hover:bg-slate-700'}
                             `}>
                                 <div className="flex items-center gap-1.5 text-xs font-medium">
-                                    <i data-lucide="eye" className={`w-3.5 h-3.5 ${product.overlay ? 'text-indigo-400' : 'text-slate-400'}`}></i>
+                                    <window.Icon name="eye" className={`w-3.5 h-3.5 ${product.overlay ? 'text-indigo-400' : 'text-slate-400'}`} />
                                     <span className={product.overlay ? 'text-indigo-300' : 'text-slate-400'}>Оверлей</span>
                                 </div>
                                 <input type="file" className="hidden" accept="image/png" onChange={e => handleFileUpload(e, 'overlay')} />
                             </label>
                             {product.overlay && (
                                 <button onClick={() => handleFileDelete('overlay', product.overlay)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
-                                    <i data-lucide="x" className="w-3 h-3"></i>
+                                    <window.Icon name="x" className="w-3 h-3" />
                                 </button>
                             )}
                         </div>
@@ -370,7 +370,7 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
             <div className="flex flex-col gap-2 bg-slate-800 rounded-xl border border-slate-700 p-3">
                 {/* Поиск */}
                 <div className="relative">
-                    <i data-lucide="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                    <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input 
                         type="text" 
                         placeholder="Поиск..." 
@@ -404,14 +404,14 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
                         onClick={handleSelectAll}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-[10px] font-medium text-slate-300 hover:bg-slate-700 hover:border-indigo-500/50 hover:text-white transition-all"
                     >
-                        <i data-lucide="check-square" className="w-3 h-3"></i>
+                        <window.Icon name="check-square" className="w-3 h-3" />
                         <span>Выделить все</span>
                     </button>
                     <button
                         onClick={handleDeselectAll}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-[10px] font-medium text-slate-300 hover:bg-slate-700 hover:border-red-500/50 hover:text-white transition-all"
                     >
-                        <i data-lucide="square" className="w-3 h-3"></i>
+                        <window.Icon name="square" className="w-3 h-3" />
                         <span>Снять все</span>
                     </button>
                 </div>

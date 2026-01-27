@@ -33,7 +33,7 @@ window.LoginScreen = ({ onLogin }) => {
             <div className="w-full max-w-md bg-slate-900 rounded-2xl border border-slate-800 p-8 shadow-2xl">
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20">
-                        <i data-lucide="lock" className="text-indigo-400 w-8 h-8"></i>
+                        <window.Icon name="lock" className="text-indigo-400 w-8 h-8" />
                     </div>
                     <h1 className="text-2xl font-bold text-white">Wite-Hik Access</h1>
                 </div>

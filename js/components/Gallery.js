@@ -8,10 +8,6 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
     const [filter, setFilter] = useState('');
     const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
 
-    useEffect(() => {
-        if (window.lucide) window.lucide.createIcons();
-    }, [files, isUploading]);
-    
     const handleUploadFiles = async (fileList) => {
         if (!fileList || fileList.length === 0) return;
         setIsUploading(true);
@@ -74,7 +70,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
             <div className="flex flex-col gap-3">
                 {/* Фильтр по названию */}
                 <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <i data-lucide="filter" className="w-4 h-4"></i>
+                    <window.Icon name="filter" className="w-4 h-4" />
                     <input
                         type="text"
                         value={filter}
@@ -86,7 +82,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
                 
                 {/* Фильтр по дате */}
                 <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
-                    <i data-lucide="calendar" className="w-4 h-4"></i>
+                    <window.Icon name="calendar" className="w-4 h-4" />
                     <select
                         value={dateFilter}
                         onChange={(e) => setDateFilter(e.target.value)}

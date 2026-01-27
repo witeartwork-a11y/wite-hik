@@ -15,16 +15,6 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
         rotation: Number.isFinite(transform?.rotation) ? transform.rotation : 0,
     };
 
-    // Инициализация иконок после рендера
-    useEffect(() => {
-        if (!window.lucide) return;
-        try {
-            window.lucide.createIcons();
-        } catch (err) {
-            console.error('Не удалось отрисовать иконки Lucide в Canvas', err);
-        }
-    }, []);
-
     // Отрисовка
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -208,31 +198,31 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
                 <div className="flex items-center gap-2 flex-wrap">
                     <div className="grid grid-cols-3 grid-rows-3 gap-0.5 bg-slate-800/80 border border-slate-700 rounded-lg p-1 shadow-lg">
                         <button onClick={(e) => { e.stopPropagation(); onUpdateTransform({ ...t, y: t.y - 10 }); }} className="p-1 col-start-2 row-start-1 text-slate-200 hover:text-white" title="Сместить вверх">
-                            <i data-lucide="arrow-up" className="w-3.5 h-3.5"></i>
+                            <window.Icon name="arrow-up" className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onUpdateTransform({ ...t, x: t.x - 10 }); }} className="p-1 col-start-1 row-start-2 text-slate-200 hover:text-white" title="Сместить влево">
-                            <i data-lucide="arrow-left" className="w-3.5 h-3.5"></i>
+                            <window.Icon name="arrow-left" className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onUpdateTransform({ ...t, x: 0, y: 0 }); }} className="p-1 col-start-2 row-start-2 text-slate-200 hover:text-white" title="Центрировать">
-                            <i data-lucide="move" className="w-3.5 h-3.5"></i>
+                            <window.Icon name="move" className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onUpdateTransform({ ...t, x: t.x + 10 }); }} className="p-1 col-start-3 row-start-2 text-slate-200 hover:text-white" title="Сместить вправо">
-                            <i data-lucide="arrow-right" className="w-3.5 h-3.5"></i>
+                            <window.Icon name="arrow-right" className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onUpdateTransform({ ...t, y: t.y + 10 }); }} className="p-1 col-start-2 row-start-3 text-slate-200 hover:text-white" title="Сместить вниз">
-                            <i data-lucide="arrow-down" className="w-3.5 h-3.5"></i>
+                            <window.Icon name="arrow-down" className="w-3.5 h-3.5" />
                         </button>
                     </div>
 
                     <div className="flex items-center gap-1 bg-slate-800/80 border border-slate-700 rounded-lg px-2 py-1 shadow-lg">
                         <button onClick={(e) => { e.stopPropagation(); rotateBy(-1); }} className="p-1.5 text-slate-200 hover:text-white" title="Повернуть -1°">
-                            <i data-lucide="rotate-ccw" className="w-4 h-4"></i>
+                            <window.Icon name="rotate-ccw" className="w-4 h-4" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onUpdateTransform({ ...t, rotation: 0 }); }} className="p-1.5 text-slate-200 hover:text-white" title="Сбросить поворот">
-                            <i data-lucide="refresh-ccw" className="w-4 h-4"></i>
+                            <window.Icon name="refresh-ccw" className="w-4 h-4" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); rotateBy(1); }} className="p-1.5 text-slate-200 hover:text-white" title="Повернуть +1°">
-                            <i data-lucide="rotate-cw" className="w-4 h-4"></i>
+                            <window.Icon name="rotate-cw" className="w-4 h-4" />
                         </button>
                     </div>
 
@@ -241,7 +231,7 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
                         className="p-2 bg-slate-800/90 text-white rounded-lg border border-slate-600 hover:bg-indigo-600 transition-colors shadow-lg"
                         title="Сбросить все"
                     >
-                        <i data-lucide="rotate-ccw" className="w-4 h-4"></i>
+                        <window.Icon name="rotate-ccw" className="w-4 h-4" />
                     </button>
                 </div>
 
