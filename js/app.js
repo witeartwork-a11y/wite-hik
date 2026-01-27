@@ -90,24 +90,39 @@ function App() {
             return;
         }
         
+        console.log('Выбор принта:', file.name);
+        
         try {
             setSelectedPrint(file);
             
             if (!window.RenderService) {
                 console.error('RenderService не загружен');
+                alert('Ошибка: RenderService не загружен. Обновите страницу.');
                 return;
             }
             
             const newTransforms = await window.RenderService.initializeTransforms(file, products, 'mockups');
             const newProductTransforms = await window.RenderService.initializeTransforms(file, products, 'products');
+            
+            console.log('Трансформации успешно инициализированы');
+            
             setTransforms(newTransforms);
             setProductTransforms(newProductTransforms);
         } catch (e) {
             console.error('Ошибка при выборе принта:', e);
+            alert('Ошибка при выборе принта: ' + e.message);
+            
+            // Откатываем состояние
+            setSelectedPrint(null);
+            
             if (window.RenderService && window.RenderService.buildDefaultTransforms) {
-                const defaults = window.RenderService.buildDefaultTransforms(products);
-                setTransforms(defaults);
-                setProductTransforms(defaults);
+                try {
+                    const defaults = window.RenderService.buildDefaultTransforms(products);
+                    setTransforms(defaults);
+                    setProductTransforms(defaults);
+                } catch (err) {
+                    console.error('Ошибка при создании дефолтных трансформаций:', err);
+                }
             }
         }
     };
@@ -174,26 +189,40 @@ function App() {
 
     // === УПРАВЛЕНИЕ КОЛЛЕКЦИЕЙ ПРИНТОВ ===
     const handleAddPrintToCollection = (file) => {
-        const printId = 'print_' + Date.now();
-        // Сохраняем позиции всех включенных товаров
-        const enabledProducts = products.filter(p => p.enabled);
-        const positions = {};
+        if (!file) {
+            console.warn('handleAddPrintToCollection: файл не передан');
+            return;
+        }
         
-        enabledProducts.forEach(prod => {
-            const currentTransforms = activeTab === 'products' ? productTransforms : transforms;
-            positions[prod.id] = currentTransforms[prod.id] || { x: 0, y: 0, scale: 0.5, rotation: 0 };
-        });
-        
-        setPrintCollection(prev => [...prev, {
-            id: printId,
-            name: file.name,
-            url: file.url,
-            thumb: file.thumb || file.url,
-            article: file.name.split('.')[0],
-            positions: positions
-        }]);
-        
-        setSelectedPrintIds(prev => [...prev, printId]);
+        try {
+            console.log('Добавление принта в коллекцию:', file.name);
+            
+            const printId = 'print_' + Date.now();
+            // Сохраняем позиции всех включенных товаров
+            const enabledProducts = products.filter(p => p.enabled);
+            const positions = {};
+            
+            enabledProducts.forEach(prod => {
+                const currentTransforms = activeTab === 'products' ? productTransforms : transforms;
+                positions[prod.id] = currentTransforms[prod.id] || { x: 0, y: 0, scale: 0.5, rotation: 0 };
+            });
+            
+            setPrintCollection(prev => [...prev, {
+                id: printId,
+                name: file.name,
+                url: file.url,
+                thumb: file.thumb || file.url,
+                article: file.name.split('.')[0],
+                positions: positions
+            }]);
+            
+            setSelectedPrintIds(prev => [...prev, printId]);
+            
+            console.log('Принт успешно добавлен в коллекцию');
+        } catch (e) {
+            console.error('Ошибка при добавлении принта в коллекцию:', e);
+            alert('Ошибка при добавлении принта в коллекцию: ' + e.message);
+        }
     };
 
     const handleSelectPrintInCollection = (printId) => {
@@ -375,29 +404,40 @@ function App() {
                                             {files.filter(f => f.type === 'upload').map(f => (
                                                 <div 
                                                     key={f.name} 
-                                                    className={`aspect-square rounded border cursor-pointer overflow-hidden bg-slate-900 relative group ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}
+                                                    className={`aspect-square rounded border overflow-hidden bg-slate-900 relative group ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}
                                                 >
-                                                    <img 
-                                                        src={f.thumb || f.url} 
-                                                        loading="lazy" 
-                                                        className="w-full h-full object-cover" 
-                                                        onClick={() => handleSelectPrint(f)}
-                                                    />
-                                                    {/* Кнопка добавления в коллекцию (по центру, полупрозрачная) */}
-                                                    <button 
+                                                    {/* Изображение с областью клика для выбора */}
+                                                    <div 
+                                                        className="w-full h-full cursor-pointer"
                                                         onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (typeof handleAddPrintToCollection === 'function') {
-                                                                handleAddPrintToCollection(f);
+                                                            // Проверяем что не кликнули по кнопке добавления
+                                                            if (!e.target.closest('.add-to-collection-btn')) {
+                                                                handleSelectPrint(f);
                                                             }
                                                         }}
-                                                        className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/0 hover:bg-black/40 transition-all duration-200"
-                                                        title="Добавить в коллекцию"
                                                     >
-                                                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-400/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                        <img 
+                                                            src={f.thumb || f.url} 
+                                                            loading="lazy" 
+                                                            className="w-full h-full object-cover pointer-events-none" 
+                                                        />
+                                                    </div>
+                                                    
+                                                    {/* Кнопка добавления в коллекцию (по центру, полупрозрачная) */}
+                                                    <div 
+                                                        className="add-to-collection-btn absolute inset-0 w-full h-full flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
+                                                    >
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleAddPrintToCollection(f);
+                                                            }}
+                                                            className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-400/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-indigo-500/40 hover:border-indigo-400"
+                                                            title="Добавить в коллекцию"
+                                                        >
                                                             <i data-lucide="plus" className="w-6 h-6 text-white"></i>
-                                                        </div>
-                                                    </button>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
