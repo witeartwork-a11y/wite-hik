@@ -3,7 +3,7 @@ window.DataService = {
     // Загрузить список файлов галереи
     loadFiles: async () => {
         try {
-            const res = await fetch('/api.php?action=list');
+            const res = await fetch('/api.php?action=list&t=' + Date.now());
             const data = await res.json();
             return data.files || [];
         } catch (e) {
@@ -15,7 +15,7 @@ window.DataService = {
     // Загрузить сохраненную конфигурацию товаров
     loadConfig: async () => {
         try {
-            const res = await fetch('/api.php?action=load_config');
+            const res = await fetch('/api.php?action=load_config&t=' + Date.now());
             const data = await res.json();
             return data.config || [];
         } catch (e) {
@@ -39,7 +39,7 @@ window.DataService = {
     // Загрузить конфигурацию принтов
     loadPrintsConfig: async (printName = null) => {
         try {
-            let url = '/api.php?action=load_prints_config';
+            let url = '/api.php?action=load_prints_config&t=' + Date.now();
             if (printName) {
                 url += '&print_name=' + encodeURIComponent(printName);
             }

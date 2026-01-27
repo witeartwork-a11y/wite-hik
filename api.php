@@ -4,6 +4,9 @@
 @ini_set('post_max_size', '256M');
 @ini_set('memory_limit', '512M');
 header("Access-Control-Allow-Origin: *");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 header("Content-Type: application/json; charset=UTF-8");
 
 $PASSWORD = 'hikomori1hikomori1'; 
@@ -124,7 +127,12 @@ if ($action === 'load_config') {
 if ($action === 'save_config') {
     $input = json_decode(file_get_contents('php://input'), true);
     if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
-    file_put_contents($CONFIG_FILE, json_encode($input['products'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    
+    $result = file_put_contents($CONFIG_FILE, json_encode($input['products'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    
+    if ($result === false) {
+        jsonResponse(false, [], 'Failed to write config file. Permissions? ' . $CONFIG_FILE);
+    }
     jsonResponse(true);
 }
 
