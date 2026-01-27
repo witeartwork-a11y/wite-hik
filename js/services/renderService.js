@@ -61,8 +61,8 @@ window.RenderService = {
 
         const [base, mask, overlay] = await Promise.all([
             utils.loadImage(product.image),
-            utils.loadImage(product.mask),
-            utils.loadImage(product.overlay)
+            utils.loadImage((options && options.maskUrl !== undefined) ? options.maskUrl : product.mask),
+            utils.loadImage((options && options.overlayUrl !== undefined) ? options.overlayUrl : product.overlay)
         ]);
 
         const canvas = document.createElement('canvas');

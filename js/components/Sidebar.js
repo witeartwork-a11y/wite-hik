@@ -16,68 +16,98 @@ const ProductCard = ({
     const [isEditing, setIsEditing] = useState(false);
     const [localName, setLocalName] = useState(product.name);
     const [isEditingResolution, setIsEditingResolution] = useState(false);
-    const [localWidth, setLocalWidth] = useState(product.width);
-    const [localHeight, setLocalHeight] = useState(product.height);
+    
+    // State for tabs
+    const [configTab, setConfigTab] = useState('mockup'); // 'mockup' | 'product'
+
+    // Compute current values based on tab
+    // Fallback for mockup dimensions to product dimensions if not set, to avoid 0x0
+    const currentWidth = configTab === 'mockup' ? (product.mockupWidth || product.width) : product.width;
+    const currentHeight = configTab === 'mockup' ? (product.mockupHeight || product.height) : product.height;
+    
+    // For masks/overlays, we treat them as empty if not set (no fallback to product mask for mockup to avoid confusion)
+    const currentMask = configTab === 'mockup' ? product.mockupMask : product.mask;
+    const currentOverlay = configTab === 'mockup' ? product.mockupOverlay : product.overlay;
+
+    const [localWidth, setLocalWidth] = useState(currentWidth);
+    const [localHeight, setLocalHeight] = useState(currentHeight);
     const resolutionContainerRef = useRef(null);
 
-    // Синхронизируем локальные значения при изменении продукта
+    // Sync local state when product or tab changes
     useEffect(() => {
         setLocalName(product.name);
-        setLocalWidth(product.width);
-        setLocalHeight(product.height);
-    }, [product.id]);
+        setLocalWidth(currentWidth);
+        setLocalHeight(currentHeight);
+    }, [product.id, configTab, product.width, product.height, product.mockupWidth, product.mockupHeight]);
 
-    // Обработчик для закрытия режима редактирования при клике вне контейнера
+    const handleResolutionUpdate = () => {
+        setIsEditingResolution(false);
+        const updates = {};
+        if (configTab === 'mockup') {
+            updates.mockupWidth = localWidth;
+            updates.mockupHeight = localHeight;
+        } else {
+            updates.width = localWidth;
+            updates.height = localHeight;
+        }
+        onUpdate(product.id, updates);
+    };
+
+    // Close editing on click outside
     useEffect(() => {
         if (!isEditingResolution) return;
         
         const handleClickOutside = (e) => {
             if (resolutionContainerRef.current && !resolutionContainerRef.current.contains(e.target)) {
-                setIsEditingResolution(false);
-                onUpdate(product.id, { width: localWidth, height: localHeight });
+                handleResolutionUpdate();
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isEditingResolution, localWidth, localHeight, product.id, onUpdate]);
+    }, [isEditingResolution, localWidth, localHeight, product.id, onUpdate, configTab]);
 
-    // Загрузка файлов (маска/оверлей)
+    // Handle file upload
     const handleFileUpload = async (e, type) => {
         const file = e.target.files[0];
         if(!file) return;
         
-        // Показываем, что грузим (можно добавить лоадер, но пока просто алерт если долго)
         const formData = new FormData();
         formData.append('files', file);
         formData.append('password', password);
-        formData.append('type', 'asset'); // Указываем, что это asset (маска/оверлей)
-        formData.append('assetType', type); // mask или overlay
+        formData.append('type', 'asset');
+        formData.append('assetType', type);
         
         try {
             const res = await fetch('/api.php?action=upload', { method:'POST', body: formData });
             const data = await res.json();
             if(data.success) {
-                onUpdate(product.id, { [type]: data.files[0].url });
+                // Determine field name
+                const fieldName = configTab === 'mockup'
+                    ? (type === 'mask' ? 'mockupMask' : 'mockupOverlay')
+                    : (type === 'mask' ? 'mask' : 'overlay');
+                
+                onUpdate(product.id, { [fieldName]: data.files[0].url });
             } else {
                 alert('Ошибка загрузки: ' + (data.message || 'Unknown'));
             }
         } catch(err) {
             console.error(err);
         } finally {
-            // Сбрасываем значение input, чтобы можно было загрузить файл повторно
             e.target.value = '';
         }
     };
 
-    // Удаление маски/оверлея
+    // Handle file delete
     const handleFileDelete = async (type, fileUrl) => {
         if (!fileUrl) return;
         
-        // Удаляем из конфига
-        onUpdate(product.id, { [type]: '' });
+        const fieldName = configTab === 'mockup'
+            ? (type === 'mask' ? 'mockupMask' : 'mockupOverlay')
+            : (type === 'mask' ? 'mask' : 'overlay');
+            
+        onUpdate(product.id, { [fieldName]: '' });
         
-        // Удаляем файл с сервера
         try {
             await fetch('/api.php?action=delete', {
                 method: 'POST',
@@ -99,9 +129,8 @@ const ProductCard = ({
                 ? 'bg-slate-800/80 border-slate-700 shadow-sm' 
                 : 'bg-slate-900/40 border-slate-800 opacity-75 hover:opacity-100'}
         `}>
-            {/* --- ШАПКА КАРТОЧКИ --- */}
+            {/* --- HEAD --- */}
             <div className="p-3 flex items-center gap-3 border-b border-slate-700/50">
-                {/* Чекбокс */}
                 <button 
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggle(product.id); }}
                     className={`
@@ -114,7 +143,6 @@ const ProductCard = ({
                     {product.enabled && <span><window.Icon name="check" className="w-3.5 h-3.5" /></span>}
                 </button>
 
-                {/* Название (Редактируемое) */}
                 <div className="flex-1 min-w-0">
                     {isEditing ? (
                         <input 
@@ -139,10 +167,7 @@ const ProductCard = ({
                                     value={localWidth}
                                     onChange={(e) => setLocalWidth(parseInt(e.target.value) || 1)}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            setIsEditingResolution(false);
-                                            onUpdate(product.id, { width: localWidth, height: localHeight });
-                                        }
+                                        if (e.key === 'Enter') handleResolutionUpdate();
                                     }}
                                     autoFocus
                                     className="w-12 bg-slate-900 border border-indigo-500 rounded px-1 py-0.5 text-[10px] text-white outline-none"
@@ -153,10 +178,7 @@ const ProductCard = ({
                                     value={localHeight}
                                     onChange={(e) => setLocalHeight(parseInt(e.target.value) || 1)}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            setIsEditingResolution(false);
-                                            onUpdate(product.id, { width: localWidth, height: localHeight });
-                                        }
+                                        if (e.key === 'Enter') handleResolutionUpdate();
                                     }}
                                     className="w-12 bg-slate-900 border border-indigo-500 rounded px-1 py-0.5 text-[10px] text-white outline-none"
                                 />
@@ -164,7 +186,7 @@ const ProductCard = ({
                             </div>
                         ) : (
                             <span className="cursor-pointer hover:text-slate-300 transition-colors group/res flex items-center gap-1" onClick={() => setIsEditingResolution(true)}>
-                                {product.width}x{product.height}px
+                                {currentWidth}x{currentHeight}px ({configTab === 'mockup' ? 'Мокап' : 'Товар'})
                                 <window.Icon name="pencil" className="w-2.5 h-2.5 text-slate-600 opacity-0 group-hover/res:opacity-100 transition-opacity" />
                             </span>
                         )}
@@ -173,7 +195,6 @@ const ProductCard = ({
                     </div>
                 </div>
 
-                {/* Кнопка удаления */}
                 <button 
                     onClick={() => onDelete(product.id)}
                     className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors opacity-0 group-hover:opacity-100"
@@ -183,11 +204,36 @@ const ProductCard = ({
                 </button>
             </div>
 
-            {/* --- ТЕЛО КАРТОЧКИ (Настройки) --- */}
+            {/* --- BODY --- */}
             {product.enabled && (
                 <div className="p-3 space-y-3 bg-slate-900/20">
                     
-                    {/* Ряд 1: Управление позицией и дублирование */}
+                    {/* Mode Tabs */}
+                    <div className="flex bg-slate-900/50 p-1 rounded-lg border border-slate-700/50">
+                        <button
+                            onClick={() => setConfigTab('mockup')}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] uppercase font-bold tracking-wide rounded-md transition-all ${
+                                configTab === 'mockup' 
+                                    ? 'bg-indigo-600 text-white shadow-sm' 
+                                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+                            }`}
+                        >
+                            <window.Icon name="image" className="w-3 h-3" />
+                            Мокап
+                        </button>
+                        <button
+                            onClick={() => setConfigTab('product')}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] uppercase font-bold tracking-wide rounded-md transition-all ${
+                                configTab === 'product' 
+                                    ? 'bg-indigo-600 text-white shadow-sm' 
+                                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+                            }`}
+                        >
+                            <window.Icon name="archive" className="w-3 h-3" />
+                            Товар
+                        </button>
+                    </div>
+
                     <div className="flex items-center gap-2">
                         <div className="flex bg-slate-800 rounded-md border border-slate-700 p-0.5">
                             <button 
@@ -215,9 +261,9 @@ const ProductCard = ({
                             <span>Дубль</span>
                         </button>
                         
-                        {/* Префикс */}
+                        {/* Prefix */}
                         <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-md px-2 py-1">
-                            <span className="text-[10px] text-slate-500 uppercase font-bold">PRE</span>
+                            <span className="text-[10px] text-slate-500 uppercase font-bold">Префикс</span>
                             <input 
                                 type="text" 
                                 value={product.defaultPrefix || ''}
@@ -228,45 +274,45 @@ const ProductCard = ({
                         </div>
                     </div>
 
-                    {/* Ряд 2: Загрузчики (Маска и Оверлей) */}
+                    {/* Files (Mask & Overlay) */}
                     <div className="grid grid-cols-2 gap-2">
-                        {/* Маска */}
+                        {/* Mask */}
                         <div className="relative">
                             <label className={`
                                 flex flex-col items-center justify-center gap-1 p-2 rounded-lg border border-dashed cursor-pointer transition-all
-                                ${product.mask 
+                                ${currentMask 
                                     ? 'bg-indigo-500/10 border-indigo-500/50' 
                                     : 'bg-slate-800 border-slate-700 hover:border-slate-500 hover:bg-slate-700'}
                             `}>
                                 <div className="flex items-center gap-1.5 text-xs font-medium">
-                                    <window.Icon name="layers" className={`w-3.5 h-3.5 ${product.mask ? 'text-indigo-400' : 'text-slate-400'}`} />
-                                    <span className={product.mask ? 'text-indigo-300' : 'text-slate-400'}>Маска</span>
+                                    <window.Icon name="layers" className={`w-3.5 h-3.5 ${currentMask ? 'text-indigo-400' : 'text-slate-400'}`} />
+                                    <span className={currentMask ? 'text-indigo-300' : 'text-slate-400'}>{configTab === 'mockup' ? 'М. Маска' : 'Маска'}</span>
                                 </div>
                                 <input type="file" className="hidden" accept="image/png" onChange={e => handleFileUpload(e, 'mask')} />
                             </label>
-                            {product.mask && (
-                                <button onClick={() => handleFileDelete('mask', product.mask)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
+                            {currentMask && (
+                                <button onClick={() => handleFileDelete('mask', currentMask)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
                                     <window.Icon name="x" className="w-3 h-3" />
                                 </button>
                             )}
                         </div>
 
-                        {/* Оверлей */}
+                        {/* Overlay */}
                         <div className="relative">
                             <label className={`
                                 flex flex-col items-center justify-center gap-1 p-2 rounded-lg border border-dashed cursor-pointer transition-all
-                                ${product.overlay 
+                                ${currentOverlay 
                                     ? 'bg-indigo-500/10 border-indigo-500/50' 
                                     : 'bg-slate-800 border-slate-700 hover:border-slate-500 hover:bg-slate-700'}
                             `}>
                                 <div className="flex items-center gap-1.5 text-xs font-medium">
-                                    <window.Icon name="eye" className={`w-3.5 h-3.5 ${product.overlay ? 'text-indigo-400' : 'text-slate-400'}`} />
-                                    <span className={product.overlay ? 'text-indigo-300' : 'text-slate-400'}>Оверлей</span>
+                                    <window.Icon name="eye" className={`w-3.5 h-3.5 ${currentOverlay ? 'text-indigo-400' : 'text-slate-400'}`} />
+                                    <span className={currentOverlay ? 'text-indigo-300' : 'text-slate-400'}>{configTab === 'mockup' ? 'М. Оверлей' : 'Оверлей'}</span>
                                 </div>
                                 <input type="file" className="hidden" accept="image/png" onChange={e => handleFileUpload(e, 'overlay')} />
                             </label>
-                            {product.overlay && (
-                                <button onClick={() => handleFileDelete('overlay', product.overlay)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
+                            {currentOverlay && (
+                                <button onClick={() => handleFileDelete('overlay', currentOverlay)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
                                     <window.Icon name="x" className="w-3 h-3" />
                                 </button>
                             )}

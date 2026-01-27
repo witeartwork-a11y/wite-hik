@@ -26,14 +26,32 @@ window.ExportService = {
             // Использовать DPI продукта
             const productDPI = prod.dpi || 300;
             
+            let targetWidth, targetHeight, targetMask, targetOverlay;
+
+            if (exportMode === 'products') {
+                targetWidth = prod.width;
+                targetHeight = prod.height;
+                targetMask = prod.mask;
+                targetOverlay = prod.overlay;
+            } else {
+                targetWidth = prod.mockupWidth;
+                targetHeight = prod.mockupHeight;
+                targetMask = prod.mockupMask;
+                targetOverlay = prod.mockupOverlay;
+            }
+
             const blob = await window.RenderService.renderMockupBlob(
                 prod,
                 printImg,
                 tr,
                 productDPI,
-                null,
-                null,
-                { mimeType: 'image/png' }
+                targetWidth,
+                targetHeight,
+                { 
+                    mimeType: 'image/png',
+                    maskUrl: targetMask,
+                    overlayUrl: targetOverlay
+                }
             );
             
             if (!blob) continue;

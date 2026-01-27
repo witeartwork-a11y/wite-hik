@@ -27,8 +27,8 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
         const render = async () => {
             try {
                 const baseImg = await utils.loadImage(product.image);
-                const maskImg = await utils.loadImage(maskUrl || product.mask);
-                const overlayImg = await utils.loadImage(overlayUrl || product.overlay);
+                const maskImg = await utils.loadImage(maskUrl !== undefined ? maskUrl : product.mask);
+                const overlayImg = await utils.loadImage(overlayUrl !== undefined ? overlayUrl : product.overlay);
                 const printImg = await utils.loadImage(imageUrl);
 
                 // Если компонент размонтирован, не рисуем

@@ -578,14 +578,31 @@ function App() {
                                             ) : (
                                                 <div className="responsive-canvas-grid grid gap-6" style={{ gridTemplateColumns: `repeat(${mockupsPerRow}, 1fr)` }}>
                                                     {products.filter(p => p.enabled).map(product => {
-                                                        const displayProduct = isProductsTab ? { ...product, width: 900, height: 1200 } : product;
+                                                        const isProductsTab = activeTab === 'products';
+                                                        
+                                                        let displayProduct;
+                                                        if (isProductsTab) {
+                                                            displayProduct = { ...product, width: 900, height: 1200 };
+                                                        } else {
+                                                            displayProduct = {
+                                                                ...product,
+                                                                width: product.mockupWidth || product.width,
+                                                                height: product.mockupHeight || product.height,
+                                                                mask: product.mockupMask !== undefined ? product.mockupMask : product.mask,
+                                                                overlay: product.mockupOverlay !== undefined ? product.mockupOverlay : product.overlay
+                                                            };
+                                                        }
+
                                                         const fallbackScale = isProductsTab ? 0.6 : 0.5;
                                                         const productDPI = product.dpi || 300;
+                                                        const labelWidth = isProductsTab ? product.width : (product.mockupWidth || product.width);
+                                                        const labelHeight = isProductsTab ? product.height : (product.mockupHeight || product.height);
+
                                                         return (
                                                             <div key={product.id} className="w-full">
                                                                 <div className="mb-2 px-2 flex justify-between items-end">
                                                                     <span className="text-slate-400 text-sm font-medium">{product.name}</span>
-                                                                    <span className="text-slate-600 text-xs font-mono">{product.width}x{product.height}</span>
+                                                                    <span className="text-slate-600 text-xs font-mono">{labelWidth}x{labelHeight}</span>
                                                                 </div>
                                                                 <div className="aspect-[3/4] w-full bg-slate-900 rounded-lg border border-slate-800/50">
                                                                     <window.MockupCanvas
