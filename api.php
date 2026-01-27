@@ -227,6 +227,11 @@ if ($action === 'upload') {
         
         $newName = sanitize($name);
         $finalPath = $uploadPath . '/' . $newName;
+
+        // Если файл с таким именем уже есть, удаляем его, чтобы новое сохранение перезаписывало старое
+        if (file_exists($finalPath)) {
+            @unlink($finalPath);
+        }
         
         if (move_uploaded_file($tmp, $finalPath)) {
             if ($uploadType === 'cloud' && $article) {

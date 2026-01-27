@@ -53,68 +53,67 @@ window.PrintCollection = ({
                             `}
                             onClick={() => onSelectPrint(print.id)}
                         >
-                            {/* Информация о принте */}
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-center gap-3">
                                 {/* Checkbox */}
                                 <input
                                     type="checkbox"
                                     checked={selectedPrints.includes(print.id)}
                                     onChange={() => {}}
-                                    className="mt-1 w-4 h-4 rounded cursor-pointer accent-indigo-500"
+                                    className="w-4 h-4 rounded cursor-pointer accent-indigo-500"
                                     onClick={(e) => e.stopPropagation()}
                                 />
 
+                                {/* Миниатюра */}
+                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-900 border border-slate-700 flex-shrink-0">
+                                    <img src={print.thumb || print.url} className="w-full h-full object-cover" />
+                                </div>
+
                                 {/* Контент */}
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 space-y-1">
                                     {/* Название файла */}
-                                    <p className="text-xs text-slate-400 truncate mb-1">
+                                    <p className="text-xs text-slate-400 truncate">
                                         {print.name}
                                     </p>
 
                                     {/* Артикул (редактируемый) */}
-                                    <div className="mb-2">
-                                        {editingId === print.id ? (
-                                            <input
-                                                type="text"
-                                                value={editingValue}
-                                                onChange={(e) => setEditingValue(e.target.value)}
-                                                onBlur={() => handleSaveArticle(print)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') handleSaveArticle(print);
-                                                    if (e.key === 'Escape') setEditingId(null);
-                                                }}
-                                                autoFocus
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="w-full bg-slate-900 border border-indigo-500 rounded px-2 py-1 text-sm text-white outline-none"
-                                                placeholder="Артикул"
-                                            />
-                                        ) : (
-                                            <div 
-                                                className="flex items-center gap-2 group/article"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleEditArticle(print);
-                                                }}
-                                            >
-                                                <span className="text-sm font-mono bg-slate-900/50 px-2 py-1 rounded text-indigo-300">
-                                                    {print.article || print.name.split('.')[0]}
-                                                </span>
-                                                <i data-lucide="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/article:opacity-100 transition-opacity"></i>
-                                            </div>
-                                        )}
-                                    </div>
+                                    {editingId === print.id ? (
+                                        <input
+                                            type="text"
+                                            value={editingValue}
+                                            onChange={(e) => setEditingValue(e.target.value)}
+                                            onBlur={() => handleSaveArticle(print)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleSaveArticle(print);
+                                                if (e.key === 'Escape') setEditingId(null);
+                                            }}
+                                            autoFocus
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-full bg-slate-900 border border-indigo-500 rounded px-2 py-1 text-sm text-white outline-none"
+                                            placeholder="Артикул"
+                                        />
+                                    ) : (
+                                        <div 
+                                            className="flex items-center gap-2 group/article"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditArticle(print);
+                                            }}
+                                        >
+                                            <span className="text-sm font-mono bg-slate-900/50 px-2 py-1 rounded text-indigo-300">
+                                                {print.article || print.name.split('.')[0]}
+                                            </span>
+                                            <i data-lucide="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/article:opacity-100 transition-opacity"></i>
+                                        </div>
+                                    )}
 
                                     {/* Позиция на канве (если была сохранена) */}
                                     {print.positions && (
-                                        <div className="text-[10px] text-slate-500 space-y-1">
-                                            <p>Сохраненные позиции:</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {Object.entries(print.positions).map(([prodId, pos]) => (
-                                                    <span key={prodId} className="bg-slate-900/50 px-2 py-0.5 rounded">
-                                                        X={pos.x.toFixed(0)}, Y={pos.y.toFixed(0)}
-                                                    </span>
-                                                ))}
-                                            </div>
+                                        <div className="text-[10px] text-slate-500 flex flex-wrap gap-2">
+                                            {Object.entries(print.positions).map(([prodId, pos]) => (
+                                                <span key={prodId} className="bg-slate-900/50 px-2 py-0.5 rounded">
+                                                    X={pos.x.toFixed(0)}, Y={pos.y.toFixed(0)}
+                                                </span>
+                                            ))}
                                         </div>
                                     )}
                                 </div>

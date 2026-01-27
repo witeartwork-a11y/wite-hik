@@ -175,6 +175,7 @@ function App() {
             id: printId,
             name: file.name,
             url: file.url,
+            thumb: file.thumb || file.url,
             article: file.name.split('.')[0],
             positions: positions
         }]);
@@ -203,14 +204,14 @@ function App() {
         );
     };
 
-    const handleDeleteFile = useCallback(async (fileName) => {
-        // Удаляем все принты связанные с этим файлом из коллекции
-        const printsToRemove = printCollection.filter(p => p.name === fileName).map(p => p.id);
-        if (printsToRemove.length > 0) {
-            setPrintCollection(prev => prev.filter(p => p.name !== fileName));
-            setSelectedPrintIds(prev => prev.filter(id => !printsToRemove.includes(id)));
-        }
-    }, [printCollection]);
+    // Удаляем все записи о принте, если исходный файл был удален из галереи
+    const handleDeleteFileFromGallery = useCallback(async (fileName) => {
+        setPrintCollection(prev => {
+            const next = prev.filter(p => p.name !== fileName);
+            setSelectedPrintIds(ids => ids.filter(id => next.some(p => p.id === id)));
+            return next;
+        });
+    }, []);
 
     const handleSaveCollectionToCloud = useCallback(async (printIds) => {
         const printsToSave = printCollection.filter(p => printIds.includes(p.id));
@@ -219,67 +220,22 @@ function App() {
         setIsCloudSaving(true);
 
         try {
-            if (!window.Utils) throw new Error("Библиотеки не загружены");
-            
             const enabledProducts = products.filter(p => p.enabled);
             if (enabledProducts.length === 0) {
                 throw new Error("Нет включенных товаров для сохранения");
             }
 
-            let totalProcessed = 0;
-            const totalItems = printsToSave.length * enabledProducts.length;
+            const modeToUse = activeTab === 'base' ? cloudMode : activeTab;
 
-            for (const printItem of printsToSave) {
-                const printImg = await window.Utils.loadImage(printItem.url);
-                if (!printImg) continue;
-
-                const modeToUse = activeTab === 'base' ? cloudMode : activeTab;
-
-                for (const prod of enabledProducts) {
-                    // Используем сохраненные позиции из printItem или текущие трансформы
-                    const tr = printItem.positions && printItem.positions[prod.id]
-                        ? printItem.positions[prod.id]
-                        : window.RenderService.getTransformByMode(
-                            transforms,
-                            productTransforms,
-                            modeToUse,
-                            prod.id,
-                            modeToUse === 'products' ? 0.6 : 0.5
-                        );
-
-                    const productDPI = prod.dpi || 300;
-
-                    const blob = await window.RenderService.renderMockupBlob(
-                        prod,
-                        printImg,
-                        tr,
-                        productDPI,
-                        null,
-                        null,
-                        { mimeType: 'image/png' }
-                    );
-
-                    if (blob) {
-                        const categoryFolder = modeToUse === 'products' ? 'products' : 'mockups';
-                        const fileName = `${prod.defaultPrefix}_${printItem.article}.png`;
-                        
-                        await window.DataService.uploadToCloud(
-                            auth.password,
-                            blob,
-                            fileName,
-                            printItem.article,
-                            categoryFolder
-                        );
-                    }
-
-                    totalProcessed++;
-                    setCloudProgress({
-                        total: totalItems,
-                        done: totalProcessed,
-                        current: `${printItem.article} - ${prod.name}`
-                    });
-                }
-            }
+            await window.CollectionService.savePrintsToCloud({
+                prints: printsToSave,
+                enabledProducts,
+                mode: modeToUse,
+                transforms,
+                productTransforms,
+                password: auth.password,
+                onProgress: setCloudProgress
+            });
 
             alert(`Готово! ${printsToSave.length} принт(ов) сохранено в облако.`);
             
@@ -359,7 +315,13 @@ function App() {
                         </div>
 
                         {galleryTab === 'files' ? (
-                            <window.Gallery files={files} auth={auth} init={init} onAddToCollection={handleAddPrintToCollection} onDeleteFile={handleDeleteFile} />
+                            <window.Gallery 
+                                files={files} 
+                                auth={auth} 
+                                init={init} 
+                                onAddToCollection={handleAddPrintToCollection} 
+                                onDeleteFile={handleDeleteFileFromGallery} 
+                            />
                         ) : (
                             <window.CloudSaver files={files} />
                         )}
@@ -401,18 +363,19 @@ function App() {
                                                 <div 
                                                     key={f.name} 
                                                     className={`aspect-square rounded border cursor-pointer overflow-hidden bg-slate-900 relative group ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}
+                                                    onClick={() => handleSelectPrint(f)}
                                                 >
-                                                    <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover" onClick={() => handleSelectPrint(f)} />
-                                                    {/* Кнопка добавления в коллекцию */}
+                                                    <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover" />
+                                                    {/* Кнопка добавления в коллекцию (маленькая, не перекрывает клики) */}
                                                     <button 
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleAddPrintToCollection(f);
                                                         }}
-                                                        className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/0 hover:bg-black/40 transition-colors"
+                                                        className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900/70 text-slate-200 shadow border border-slate-700 hover:bg-indigo-500 hover:text-white"
                                                         title="Добавить в коллекцию"
                                                     >
-                                                        <i data-lucide="plus-circle" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                                        <i data-lucide="plus" className="w-4 h-4"></i>
                                                     </button>
                                                 </div>
                                             ))}
