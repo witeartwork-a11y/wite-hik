@@ -38,12 +38,13 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                 }
             }
             
-            // Фильтрация по тексту (имя файла или артикул)
+            // Фильтрация по тексту (имя файла, артикул или оригинальное имя принта)
             if (filter.trim() !== '') {
                 const searchLower = filter.toLowerCase();
                 const matchArticle = f.article.toLowerCase().includes(searchLower);
                 const matchFile = f.name.toLowerCase().includes(searchLower);
-                if (!matchArticle && !matchFile) return;
+                const matchPrintName = f.print_name && f.print_name.toLowerCase().includes(searchLower);
+                if (!matchArticle && !matchFile && !matchPrintName) return;
             }
             
             const article = f.article;
@@ -337,9 +338,20 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                                     <p className="text-xs font-semibold text-indigo-300 truncate" title={f.article}>
                                                         {f.article}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-400 truncate" title={f.name}>
-                                                        {f.name}
-                                                    </p>
+                                                    {f.print_name ? (
+                                                        <>
+                                                            <p className="text-[10px] text-slate-300 truncate" title={f.print_name}>
+                                                                {f.print_name}
+                                                            </p>
+                                                            <p className="text-[10px] text-slate-500 truncate" title={f.name}>
+                                                                {f.name}
+                                                            </p>
+                                                        </>
+                                                    ) : (
+                                                        <p className="text-[10px] text-slate-400 truncate" title={f.name}>
+                                                            {f.name}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}

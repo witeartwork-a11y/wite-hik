@@ -69,7 +69,8 @@ window.CollectionService = {
                         blob,
                         fileName,
                         printItem.article,
-                        categoryFolder
+                        categoryFolder,
+                        printItem.name
                     );
                 }
 

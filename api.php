@@ -253,7 +253,7 @@ if ($action === 'list') {
                         $articleThumbnail = $thumbUrl ? $thumbUrl : '/uploads/cloud/' . $article . '/' . $category . '/' . $f;
                     }
 
-                    $list[] = [
+                    $cloudItem = [
                         'name' => $f,
                         'url' => '/uploads/cloud/' . $article . '/' . $category . '/' . $f,
                         'thumb' => $thumbUrl ? $thumbUrl : '/uploads/cloud/' . $article . '/' . $category . '/' . $f,
@@ -264,6 +264,17 @@ if ($action === 'list') {
                         'category' => $category,
                         'article_thumb' => $articleThumbnail
                     ];
+                    
+                    // Пытаемся прочитать оригинальное имя файла из метаданных
+                    $metaFile = $path . '.meta.json';
+                    if (file_exists($metaFile)) {
+                        $meta = json_decode(file_get_contents($metaFile), true);
+                        if (isset($meta['print_name'])) {
+                            $cloudItem['print_name'] = $meta['print_name'];
+                        }
+                    }
+                    
+                    $list[] = $cloudItem;
                 }
             }
         }
@@ -283,6 +294,7 @@ if ($action === 'upload') {
     $uploadType = $_POST['type'] ?? 'upload'; // 'upload', 'cloud' или 'asset'
     $article = $_POST['article'] ?? null; // Артикул (имя папки)
     $category = $_POST['category'] ?? 'files'; // 'mockups' или 'products'
+    $printName = $_POST['print_name'] ?? null; // Оригинальное имя принта
     $assetType = $_POST['assetType'] ?? null; // 'mask' или 'overlay'
 
     // Определяем папку для загрузки
@@ -330,7 +342,7 @@ if ($action === 'upload') {
                 $thumbUrl = $relUrl; // Если не получилось создать, используем оригинал
             }
             
-            $uploaded[] = [
+            $uploadedItem = [
                 'name' => $newName,
                 'url' => $relUrl,
                 'thumb' => $thumbUrl,
@@ -338,6 +350,20 @@ if ($action === 'upload') {
                 'size' => filesize($finalPath),
                 'type' => $uploadType
             ];
+            
+            // Добавляем дополнительные поля для облачных файлов
+            if ($uploadType === 'cloud' && $article) {
+                $uploadedItem['article'] = $article;
+                $uploadedItem['category'] = $category;
+                if ($printName) {
+                    $uploadedItem['print_name'] = $printName;
+                    // Сохраняем оригинальное имя в метаданные
+                    $metaFile = $finalPath . '.meta.json';
+                    file_put_contents($metaFile, json_encode(['print_name' => $printName], JSON_UNESCAPED_UNICODE));
+                }
+            }
+            
+            $uploaded[] = $uploadedItem;
         }
     }
     

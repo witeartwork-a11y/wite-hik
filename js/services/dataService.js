@@ -103,13 +103,16 @@ window.DataService = {
     },
 
     // Загрузить файл в облако
-    uploadToCloud: async (password, blob, fileName, article, category) => {
+    uploadToCloud: async (password, blob, fileName, article, category, printName) => {
         try {
             const formData = new FormData();
             formData.append('password', password);
             formData.append('type', 'cloud');
             formData.append('article', article);
             formData.append('category', category);
+            if (printName) {
+                formData.append('print_name', printName);
+            }
             formData.append('files[]', new File([blob], fileName, { type: 'image/png' }));
             
             const res = await fetch('/api.php?action=upload', {
