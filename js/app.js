@@ -257,12 +257,15 @@ function App() {
                 newTransforms = calculatedTransforms;
                 newProductTransforms = calculatedProductTransforms;
             } else {
-                // Мержим с рассчитанными, чтобы добавить данные для новых продуктов, если они появились
+                // Мержим: сохраненные имеют приоритет, новые продукты добавляются из calculated
                 newTransforms = { ...calculatedTransforms, ...newTransforms };
                 newProductTransforms = { ...calculatedProductTransforms, ...newProductTransforms };
+                console.log('✓ Применены сохраненные настройки с добавлением новых товаров');
             }
             
             console.log('Трансформации успешно инициализированы');
+            console.log('Финальные transforms:', newTransforms);
+            console.log('Финальные productTransforms:', newProductTransforms);
             
             setTransforms(newTransforms);
             setProductTransforms(newProductTransforms);
