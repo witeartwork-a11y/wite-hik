@@ -268,18 +268,6 @@ function App() {
             alert(e.message);
         }
     };
-            
-            if (window.RenderService && window.RenderService.buildDefaultTransforms) {
-                try {
-                    const defaults = window.RenderService.buildDefaultTransforms(products);
-                    setTransforms(defaults);
-                    setProductTransforms(defaults);
-                } catch (err) {
-                    console.error('Ошибка при создании дефолтных трансформаций:', err);
-                }
-            }
-        }
-    };
 
     // Ref для дебаунса сохранения
     const saveTimeoutRef = React.useRef(null);
