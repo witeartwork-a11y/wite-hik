@@ -236,7 +236,6 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
             const newScale = Math.min(10, Math.max(0.05, t.scale + delta));
             onUpdateTransform({ ...t, scale: newScale });
         };
-};
 
         
         // passive: false критически важен, чтобы preventDefault работал
