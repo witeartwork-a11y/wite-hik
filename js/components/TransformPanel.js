@@ -34,7 +34,7 @@ window.TransformPanel = ({
     };
 
     return (
-        <div className="flex flex-col gap-4 p-4 text-slate-200">
+        <div className="flex flex-col gap-3 p-3 text-slate-200">
             {/* Мокапов в строку - Всегда доступно */}
             {setMockupsPerRow && (
                 <div className="space-y-2 pb-4 border-b border-slate-700">

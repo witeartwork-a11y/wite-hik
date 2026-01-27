@@ -472,7 +472,7 @@ function App() {
     if (!auth.isAuth) return <window.LoginScreen onLogin={handleLoginSuccess} />;
 
     return (
-        <div className="min-h-screen pb-10">
+        <div className="min-h-screen pb-20">
             <window.CloudProgress progress={cloudProgress} isVisible={isCloudSaving} />
             <window.Navbar
                 activeTab={activeTab}
@@ -642,7 +642,7 @@ function App() {
                                 </div>
 
                                 {/* ЦЕНТР (Рабочая область) */}
-                                <div className="responsive-canvas-area flex-1 bg-slate-950 rounded-xl border border-slate-800 overflow-y-auto custom-scroll p-4 space-y-4">
+                                <div className="responsive-canvas-area flex-1 bg-slate-950 rounded-xl border border-slate-800 overflow-y-auto custom-scroll p-4 pb-8 space-y-4">
                                     {!selectedPrint ? (
                                         <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
                                             <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-slate-800">
@@ -691,7 +691,7 @@ function App() {
                                 </div>
 
                                 {/* ПРАВАЯ КОЛОНКА (Настройки) */}
-                                <div className="responsive-sidebar w-full lg:w-64 bg-slate-900/50 rounded-xl border border-slate-800 shrink-0 lg:h-full overflow-y-auto custom-scroll">
+                                <div className="responsive-sidebar w-full lg:w-64 bg-slate-900/50 rounded-xl border border-slate-800 shrink-0 lg:h-full overflow-y-auto custom-scroll max-h-[calc(100vh-200px)]">
                                     <window.TransformPanel 
                                         transform={activeProductId ? (currentTransforms[activeProductId] || { x: 0, y: 0, scale: 0.5, rotation: 0 }) : null}
                                         onUpdateTransform={(newT) => activeProductId && updateTransform(activeProductId, newT)}
