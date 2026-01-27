@@ -236,7 +236,8 @@ function App() {
         }
     };
 
-    const handleSelectPrintInCollection = (printId) => {
+    const handleSelectPrintInCollection = async (printId) => {
+        // Отображаем принт из коллекции на канве и подтягиваем сохраненные трансформации
         setSelectedPrintIds(prev => {
             if (prev.includes(printId)) {
                 return prev.filter(id => id !== printId);
@@ -244,6 +245,26 @@ function App() {
                 return [...prev, printId];
             }
         });
+
+        const print = printCollection.find(p => p.id === printId);
+        if (!print) return;
+
+        const normalizedPrint = { ...print, type: print.type || 'upload' };
+        setSelectedPrint(normalizedPrint);
+
+        try {
+            if (print.positions && Object.keys(print.positions).length > 0) {
+                setTransforms(print.positions);
+                setProductTransforms(print.positions);
+            } else if (window.RenderService) {
+                const newTransforms = await window.RenderService.initializeTransforms(normalizedPrint, products, 'mockups');
+                const newProductTransforms = await window.RenderService.initializeTransforms(normalizedPrint, products, 'products');
+                setTransforms(newTransforms);
+                setProductTransforms(newProductTransforms);
+            }
+        } catch (err) {
+            console.error('Ошибка выбора принта из коллекции:', err);
+        }
     };
 
     const handleRemovePrintFromCollection = (printId) => {
