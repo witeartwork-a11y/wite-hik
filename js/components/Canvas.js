@@ -139,13 +139,19 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
                     tCtx.globalCompositeOperation = 'source-over';
                 }
 
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
                 ctx.drawImage(tempCanvas, 0, 0);
+                ctx.restore();
             }
 
             // Overlay рисуется самым последним слоем поверх всего
             if (overlayImg) {
+                ctx.save();
                 ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 1.0;
                 ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
+                ctx.restore();
             }
         };
 
