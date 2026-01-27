@@ -150,7 +150,10 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
                 ctx.save();
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.globalAlpha = 1.0;
-                ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
+                // Рисуем оверлей по центру, в реальном размере
+                const ox = (canvas.width - overlayImg.width) / 2;
+                const oy = (canvas.height - overlayImg.height) / 2;
+                ctx.drawImage(overlayImg, ox, oy);
                 ctx.restore();
             }
         };

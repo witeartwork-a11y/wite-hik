@@ -109,9 +109,10 @@ window.RenderService = {
         }
 
         if (overlay) {
-            ctx.globalCompositeOperation = 'multiply';
-            ctx.drawImage(overlay, 0, 0, width, height);
             ctx.globalCompositeOperation = 'source-over';
+            const ox = (width - overlay.width) / 2;
+            const oy = (height - overlay.height) / 2;
+            ctx.drawImage(overlay, ox, oy);
         }
 
         const mimeType = options.mimeType || 'image/png';
