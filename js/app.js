@@ -41,9 +41,14 @@ function App() {
         setAuth({ isAuth: true, password: pwd });
     }, []);
 
-    // Подгрузка иконок
+    // Подгружаем/перерисовываем иконки; защищаемся от падения lucide
     useEffect(() => { 
-        if(window.lucide) window.lucide.createIcons(); 
+        if (!window.lucide) return;
+        try {
+            window.lucide.createIcons();
+        } catch (err) {
+            console.error('Не удалось отрисовать иконки Lucide', err);
+        }
     }, [auth, activeTab, files, products, isUploading]);
 
     // Автовход, если пароль уже сохранен в localStorage

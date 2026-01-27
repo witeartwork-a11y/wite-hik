@@ -17,7 +17,12 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
 
     // Инициализация иконок после рендера
     useEffect(() => {
-        if (window.lucide) window.lucide.createIcons();
+        if (!window.lucide) return;
+        try {
+            window.lucide.createIcons();
+        } catch (err) {
+            console.error('Не удалось отрисовать иконки Lucide в Canvas', err);
+        }
     }, []);
 
     // Отрисовка
