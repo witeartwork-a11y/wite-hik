@@ -223,6 +223,7 @@ function App() {
 
     // Таймер для автозагрузки
     const autoLoadTimerRef = React.useRef(null);
+    const isPrintLoadedRef = React.useRef(false);
 
     // === ВЫБОР ПРИНТА ===
     const handleSelectPrint = async (file) => {
