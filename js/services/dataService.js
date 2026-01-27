@@ -37,15 +37,25 @@ window.DataService = {
     },
 
     // Загрузить конфигурацию принтов
-    loadPrintsConfig: async () => {
+    loadPrintsConfig: async (printName = null) => {
         try {
-            const res = await fetch('/api.php?action=load_prints_config');
+            let url = '/api.php?action=load_prints_config';
+            if (printName) {
+                url += '&print_name=' + encodeURIComponent(printName);
+            }
+            const res = await fetch(url);
             const data = await res.json();
+            
+            if (printName) {
+                // Return specific config
+                return data.config;
+            }
+            
             console.log('✓ loadPrintsConfig успешно загружена:', data.config);
             return data.config || {};
         } catch (e) {
             console.error("Ошибка загрузки конфига принтов:", e);
-            return {};
+            return printName ? null : {};
         }
     },
 

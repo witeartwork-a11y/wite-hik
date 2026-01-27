@@ -13,8 +13,11 @@ $CLOUD_DIR = $BASE_DIR . '/uploads/cloud'; // Папка для облачных
 $ASSETS_DIR = $BASE_DIR . '/uploads/assets'; // Папка для масок и оверлеев
 $DATA_DIR = $BASE_DIR . '/data';
 $THUMBS_DIR = $BASE_DIR . '/data/thumbnails';
+$PROTECTED_FILES = ['thumbnails'];
+
 $CONFIG_FILE = $DATA_DIR . '/products_config.json';
 $PRINTS_CONFIG_FILE = $DATA_DIR . '/prints_config.json';
+$PRINTS_CONFIGS_DIR = $DATA_DIR . '/prints_configs';
 
 // === ПОМОЩНИКИ ===
 function jsonResponse($success, $data = [], $msg = '') {
@@ -97,6 +100,7 @@ ensureDir($THUMBS_DIR);
 ensureDir($UPLOADS_DIR);
 ensureDir($CLOUD_DIR);
 ensureDir($ASSETS_DIR);
+ensureDir($PRINTS_CONFIGS_DIR);
 
 $action = $_GET['action'] ?? '';
 
@@ -125,10 +129,32 @@ if ($action === 'save_config') {
 }
 
 if ($action === 'load_prints_config') {
-    if (file_exists($PRINTS_CONFIG_FILE)) {
-        jsonResponse(true, ['config' => json_decode(file_get_contents($PRINTS_CONFIG_FILE), true)]);
+    $printName = $_GET['print_name'] ?? null;
+
+    if ($printName) {
+        $hash = md5($printName);
+        $file = $PRINTS_CONFIGS_DIR . '/' . $hash . '.json';
+        
+        if (file_exists($file)) {
+            $data = json_decode(file_get_contents($file), true);
+            jsonResponse(true, ['config' => $data]);
+        } 
+        
+        // Fallback to big file
+        if (file_exists($PRINTS_CONFIG_FILE)) {
+            $allConfigs = json_decode(file_get_contents($PRINTS_CONFIG_FILE), true);
+            if (isset($allConfigs[$printName])) {
+                jsonResponse(true, ['config' => $allConfigs[$printName]]);
+            }
+        }
+        
+        jsonResponse(true, ['config' => null]);
     } else {
-        jsonResponse(true, ['config' => []]);
+        if (file_exists($PRINTS_CONFIG_FILE)) {
+            jsonResponse(true, ['config' => json_decode(file_get_contents($PRINTS_CONFIG_FILE), true)]);
+        } else {
+            jsonResponse(true, ['config' => []]);
+        }
     }
 }
 
@@ -136,30 +162,19 @@ if ($action === 'save_prints_config') {
     $input = json_decode(file_get_contents('php://input'), true);
     if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
     
-    $currentConfig = [];
-    if (file_exists($PRINTS_CONFIG_FILE)) {
-        $startData = file_get_contents($PRINTS_CONFIG_FILE);
-        if ($startData) {
-            $currentConfig = json_decode($startData, true);
-        }
-    }
-    if (!is_array($currentConfig)) $currentConfig = [];
-
-    // Поддержка частичного обновления (один файл)
     if (isset($input['print_name']) && isset($input['print_data'])) {
-        $currentConfig[$input['print_name']] = $input['print_data'];
-    } elseif (isset($input['config'])) {
-        // Полная перезапись (если нужно)
-        $currentConfig = $input['config'];
+        $hash = md5($input['print_name']);
+        $file = $PRINTS_CONFIGS_DIR . '/' . $hash . '.json';
+        
+        $result = file_put_contents($file, json_encode($input['print_data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        
+        if ($result === false) {
+             jsonResponse(false, [], 'Failed to write config file. Permissions? Path: ' . $file);
+        }
+        jsonResponse(true);
+    } else {
+        jsonResponse(false, [], 'Bulk save not supported in optimized mode');
     }
-
-    $result = file_put_contents($PRINTS_CONFIG_FILE, json_encode($currentConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    
-    if ($result === false) {
-        jsonResponse(false, [], 'Failed to write config file. Permissions? Path: ' . $PRINTS_CONFIG_FILE);
-    }
-    
-    jsonResponse(true);
 }
 
 if ($action === 'list') {

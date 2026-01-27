@@ -136,20 +136,13 @@ function App() {
         if (!selectedPrint || !auth.isAuth) return;
         
         console.log('🔄 Принудительно загружаю конфиг...');
-        const newPrintsConfig = await window.DataService.loadPrintsConfig();
-        console.log('Загруженный конфиг:', newPrintsConfig);
+        const saved = await window.DataService.loadPrintsConfig(selectedPrint.name);
+        console.log('Загруженный конфиг:', saved);
         
-        setPrintsConfig(newPrintsConfig);
-        
-        if (newPrintsConfig && newPrintsConfig[selectedPrint.name]) {
-            const saved = newPrintsConfig[selectedPrint.name];
-            console.log('✓ Найден конфиг для файла:', saved);
-            
-            if (saved.transforms && saved.productTransforms) {
-                setTransforms(saved.transforms);
-                setProductTransforms(saved.productTransforms);
-                alert('✓ Конфиг загружен успешно!');
-            }
+        if (saved && saved.transforms && saved.productTransforms) {
+            setTransforms(saved.transforms);
+            setProductTransforms(saved.productTransforms);
+            alert('✓ Конфиг загружен успешно!');
         } else {
             console.log('❌ Конфиг для файла не найден');
             alert('❌ Конфиг для этого файла не найден');
@@ -227,6 +220,9 @@ function App() {
         }
     };
 
+    // Flag to prevent auto-save on initial load
+    const isPrintLoadedRef = React.useRef(false);
+
     // === ВЫБОР ПРИНТА ===
     const handleSelectPrint = async (file) => {
         if (!file) {
@@ -234,6 +230,9 @@ function App() {
             return;
         }
         
+        // Сбрасываем флаг загрузки, чтобы не срабатывало автосохранение
+        isPrintLoadedRef.current = false;
+
         console.log('Выбор принта:', file.name);
         
         try {
@@ -248,28 +247,16 @@ function App() {
             let newTransforms = null;
             let newProductTransforms = null;
 
-            // Пытаемся загрузить сохраненную конфигурацию
-            console.log('printsConfig при выборе принта (все ключи):', Object.keys(printsConfig || {}));
-            console.log('Имя выбранного файла:', file.name);
-            console.log('Тип файла:', typeof file.name);
-            console.log('Длина имени:', file.name?.length);
+            // Пытаемся загрузить сохраненную конфигурацию (Lazy Load)
+            console.log('Загружаю конфиг для:', file.name);
+            const saved = await window.DataService.loadPrintsConfig(file.name);
             
-            // Проверяем все ключи
-            if (printsConfig) {
-                for (const key in printsConfig) {
-                    console.log(`Сравниваю: "${key}" === "${file.name}" → ${key === file.name}`);
-                }
-            }
-            
-            if (printsConfig && printsConfig[file.name]) {
-                const saved = printsConfig[file.name];
-                if (saved.transforms && saved.productTransforms) {
-                    newTransforms = saved.transforms;
-                    newProductTransforms = saved.productTransforms;
-                    console.log('✓ Загружена сохраненная конфигурация принта:', saved);
-                }
+            if (saved && saved.transforms && saved.productTransforms) {
+                newTransforms = saved.transforms;
+                newProductTransforms = saved.productTransforms;
+                console.log('✓ Загружена сохраненная конфигурация принта:', saved);
             } else {
-                console.log('⚠ Конфиг для файла не найден. Доступные ключи:', Object.keys(printsConfig || {}));
+                console.log('⚠ Конфиг для файла не найден или пуст');
             }
 
             // Если конфигурации нет или она неполная, инициализируем заново
@@ -286,12 +273,15 @@ function App() {
                 console.log('✓ Применены сохраненные настройки с добавлением новых товаров');
             }
             
-            console.log('Трансформации успешно инициализированы');
-            console.log('Финальные transforms:', newTransforms);
-            console.log('Финальные productTransforms:', newProductTransforms);
-            
             setTransforms(newTransforms);
             setProductTransforms(newProductTransforms);
+            
+            // Устанавливаем флаг, что загрузка завершена
+            // Небольшая задержка чтобы пропустить первый цикл рендера
+            setTimeout(() => {
+                isPrintLoadedRef.current = true;
+            }, 500);
+            
         } catch (e) {
             console.error('Ошибка при выборе принта:', e);
             alert('Ошибка при выборе принта: ' + e.message);
@@ -328,8 +318,18 @@ function App() {
         }, 1000);
     }, [auth.password]);
 
-    // УДАЛЕНО: useEffect с автосохранением, так как он вызывал перезапись при инициализации
-    // useEffect(() => { ... }, [...]);
+    // Автосохранение при изменении трансформаций
+    useEffect(() => {
+        if (!isPrintLoadedRef.current || !selectedPrint || !auth.isAuth) return;
+        
+        const newData = {
+            transforms,
+            productTransforms,
+            lastModified: Date.now()
+        };
+        
+        triggerSaveConfig(selectedPrint.name, newData);
+    }, [transforms, productTransforms, selectedPrint, auth.isAuth, triggerSaveConfig]);
 
     const handleSaveConfig = async (newProducts) => {
         setProducts(newProducts);
