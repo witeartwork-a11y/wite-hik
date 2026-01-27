@@ -57,7 +57,10 @@ function sanitize($name) {
 
 // Функция для очистки артикула (без расширения)
 function sanitizeArticle($article) {
-    $clean = preg_replace('/[^a-zA-Z0-9\-_]/', '', $article);
+    // Только удаляем опасные символы (слэши, точки в конце и т.д.), но сохраняем цифры и подчеркивания
+    $clean = preg_replace('/[^a-zA-Z0-9_\-.]/', '', $article);
+    // Удаляем точки в конце (они появляются когда артикул содержал точку)
+    $clean = rtrim($clean, '.');
     if (!$clean) $clean = 'article_' . time();
     return $clean;
 }
@@ -400,6 +403,10 @@ if ($action === 'delete') {
     
     if (file_exists($path)) {
         unlink($path);
+        // Удаляем метаданные если они есть
+        $metaFile = $path . '.meta.json';
+        if (file_exists($metaFile)) unlink($metaFile);
+        
         $thumbName = getThumbnailName($filename);
         $thumbPath = $THUMBS_DIR . '/' . $thumbName;
         if (file_exists($thumbPath)) unlink($thumbPath);

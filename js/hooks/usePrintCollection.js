@@ -29,7 +29,20 @@ window.usePrintCollection = () => {
             
             enabledProducts.forEach(prod => {
                 const currentTransforms = activeTab === 'products' ? productTransforms : transforms;
-                positions[prod.id] = currentTransforms[prod.id] || { x: 0, y: 0, scale: 0.5, rotation: 0 };
+                // Используем текущую трансформацию или вычисляем правильно
+                if (currentTransforms[prod.id]) {
+                    positions[prod.id] = currentTransforms[prod.id];
+                } else if (window.RenderService && window.RenderService.getTransformByMode) {
+                    positions[prod.id] = window.RenderService.getTransformByMode(
+                        transforms,
+                        productTransforms,
+                        activeTab === 'products' ? 'products' : 'mockups',
+                        prod.id,
+                        activeTab === 'products' ? 0.6 : 0.5
+                    );
+                } else {
+                    positions[prod.id] = { x: 0, y: 0, scale: 0.5, rotation: 0 };
+                }
             });
             
             const newPrint = {
@@ -37,7 +50,7 @@ window.usePrintCollection = () => {
                 name: file.name,
                 url: file.url,
                 thumb: file.thumb || file.url,
-                article: file.name.split('.')[0],
+                article: file.article || file.name.split('.')[0],
                 positions: positions
             };
 

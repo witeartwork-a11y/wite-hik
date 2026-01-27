@@ -92,7 +92,7 @@ window.ExportService = {
             throw new Error("Нет включенных товаров для сохранения");
         }
 
-        const article = selectedPrint.name.split('.')[0];
+        const article = selectedPrint.article || selectedPrint.name.split('.')[0];
         const categoryFolder = modeToUse === 'products' ? 'products' : 'mockups';
 
         if (onProgress) {
@@ -146,9 +146,9 @@ window.ExportService = {
             if (!blob) continue;
 
             const prefix = prod.defaultPrefix || prod.name;
-            const fileName = `${prefix}_${article}.png`;
+            const fileName = `${prefix}-${article}.png`;
 
-            await window.DataService.uploadToCloud(password, blob, fileName, article, categoryFolder);
+            await window.DataService.uploadToCloud(password, blob, fileName, article, categoryFolder, selectedPrint.name);
 
             if (onProgress) {
                 onProgress(prev => ({ ...prev, done: prev.done + 1 }));
