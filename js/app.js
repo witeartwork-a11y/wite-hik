@@ -482,25 +482,24 @@ function App() {
             <div className="container mx-auto p-4 max-w-[95vw]">
                 {activeTab === 'base' ? (
                     <div className="space-y-4">
-                        <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 w-fit">
-                            <button onClick={() => setGalleryTab('files')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${galleryTab === 'files' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}>
-                                Файлы
-                            </button>
-                            <button onClick={() => setGalleryTab('cloud')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${galleryTab === 'cloud' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}>
-                                Облако
-                            </button>
-                        </div>
-
                         {galleryTab === 'files' ? (
                             <window.Gallery 
                                 files={files} 
                                 auth={auth} 
                                 init={init} 
                                 onAddToCollection={handleAddPrintToCollection} 
-                                onDeleteFile={handleDeleteFileFromGallery} 
+                                onDeleteFile={handleDeleteFileFromGallery}
+                                activeSubTab={galleryTab}
+                                onSubTabChange={setGalleryTab}
                             />
                         ) : (
-                            <window.CloudSaver files={files} password={auth.password} onChanged={init} />
+                            <window.CloudSaver 
+                                files={files} 
+                                password={auth.password} 
+                                onChanged={init}
+                                activeSubTab={galleryTab}
+                                onSubTabChange={setGalleryTab}
+                            />
                         )}
                     </div>
                 ) : (
@@ -563,7 +562,7 @@ function App() {
                                                 <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
                                                 {isUploading ? <window.Icon name="loader-2" className="w-6 h-6 text-indigo-400 animate-spin" /> : <window.Icon name="plus" className="w-6 h-6 text-slate-500" />}
                                             </div>
-                                            {files.filter(f => f.type === 'upload').map(f => (
+                                            {files.filter(f => f.type === 'upload').sort((a, b) => (b.mtime || 0) - (a.mtime || 0)).slice(0, 7).map(f => (
                                                 <div 
                                                     key={f.name} 
                                                     className={`aspect-square rounded border overflow-hidden bg-slate-900 relative group ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}

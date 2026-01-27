@@ -1,4 +1,4 @@
-window.CloudSaver = ({ files, password, onChanged }) => {
+window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange }) => {
     const { useState, useMemo } = React;
     const [expandedArticle, setExpandedArticle] = useState(null);
     const [isZipping, setIsZipping] = useState(false);
@@ -136,18 +136,44 @@ window.CloudSaver = ({ files, password, onChanged }) => {
         await refresh();
     };
 
+    const header = (
+        <div className="glass-card rounded-xl p-4 flex gap-4 items-center mb-6">
+             {onSubTabChange && (
+                 <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 shrink-0">
+                     <button 
+                         onClick={() => onSubTabChange('files')} 
+                         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'files' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                     >
+                         Файлы
+                     </button>
+                     <button 
+                         onClick={() => onSubTabChange('cloud')} 
+                         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'cloud' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                     >
+                         Облако
+                     </button>
+                 </div>
+             )}
+        </div>
+    );
+
     if (articles.length === 0) {
         return (
-            <div className="text-center py-20 text-slate-500">
-                <window.Icon name="folder-open" className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p>Нет сохраненных проектов в облаке.</p>
+            <div className="space-y-6 fade-in pb-10">
+                {header}
+                <div className="text-center py-20 text-slate-500">
+                    <window.Icon name="folder-open" className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                    <p>Нет сохраненных проектов в облаке.</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-3">
-            {articles.map(article => (
+        <div className="space-y-6 fade-in pb-10">
+            {header}
+            <div className="space-y-3">
+                {articles.map(article => (
                 <div key={article.key} className="border border-slate-700 rounded-lg overflow-hidden">
                     <button
                         onClick={() => setExpandedArticle(expandedArticle === article.key ? null : article.key)}
@@ -216,20 +242,24 @@ window.CloudSaver = ({ files, password, onChanged }) => {
                                         {fileList.map(f => (
                                             <div key={f.name} className="group relative bg-slate-900 rounded-lg overflow-hidden border border-slate-700 aspect-square">
                                                 <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer" onClick={() => setPreviewFile(f)} />
-                                                <div className="absolute inset-0 bg-slate-900/90 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1">
-                                                    <button onClick={() => setPreviewFile(f)} title="Предпросмотр" className="p-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-white">
+                                                <div className="absolute inset-0 bg-slate-900/95 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center p-2 gap-2">
+                                                    <button onClick={() => setPreviewFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 rounded text-xs transition-colors text-white">
                                                         <window.Icon name="eye" className="w-3 h-3" />
+                                                        <span>Смотреть</span>
                                                     </button>
-                                                    <button onClick={() => handleCopyLink(f.url)} title="Копировать ссылку" className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white">
+                                                    <button onClick={() => handleCopyLink(f.url)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
                                                         <window.Icon name="copy" className="w-3 h-3" />
+                                                        <span>Копия</span>
                                                     </button>
-                                                    <button onClick={() => window.open(f.url, '_blank')} title="Открыть" className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white">
+                                                    <button onClick={() => window.open(f.url, '_blank')} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
                                                         <window.Icon name="external-link" className="w-3 h-3" />
+                                                        <span>Открыть</span>
                                                     </button>
-                                                    <button onClick={() => handleDeleteFile(f)} title="Удалить файл" className="p-1.5 bg-red-600/20 hover:bg-red-600/30 rounded text-red-200 border border-red-500/30 disabled:opacity-50" disabled={busy.type === 'file' && busy.key === f.url}>
+                                                    <button onClick={() => handleDeleteFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 rounded text-xs transition-colors text-red-200 border border-red-500/30 disabled:opacity-50" disabled={busy.type === 'file' && busy.key === f.url}>
                                                         {busy.type === 'file' && busy.key === f.url
                                                             ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" />
                                                             : <window.Icon name="trash-2" className="w-3 h-3" />}
+                                                        <span>Удалить</span>
                                                     </button>
                                                 </div>
                                             </div>

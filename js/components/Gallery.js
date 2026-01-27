@@ -1,11 +1,41 @@
 // js/components/Gallery.js
 const { Upload, Loader2, Link, Trash2, Plus } = lucide;
 
-window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
+window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSubTab, onSubTabChange }) => {
     const { useState, useEffect } = React;
     const [isUploading, setIsUploading] = useState(false);
     const [filter, setFilter] = useState('');
     const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
+    const [selectedFiles, setSelectedFiles] = useState(new Set());
+
+    const toggleSelect = (fileName) => {
+        const newSet = new Set(selectedFiles);
+        if (newSet.has(fileName)) {
+            newSet.delete(fileName);
+        } else {
+            newSet.add(fileName);
+        }
+        setSelectedFiles(newSet);
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedFiles.size === 0) return;
+        if (!confirm(`Удалить выбранные файлы (${selectedFiles.size} шт.)?`)) return;
+        
+        try {
+            for (const filename of selectedFiles) {
+                await fetch('/api.php?action=delete', { 
+                    method: 'POST', 
+                    body: JSON.stringify({ filename, password: auth.password }) 
+                });
+            }
+            setSelectedFiles(new Set());
+            await init();
+        } catch (e) {
+            console.error(e);
+            alert('Ошибка при удалении');
+        }
+    };
 
     const handleUploadFiles = async (fileList) => {
         if (!fileList || fileList.length === 0) return;
@@ -63,8 +93,26 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
     return (
         <div className="space-y-6 fade-in pb-10">
             {/* Панель управления галереей */}
-            <div className="glass-card rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
-                <div className="flex gap-4 w-full md:w-auto">
+            <div className="glass-card rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-start md:items-center">
+                    {/* Переключатель вкладок */}
+                    {onSubTabChange && (
+                        <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 shrink-0">
+                            <button 
+                                onClick={() => onSubTabChange('files')} 
+                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'files' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                Файлы
+                            </button>
+                            <button 
+                                onClick={() => onSubTabChange('cloud')} 
+                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'cloud' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                Облако
+                            </button>
+                        </div>
+                    )}
+                    
                     {/* Фильтр по названию */}
                     <div className="relative group w-full md:w-64">
                         <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
@@ -78,19 +126,32 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
                     </div>
                 </div>
                 
-                {/* Фильтр по дате */}
-                <div className="flex items-center gap-2">
-                    <window.Icon name="calendar" className="w-4 h-4 text-slate-500" />
-                    <select
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        className="bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500/50 cursor-pointer hover:bg-slate-800 transition-colors"
-                    >
-                        <option value="all">За все время</option>
-                        <option value="today">Сегодня</option>
-                        <option value="week">За неделю</option>
-                        <option value="month">За месяц</option>
-                    </select>
+                <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                    {/* Кнопка множественного удаления */}
+                    {selectedFiles.size > 0 && (
+                        <button 
+                            onClick={handleBulkDelete}
+                            className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-200 rounded-lg border border-red-500/30 transition-colors animate-pulse-once"
+                        >
+                            <window.Icon name="trash-2" className="w-4 h-4" />
+                            <span className="text-sm">Удалить ({selectedFiles.size})</span>
+                        </button>
+                    )}
+
+                    {/* Фильтр по дате */}
+                    <div className="flex items-center gap-2">
+                        <window.Icon name="calendar" className="w-4 h-4 text-slate-500" />
+                        <select
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                            className="bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500/50 cursor-pointer hover:bg-slate-800 transition-colors"
+                        >
+                            <option value="all">За все время</option>
+                            <option value="today">Сегодня</option>
+                            <option value="week">За неделю</option>
+                            <option value="month">За месяц</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -114,53 +175,70 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
 
             {/* Сетка галереи */}
             <div className="gallery-grid">
-                {filteredFiles.map(f => (
-                    <div key={f.name} className="gallery-item group border border-white/5">
-                        <img 
-                            src={f.thumb || f.url} 
-                            loading="lazy" 
-                            className="gallery-image bg-slate-900"
-                            alt={f.name}
-                        />
-                        <div className="gallery-overlay">
-                            <p className="text-xs font-medium text-white truncate mb-3 drop-shadow-md">{f.name}</p>
+                {filteredFiles.map(f => {
+                    const isSelected = selectedFiles.has(f.name);
+                    return (
+                        <div 
+                            key={f.name} 
+                            className={`gallery-item group border transition-all ${isSelected ? 'border-indigo-500 ring-1 ring-indigo-500/50' : 'border-white/5'}`}
+                        >
+                            <img 
+                                src={f.thumb || f.url} 
+                                loading="lazy" 
+                                className="gallery-image bg-slate-900"
+                                alt={f.name}
+                            />
                             
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => { navigator.clipboard.writeText(window.location.origin + f.url); }} 
-                                    className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
-                                    title="Копировать ссылку"
-                                >
-                                    <window.Icon name="link" className="w-4 h-4" />
-                                </button>
+                            {/* Checkbox */}
+                            <div 
+                                className="absolute top-2 left-2 z-10 cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); toggleSelect(f.name); }}
+                            >
+                                <div className={`w-6 h-6 rounded flex items-center justify-center transition-colors shadow-lg backdrop-blur-sm ${isSelected ? 'bg-indigo-600 text-white' : 'bg-black/40 hover:bg-black/60 text-white/50 border border-white/20'}`}>
+                                    {isSelected && <window.Icon name="check" className="w-4 h-4" />}
+                                </div>
+                            </div>
+
+                            <div className="gallery-overlay">
+                                <p className="text-xs font-medium text-white truncate mb-3 drop-shadow-md">{f.name}</p>
                                 
-                                {onAddToCollection && (
+                                <div className="flex gap-2">
                                     <button 
-                                        onClick={() => onAddToCollection(f)}
-                                        className="flex-1 bg-indigo-500/80 hover:bg-indigo-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
-                                        title="Добавить в коллекцию"
+                                        onClick={() => { navigator.clipboard.writeText(window.location.origin + f.url); }} 
+                                        className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                        title="Копировать ссылку"
                                     >
-                                        <window.Icon name="plus" className="w-4 h-4" />
+                                        <window.Icon name="link" className="w-4 h-4" />
                                     </button>
-                                )}
-                                
-                                <button 
-                                    onClick={async () => { 
-                                        if(confirm('Удалить файл навсегда?')) {
-                                            await fetch('/api.php?action=delete', { method:'POST', body: JSON.stringify({filename: f.name, password: auth.password}) });
-                                            if (onDeleteFile) onDeleteFile(f.name);
-                                            init();
-                                        }
-                                    }} 
-                                    className="flex-1 bg-red-500/80 hover:bg-red-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
-                                    title="Удалить"
-                                >
-                                    <window.Icon name="trash-2" className="w-4 h-4" />
-                                </button>
+                                    
+                                    {onAddToCollection && (
+                                        <button 
+                                            onClick={() => onAddToCollection(f)}
+                                            className="flex-1 bg-indigo-500/80 hover:bg-indigo-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                            title="Добавить в коллекцию"
+                                        >
+                                            <window.Icon name="plus" className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    
+                                    <button 
+                                        onClick={async () => { 
+                                            if(confirm('Удалить файл навсегда?')) {
+                                                await fetch('/api.php?action=delete', { method:'POST', body: JSON.stringify({filename: f.name, password: auth.password}) });
+                                                if (onDeleteFile) onDeleteFile(f.name);
+                                                init();
+                                            }
+                                        }} 
+                                        className="flex-1 bg-red-500/80 hover:bg-red-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                        title="Удалить"
+                                    >
+                                        <window.Icon name="trash-2" className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
             
             {filteredFiles.length === 0 && (

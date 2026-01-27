@@ -253,7 +253,7 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
     return (
         <div 
             ref={containerRef} 
-            className={`w-full h-full flex flex-col bg-slate-900/50 rounded-xl overflow-hidden border p-2 select-none no-scroll-zoom transition-colors duration-200
+            className={`w-full h-full flex flex-col bg-slate-900/50 rounded-xl overflow-hidden border p-2 pb-6 select-none no-scroll-zoom transition-colors duration-200
                 ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500/50' : 'border-slate-700 hover:border-slate-600'}
             `}
             onClick={() => onActivate && onActivate()}
