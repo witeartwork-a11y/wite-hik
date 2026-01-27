@@ -22,25 +22,8 @@ function App() {
     const [mockupWidth, setMockupWidth] = useState(null);
     const [mockupHeight, setMockupHeight] = useState(null);
 
-    const attemptLogin = useCallback(async (pwd) => {
-        if (!pwd) return false;
-        try {
-            const res = await fetch('/api.php?action=login', {
-                method: 'POST',
-                body: JSON.stringify({ password: pwd })
-            });
-            const data = await res.json();
-            return !!data.success;
-        } catch (e) {
-            console.error("Автовход не удался:", e);
-            return false;
-        }
-    }, []);
-
     const handleLoginSuccess = useCallback((pwd) => {
-        if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('witehik_password', pwd);
-        }
+        window.AuthService.savePassword(pwd);
         setAuth({ isAuth: true, password: pwd });
     }, []);
 
@@ -58,66 +41,26 @@ function App() {
     useEffect(() => {
         let cancelled = false;
         const restoreAuth = async () => {
-            const cached = (typeof localStorage !== 'undefined') ? localStorage.getItem('witehik_password') : null;
-            if (!cached) return;
-            const ok = await attemptLogin(cached);
+            const password = await window.AuthService.restoreSession();
             if (cancelled) return;
-            if (ok) {
-                setAuth({ isAuth: true, password: cached });
-            } else if (typeof localStorage !== 'undefined') {
-                localStorage.removeItem('witehik_password');
+            if (password) {
+                setAuth({ isAuth: true, password });
             }
         };
         restoreAuth();
         return () => { cancelled = true; };
-    }, [attemptLogin]);
+    }, []);
 
-    // Инициализация
+    // Инициализация данных
     const init = useCallback(async () => {
         if (!auth.isAuth) return;
         try {
-            // 1. Загружаем файлы (галерея)
-            const fRes = await fetch('/api.php?action=list');
-            const fData = await fRes.json();
-            if (fData.files) setFiles(fData.files);
-
-            // 2. Загружаем сохраненный конфиг (маски, включено/выключено)
-            const pRes = await fetch('/api.php?action=load_config');
-            const pData = await pRes.json();
-            const savedConfig = pData.config || [];
-
-            // 3. ОБЪЕДИНЕНИЕ (MERGE LOGIC)
-            // Берем жесткий список из constants.js (PRODUCTS_DATA)
-            // И ищем для каждого товара настройки в savedConfig.
-            
-            if (window.PRODUCTS_DATA) {
-                const mergedProducts = window.PRODUCTS_DATA.map(def => {
-                    // Ищем, сохранял ли пользователь настройки для этого ID раньше
-                    const saved = savedConfig.find(s => s.id === def.id);
-                    
-                    return {
-                        ...def, // Берем размеры и имя из констант (3508x2480 и т.д.)
-                        // Восстанавливаем настройки или ставим дефолт
-                        enabled: saved ? saved.enabled : true, 
-                        image: saved ? saved.image : '',       // Тут может быть загруженный пользователем мокап
-                        mask: saved ? saved.mask : '',
-                        overlay: saved ? saved.overlay : '',
-                        defaultPrefix: saved ? saved.defaultPrefix : def.defaultPrefix
-                    };
-                });
-
-                // Также добавляем "Кастомные" товары, которые пользователь мог добавить через кнопку "Добавить"
-                // Они начинаются с 'custom_' и их нет в constants.js
-                const customProducts = savedConfig.filter(s => s.id.startsWith('custom_'));
-                
-                setProducts([...mergedProducts, ...customProducts]);
-            } else {
-                // Если constants.js не прогрузился, используем то, что пришло с сервера
-                console.error("PRODUCTS_DATA не найдены! Проверьте подключение constants.js в index.html");
-                setProducts(savedConfig);
-            }
-
-        } catch (e) { console.error("Ошибка инициализации:", e); }
+            const { files: loadedFiles, products: loadedProducts } = await window.DataService.initialize();
+            setFiles(loadedFiles);
+            setProducts(loadedProducts);
+        } catch (e) {
+            console.error("Ошибка инициализации:", e);
+        }
     }, [auth.isAuth]);
 
     useEffect(() => { init(); }, [init]);
@@ -126,19 +69,11 @@ function App() {
         if (!fileList || fileList.length === 0) return;
         setIsUploading(true);
         try {
-            const formData = new FormData();
-            formData.append('password', auth.password);
-            formData.append('type', 'upload'); 
-            for (let i = 0; i < fileList.length; i++) formData.append('files[]', fileList[i]);
-            const response = await fetch('/api.php?action=upload', { method: 'POST', body: formData });
-            const data = await response.json();
-            
-            // Оптимистичное обновление: сразу добавляем новые файлы в состояние
-            if (data.success && data.files) {
-                setFiles(prevFiles => [...prevFiles, ...data.files]);
+            const uploadedFiles = await window.DataService.uploadFiles(auth.password, fileList);
+            if (uploadedFiles) {
+                setFiles(prevFiles => [...prevFiles, ...uploadedFiles]);
             }
-            
-            await init(); 
+            await init();
         } catch (error) {
             console.error("Upload failed", error);
             alert("Ошибка загрузки");
@@ -149,73 +84,33 @@ function App() {
 
     // === ВЫБОР ПРИНТА ===
     const handleSelectPrint = async (file) => {
-        const buildDefault = () => {
-            const map = {};
-            products.forEach(p => {
-                if (!p.enabled) return;
-                map[p.id] = { x: 0, y: 0, scale: 0.6, rotation: 0 };
-            });
-            return map;
-        };
-
         try {
             setSelectedPrint(file);
-            if (!window.Utils) {
-                setTransforms(buildDefault());
-                setProductTransforms(buildDefault());
-                return;
-            }
-
-            const img = await window.Utils.loadImage(file.url);
-            if (!img) {
-                setTransforms(buildDefault());
-                setProductTransforms(buildDefault());
-                return;
-            }
-
-            const buildMap = (getSizeFn) => {
-                const map = {};
-                products.forEach(p => {
-                    if (!p.enabled) return;
-                    const { w, h } = getSizeFn(p);
-                    const scale = window.Utils.getInitialScale(w, h, img.width, img.height);
-                    const safeScale = Number.isFinite(scale) ? scale * 0.9 : 0.6;
-                    map[p.id] = { x: 0, y: 0, scale: safeScale, rotation: 0 };
-                });
-                return map;
-            };
-
-            setTransforms(buildMap((p) => ({ w: p.width || 1000, h: p.height || 1000 })));
-            setProductTransforms(buildMap(() => ({ w: 900, h: 1200 })));
+            const newTransforms = await window.RenderService.initializeTransforms(file, products, 'mockups');
+            const newProductTransforms = await window.RenderService.initializeTransforms(file, products, 'products');
+            setTransforms(newTransforms);
+            setProductTransforms(newProductTransforms);
         } catch (e) {
             console.error("Ошибка при выборе принта:", e);
-            setTransforms(buildDefault());
-            setProductTransforms(buildDefault());
+            const defaults = window.RenderService.buildDefaultTransforms(products);
+            setTransforms(defaults);
+            setProductTransforms(defaults);
         }
     };
 
     const handleSaveConfig = async (newProducts) => {
         setProducts(newProducts);
-        // Сохраняем на сервер
-        await fetch('/api.php?action=save_config', {
-            method: 'POST',
-            body: JSON.stringify({ password: auth.password, products: newProducts })
-        });
+        await window.DataService.saveConfig(auth.password, newProducts);
     };
 
     const addProduct = async (fileList) => {
         const filesArr = Array.from(fileList || []);
         if (filesArr.length === 0) return;
         try {
-            const formData = new FormData();
-            filesArr.forEach(f => formData.append('files[]', f));
-            formData.append('password', auth.password);
-            const res = await fetch('/api.php?action=upload', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if(data.success && data.files) {
+            const uploadedFiles = await window.DataService.uploadFiles(auth.password, filesArr);
+            if (uploadedFiles) {
                 const template = (window.PRODUCTS_DATA && window.PRODUCTS_DATA[0]) || { width: 2000, height: 2000 };
-                const newProds = data.files.map((uploaded, idx) => ({
+                const newProds = uploadedFiles.map((uploaded, idx) => ({
                     id: 'custom_' + Date.now() + '_' + idx,
                     name: 'Новый Мокап',
                     category: 'Custom',
@@ -235,170 +130,23 @@ function App() {
         }
     };
 
-    // Функция для установки DPI в PNG
-    const setPNGDPI = async (blob, dpi) => {
-        const arrayBuffer = await blob.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // Найдем конец IHDR чанка (сигнатура PNG + IHDR)
-        let insertPosition = 33; // После PNG сигнатуры и IHDR чанка
-        
-        // Создаем pHYs чанк для установки DPI
-        // DPI to pixels per meter: DPI * 39.3701
-        const pixelsPerMeter = Math.round(dpi * 39.3701);
-        
-        const pHYs = new Uint8Array([
-            0, 0, 0, 9, // Длина чанка (9 байт)
-            0x70, 0x48, 0x59, 0x73, // 'pHYs'
-            (pixelsPerMeter >> 24) & 0xff,
-            (pixelsPerMeter >> 16) & 0xff,
-            (pixelsPerMeter >> 8) & 0xff,
-            pixelsPerMeter & 0xff,
-            (pixelsPerMeter >> 24) & 0xff,
-            (pixelsPerMeter >> 16) & 0xff,
-            (pixelsPerMeter >> 8) & 0xff,
-            pixelsPerMeter & 0xff,
-            1, // Единица измерения: метры
-        ]);
-        
-        // Вычисляем CRC32 для pHYs
-        const crcTable = new Int32Array(256);
-        for (let i = 0; i < 256; i++) {
-            let c = i;
-            for (let k = 0; k < 8; k++) {
-                c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
-            }
-            crcTable[i] = c;
-        }
-        
-        let crc = -1;
-        for (let i = 4; i < pHYs.length; i++) {
-            crc = crcTable[(crc ^ pHYs[i]) & 0xff] ^ (crc >>> 8);
-        }
-        crc = crc ^ -1;
-        
-        const crcBytes = new Uint8Array([
-            (crc >> 24) & 0xff,
-            (crc >> 16) & 0xff,
-            (crc >> 8) & 0xff,
-            crc & 0xff
-        ]);
-        
-        // Собираем новый PNG
-        const newArray = new Uint8Array(uint8Array.length + pHYs.length + crcBytes.length);
-        newArray.set(uint8Array.subarray(0, insertPosition), 0);
-        newArray.set(pHYs, insertPosition);
-        newArray.set(crcBytes, insertPosition + pHYs.length);
-        newArray.set(uint8Array.subarray(insertPosition), insertPosition + pHYs.length + crcBytes.length);
-        
-        return new Blob([newArray], { type: 'image/png' });
-    };
-
-    const renderMockupBlob = useCallback(async (prod, printImg, transform, options = {}) => {
-        if (!window.Utils) throw new Error("Библиотеки не загружены");
-        const utils = window.Utils;
-
-        const [base, mask, overlay] = await Promise.all([
-            utils.loadImage(prod.image),
-            utils.loadImage(prod.mask),
-            utils.loadImage(prod.overlay)
-        ]);
-
-        const canvas = document.createElement('canvas');
-        // Используем пользовательские размеры если установлены
-        let width = mockupWidth || (base ? base.width : (options.outputWidth || prod.width || 1000));
-        let height = mockupHeight || (base ? base.height : (options.outputHeight || prod.height || 1000));
-        
-        // Если заданы оба размера, используем их
-        if (mockupWidth && !mockupHeight && base) {
-            height = Math.round((mockupWidth / base.width) * base.height);
-        } else if (mockupHeight && !mockupWidth && base) {
-            width = Math.round((mockupHeight / base.height) * base.width);
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.clearRect(0, 0, width, height);
-
-        if (base) ctx.drawImage(base, 0, 0, width, height);
-
-        if (printImg) {
-            const tempC = document.createElement('canvas');
-            tempC.width = width; tempC.height = height;
-            const tCtx = tempC.getContext('2d');
-
-            tCtx.save();
-            tCtx.translate(width / 2 + (transform?.x || 0), height / 2 + (transform?.y || 0));
-            tCtx.rotate((transform?.rotation || 0) * Math.PI / 180);
-            tCtx.scale(transform?.scale || 1, transform?.scale || 1);
-            tCtx.drawImage(printImg, -printImg.width / 2, -printImg.height / 2);
-            tCtx.restore();
-
-            if (mask) {
-                tCtx.globalCompositeOperation = 'destination-in';
-                tCtx.drawImage(mask, 0, 0, width, height);
-            }
-
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(tempC, 0, 0);
-        }
-
-        if (overlay) {
-            ctx.globalCompositeOperation = 'multiply';
-            ctx.drawImage(overlay, 0, 0, width, height);
-            ctx.globalCompositeOperation = 'source-over';
-        }
-
-        const mimeType = options.mimeType || 'image/png';
-        let blob = await new Promise((resolve) => canvas.toBlob(resolve, mimeType, mimeType === 'image/png' ? undefined : 0.9));
-        
-        // Устанавливаем DPI для PNG
-        if (mimeType === 'image/png' && mockupDPI) {
-            blob = await setPNGDPI(blob, mockupDPI);
-        }
-        
-        return blob;
-    }, [mockupDPI, mockupWidth, mockupHeight]);
-
-    const getTransformByMode = (mode, productId) => {
-        const map = mode === 'products' ? productTransforms : transforms;
-        const fallbackScale = mode === 'products' ? 0.6 : 0.5;
-        return map[productId] || { x: 0, y: 0, scale: fallbackScale, rotation: 0 };
-    };
-
     const handleExportZip = async () => {
         if (!selectedPrint) return alert("Выберите картинку");
-        if (!window.Utils) return alert("Библиотеки не загружены");
 
         setIsExporting(true);
         try {
-            const zip = new JSZip();
-            const utils = window.Utils;
-            const exportMode = activeTab === 'products' ? 'products' : 'mockups';
-
-            const printImg = await utils.loadImage(selectedPrint.url);
-            if(!printImg) throw new Error("Не удалось загрузить принт");
-
-            const enabledProducts = products.filter(p => p.enabled);
-
-            for (const prod of enabledProducts) {
-                const tr = getTransformByMode(exportMode, prod.id);
-                const blob = await renderMockupBlob(prod, printImg, tr, { mimeType: 'image/png' });
-                if (!blob) continue;
-
-                const safeName = selectedPrint.name.split('.')[0];
-                const prefix = prod.defaultPrefix || prod.name;
-                const fileName = `${prefix}_${safeName}.png`;
-
-                zip.file(fileName, blob);
-            }
-
-            const content = await zip.generateAsync({type:"blob"});
+            const content = await window.ExportService.exportToZip(
+                selectedPrint,
+                products,
+                transforms,
+                productTransforms,
+                activeTab,
+                mockupDPI,
+                mockupWidth,
+                mockupHeight
+            );
             saveAs(content, `mockups_${selectedPrint.name.split('.')[0]}.zip`);
-        } catch(e) {
+        } catch (e) {
             console.error(e);
             alert("Ошибка экспорта: " + e.message);
         } finally {
@@ -408,52 +156,34 @@ function App() {
 
     const handleSaveToCloud = useCallback(async (arg) => {
         if (!selectedPrint) return alert("Выберите принт для сохранения");
-        if (!window.Utils) return alert("Библиотеки не загружены");
 
         const modeToUse = (typeof arg === 'string') ? arg : ((activeTab === 'base' ? cloudMode : activeTab));
 
         setIsCloudSaving(true);
-        const utils = window.Utils;
 
         try {
-            const printImg = await utils.loadImage(selectedPrint.url);
-            if (!printImg) throw new Error("Не удалось загрузить принт");
-
-            const enabledProducts = products.filter(p => p.enabled);
-            if (enabledProducts.length === 0) {
-                alert("Нет включенных товаров для сохранения");
-                return;
-            }
-
-            // Артикул = имя исходного файла без расширения
-            const article = selectedPrint.name.split('.')[0];
-            const categoryFolder = modeToUse === 'products' ? 'products' : 'mockups';
-
-            setCloudProgress({ total: enabledProducts.length, done: 0, current: '' });
-
-            for (const prod of enabledProducts) {
-                const tr = getTransformByMode(modeToUse, prod.id);
-                setCloudProgress(prev => ({ ...prev, current: prod.name }));
-
-                const blob = await renderMockupBlob(prod, printImg, tr, { mimeType: 'image/png' });
-                if (!blob) continue;
-
-                const prefix = prod.defaultPrefix || prod.name;
-                const fileName = `${prefix}_${article}.png`;
-
-                const formData = new FormData();
-                formData.append('password', auth.password);
-                formData.append('type', 'cloud');
-                formData.append('article', article);
-                formData.append('category', categoryFolder);
-                formData.append('files[]', new File([blob], fileName, { type: 'image/png' }));
-                await fetch('/api.php?action=upload', { method: 'POST', body: formData });
-
-                setCloudProgress(prev => ({ ...prev, done: prev.done + 1 }));
-            }
+            await window.ExportService.saveToCloud(
+                selectedPrint,
+                products,
+                transforms,
+                productTransforms,
+                auth.password,
+                activeTab,
+                cloudMode,
+                mockupDPI,
+                mockupWidth,
+                mockupHeight,
+                (progress) => {
+                    if (typeof progress === 'function') {
+                        setCloudProgress(progress);
+                    } else {
+                        setCloudProgress(progress);
+                    }
+                }
+            );
 
             alert('Готово! Файлы сохранены в облако.');
-            await init(); 
+            await init();
         } catch (e) {
             console.error(e);
             alert('Ошибка сохранения: ' + e.message);
@@ -461,7 +191,7 @@ function App() {
             setIsCloudSaving(false);
             setCloudProgress({ total: 0, done: 0, current: '' });
         }
-    }, [auth.password, cloudMode, activeTab, getTransformByMode, products, renderMockupBlob, selectedPrint, transforms, productTransforms, init]);
+    }, [auth.password, cloudMode, activeTab, products, selectedPrint, transforms, productTransforms, init, mockupDPI, mockupWidth, mockupHeight]);
 
     if (!auth.isAuth) return <window.LoginScreen onLogin={handleLoginSuccess} />;
 
