@@ -229,41 +229,20 @@ function App() {
     const handleSelectPrint = async (file) => {
         if (!file) return;
 
-        // 1. Сброс состояния
         isPrintLoadedRef.current = false;
-        if (autoLoadTimerRef.current) clearTimeout(autoLoadTimerRef.current);
-        
         console.log('Выбор принта:', file.name);
         setSelectedPrint(file);
         
         try {
-            if (!window.RenderService) throw new Error('RenderService not loaded');
-
-            // 2. Сначала ставим ДЕФОЛТ (чтобы было быстро)
-            const defTransforms = await window.RenderService.initializeTransforms(file, products, 'mockups');
-            const defProdTransforms = await window.RenderService.initializeTransforms(file, products, 'products');
-            
-            setTransforms(defTransforms);
-            setProductTransforms(defProdTransforms);
-
-            // 3. Запускаем таймер на подгрузку реального конфига
-            autoLoadTimerRef.current = setTimeout(async () => {
-                console.log('🔄 Авто-загрузка конфига для:', file.name);
-                const saved = await window.DataService.loadPrintsConfig(file.name);
-                
-                if (saved && saved.transforms) {
-                    console.log('✅ Конфиг найден, применяю...');
-                    // Аккуратно мержим, чтобы не потерять другие товары
-                    setTransforms(prev => ({ ...prev, ...saved.transforms }));
-                    setProductTransforms(prev => ({ ...prev, ...saved.productTransforms }));
-                } else {
-                    console.log('ℹ️ Конфига нет, оставляем дефолт');
-                }
-                
-                // Включаем автосохранение
-                isPrintLoadedRef.current = true;
-            }, 500); // 0.5 сек
-
+            // Используем TransformService для загрузки конфига
+            await window.TransformService.loadPrintWithConfig(
+                file,
+                products,
+                setTransforms,
+                setProductTransforms,
+                autoLoadTimerRef,
+                isPrintLoadedRef
+            );
         } catch (e) {
             console.error('Ошибка выбора принта:', e);
             alert(e.message);
@@ -274,30 +253,25 @@ function App() {
     const saveTimeoutRef = React.useRef(null);
 
     // Функция сохранения (вызывается при изменении трансформации)
-    const triggerSaveConfig = useCallback((printName, newData) => {
+    const triggerSaveConfig = useCallback((printName, transforms, productTransforms) => {
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         
         setSaveStatus('saving');
         saveTimeoutRef.current = setTimeout(async () => {
-             const success = await window.DataService.savePrintConfig(auth.password, printName, newData);
+             const success = await window.TransformService.savePrintConfig(
+                 auth.password,
+                 printName,
+                 transforms,
+                 productTransforms
+             );
              setSaveStatus(success ? 'saved' : 'error');
-             if (success) {
-                 setPrintsConfig(prev => ({ ...prev, [printName]: newData }));
-             }
         }, 1000);
     }, [auth.password]);
 
     // Автосохранение при изменении трансформаций
     useEffect(() => {
         if (!isPrintLoadedRef.current || !selectedPrint || !auth.isAuth) return;
-        
-        const newData = {
-            transforms,
-            productTransforms,
-            lastModified: Date.now()
-        };
-        
-        triggerSaveConfig(selectedPrint.name, newData);
+        triggerSaveConfig(selectedPrint.name, transforms, productTransforms);
     }, [transforms, productTransforms, selectedPrint, auth.isAuth, triggerSaveConfig]);
 
     const handleSaveConfig = async (newProducts) => {
@@ -430,37 +404,20 @@ function App() {
 
         // Сброс флага автосейва
         isPrintLoadedRef.current = false;
-        if (autoLoadTimerRef.current) clearTimeout(autoLoadTimerRef.current);
 
         const normalizedPrint = { ...print, type: print.type || 'upload' };
         setSelectedPrint(normalizedPrint);
 
         try {
-            // Сначала загружаем дефолтные значения
-            if (window.RenderService) {
-                const newTransforms = await window.RenderService.initializeTransforms(normalizedPrint, products, 'mockups');
-                const newProductTransforms = await window.RenderService.initializeTransforms(normalizedPrint, products, 'products');
-                setTransforms(newTransforms);
-                setProductTransforms(newProductTransforms);
-            }
-
-            // Затем автоматически загружаем сохраненный конфиг через 500мс
-            autoLoadTimerRef.current = setTimeout(async () => {
-                console.log('🔄 Авто-загрузка конфига для:', print.name);
-                const saved = await window.DataService.loadPrintsConfig(print.name);
-                
-                if (saved && saved.transforms) {
-                    console.log('✅ Конфиг найден, применяю...');
-                    setTransforms(prev => ({ ...prev, ...saved.transforms }));
-                    setProductTransforms(prev => ({ ...prev, ...saved.productTransforms }));
-                } else {
-                    console.log('ℹ️ Конфига нет, оставляем дефолт');
-                }
-                
-                // Включаем автосохранение
-                isPrintLoadedRef.current = true;
-            }, 500);
-
+            // Используем TransformService для загрузки конфига
+            await window.TransformService.loadPrintWithConfig(
+                normalizedPrint,
+                products,
+                setTransforms,
+                setProductTransforms,
+                autoLoadTimerRef,
+                isPrintLoadedRef
+            );
         } catch (err) {
             console.error('Ошибка выбора принта из коллекции:', err);
         }
