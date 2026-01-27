@@ -4,12 +4,12 @@
 function App() {
     const { useState, useEffect, useCallback } = React;
     const [auth, setAuth] = useState({ isAuth: false, password: '' });
-    const [activeTab, setActiveTab] = useState('mockups'); 
-    const [files, setFiles] = useState([]); 
-    const [products, setProducts] = useState([]); 
-    
+    const [activeTab, setActiveTab] = useState('mockups');
+    const [files, setFiles] = useState([]);
+    const [products, setProducts] = useState([]);
+
     const [selectedPrint, setSelectedPrint] = useState(null);
-    const [transforms, setTransforms] = useState({}); 
+    const [transforms, setTransforms] = useState({});
     const [productTransforms, setProductTransforms] = useState({});
     const [isExporting, setIsExporting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -25,7 +25,7 @@ function App() {
     }, []);
 
     // Подгружаем/перерисовываем иконки; защищаемся от падения lucide
-    useEffect(() => { 
+    useEffect(() => {
         if (!window.lucide) return;
         try {
             window.lucide.createIcons();
@@ -56,7 +56,7 @@ function App() {
             setFiles(loadedFiles);
             setProducts(loadedProducts);
         } catch (e) {
-            console.error("Ошибка инициализации:", e);
+            console.error('Ошибка инициализации:', e);
         }
     }, [auth.isAuth]);
 
@@ -72,8 +72,8 @@ function App() {
             }
             await init();
         } catch (error) {
-            console.error("Upload failed", error);
-            alert("Ошибка загрузки");
+            console.error('Upload failed', error);
+            alert('Ошибка загрузки');
         } finally {
             setIsUploading(false);
         }
@@ -88,7 +88,7 @@ function App() {
             setTransforms(newTransforms);
             setProductTransforms(newProductTransforms);
         } catch (e) {
-            console.error("Ошибка при выборе принта:", e);
+            console.error('Ошибка при выборе принта:', e);
             const defaults = window.RenderService.buildDefaultTransforms(products);
             setTransforms(defaults);
             setProductTransforms(defaults);
@@ -101,7 +101,7 @@ function App() {
     };
 
     const updateProductDPI = (productId, newDPI) => {
-        const updatedProducts = products.map(p => 
+        const updatedProducts = products.map(p =>
             p.id === productId ? { ...p, dpi: newDPI } : p
         );
         handleSaveConfig(updatedProducts);
@@ -130,12 +130,12 @@ function App() {
             }
         } catch (e) {
             console.error(e);
-            alert("Ошибка добавления товара");
+            alert('Ошибка добавления товара');
         }
     };
 
     const handleExportZip = async () => {
-        if (!selectedPrint) return alert("Выберите картинку");
+        if (!selectedPrint) return alert('Выберите картинку');
 
         setIsExporting(true);
         try {
@@ -149,14 +149,14 @@ function App() {
             saveAs(content, `mockups_${selectedPrint.name.split('.')[0]}.zip`);
         } catch (e) {
             console.error(e);
-            alert("Ошибка экспорта: " + e.message);
+            alert('Ошибка экспорта: ' + e.message);
         } finally {
             setIsExporting(false);
         }
     };
 
     const handleSaveToCloud = useCallback(async (arg) => {
-        if (!selectedPrint) return alert("Выберите принт для сохранения");
+        if (!selectedPrint) return alert('Выберите принт для сохранения');
 
         const modeToUse = (typeof arg === 'string') ? arg : ((activeTab === 'base' ? cloudMode : activeTab));
 
@@ -196,9 +196,9 @@ function App() {
     return (
         <div className="min-h-screen pb-10">
             <window.CloudProgress progress={cloudProgress} isVisible={isCloudSaving} />
-            <window.Navbar 
-                activeTab={activeTab} 
-                setActiveTab={setActiveTab} 
+            <window.Navbar
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
                 onExport={handleExportZip}
                 onSaveCloud={handleSaveToCloud}
                 isExporting={isExporting}
@@ -235,12 +235,12 @@ function App() {
                         };
 
                         return (
-                            <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)] fade-in">
+                            <div className="responsive-layout flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-140px)] fade-in">
                                 {/* ЛЕВАЯ КОЛОНКА (Сайдбар) */}
-                                <div className="w-full lg:w-96 flex flex-col gap-4 h-full overflow-y-auto custom-scroll pr-1">
+                                <div className="responsive-sidebar w-full lg:w-96 flex flex-col gap-4 lg:h-full overflow-y-auto custom-scroll pr-1">
                                     {/* Выбор принта */}
-                                    <div 
-                                        className="bg-slate-800 rounded-xl border border-slate-700 p-4 flex flex-col max-h-[30%] shrink-0 transition-all hover:border-indigo-500/50"
+                                    <div
+                                        className="bg-slate-800 rounded-xl border border-slate-700 p-4 flex flex-col lg:max-h-[30%] lg:shrink-0 transition-all hover:border-indigo-500/50"
                                         onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-indigo-500'); }}
                                         onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove('border-indigo-500'); }}
                                         onDrop={e => {
@@ -250,31 +250,31 @@ function App() {
                                         }}
                                     >
                                         <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Выберите принт</h3>
-                                        <div className="overflow-y-auto grid grid-cols-4 gap-2 pr-1 custom-scroll">
+                                        <div className="overflow-y-auto grid md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-2 pr-1 custom-scroll">
                                             <div className="aspect-square rounded border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-700/50 hover:border-indigo-500 transition-all relative bg-slate-900/50">
                                                 <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
                                                 {isUploading ? <i data-lucide="loader-2" className="w-6 h-6 text-indigo-400 animate-spin"></i> : <i data-lucide="plus" className="w-6 h-6 text-slate-500"></i>}
                                             </div>
                                             {files.filter(f => f.type === 'upload').map(f => (
-                                                <div key={f.name} onClick={() => handleSelectPrint(f)} 
+                                                <div key={f.name} onClick={() => handleSelectPrint(f)}
                                                     className={`aspect-square rounded border cursor-pointer overflow-hidden bg-slate-900 ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}>
-                                                    <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover"/>
+                                                    <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover" />
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
                                     {/* Sidebar с товарами */}
-                                    <window.Sidebar 
-                                        products={products} 
-                                        password={auth.password} 
+                                    <window.Sidebar
+                                        products={products}
+                                        password={auth.password}
                                         onAddProduct={addProduct}
                                         onSaveConfig={handleSaveConfig}
                                     />
                                 </div>
 
                                 {/* ЦЕНТР (Рабочая область) */}
-                                <div className="flex-1 bg-slate-950 rounded-xl border border-slate-800 overflow-y-auto custom-scroll p-4 space-y-4">
+                                <div className="responsive-canvas-area flex-1 bg-slate-950 rounded-xl border border-slate-800 overflow-y-auto custom-scroll p-4 space-y-4">
                                     {!selectedPrint ? (
                                         <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
                                             <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-slate-800">
@@ -316,33 +316,33 @@ function App() {
                                                     <p className="text-xs">Включите мокапы в списке слева галочкой</p>
                                                 </div>
                                             ) : (
-                                                <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${mockupsPerRow}, 1fr)` }}>
-                                                {products.filter(p => p.enabled).map(product => {
-                                                    const displayProduct = isProductsTab ? { ...product, width: 900, height: 1200 } : product;
-                                                    const fallbackScale = isProductsTab ? 0.6 : 0.5;
-                                                    const productDPI = product.dpi || 300;
-                                                    return (
-                                                        <div key={product.id} className="w-full">
-                                                            <div className="mb-2 px-2 flex justify-between items-end">
-                                                                <span className="text-slate-400 text-sm font-medium">{product.name}</span>
-                                                                <span className="text-slate-600 text-xs font-mono">{product.width}x{product.height}</span>
+                                                <div className="responsive-canvas-grid grid gap-6" style={{ gridTemplateColumns: `repeat(${mockupsPerRow}, 1fr)` }}>
+                                                    {products.filter(p => p.enabled).map(product => {
+                                                        const displayProduct = isProductsTab ? { ...product, width: 900, height: 1200 } : product;
+                                                        const fallbackScale = isProductsTab ? 0.6 : 0.5;
+                                                        const productDPI = product.dpi || 300;
+                                                        return (
+                                                            <div key={product.id} className="w-full">
+                                                                <div className="mb-2 px-2 flex justify-between items-end">
+                                                                    <span className="text-slate-400 text-sm font-medium">{product.name}</span>
+                                                                    <span className="text-slate-600 text-xs font-mono">{product.width}x{product.height}</span>
+                                                                </div>
+                                                                <div className="aspect-[3/4] w-full bg-slate-900 rounded-lg border border-slate-800/50">
+                                                                    <window.MockupCanvas
+                                                                        product={displayProduct}
+                                                                        imageUrl={selectedPrint.url}
+                                                                        maskUrl={displayProduct.mask}
+                                                                        overlayUrl={displayProduct.overlay}
+                                                                        transform={currentTransforms[product.id] || { x: 0, y: 0, scale: fallbackScale, rotation: 0 }}
+                                                                        onUpdateTransform={(newT) => updateTransform(product.id, newT)}
+                                                                        productId={product.id}
+                                                                        dpi={productDPI}
+                                                                        onDPIChange={(newDPI) => updateProductDPI(product.id, newDPI)}
+                                                                    />
+                                                                </div>
                                                             </div>
-                                                            <div className="aspect-[3/4] w-full bg-slate-900 rounded-lg border border-slate-800/50">
-                                                                <window.MockupCanvas 
-                                                                    product={displayProduct}
-                                                                    imageUrl={selectedPrint.url}
-                                                                    maskUrl={displayProduct.mask}
-                                                                    overlayUrl={displayProduct.overlay}
-                                                                    transform={currentTransforms[product.id] || {x:0, y:0, scale: fallbackScale, rotation: 0}}
-                                                                    onUpdateTransform={(newT) => updateTransform(product.id, newT)}
-                                                                    productId={product.id}
-                                                                    dpi={productDPI}
-                                                                    onDPIChange={(newDPI) => updateProductDPI(product.id, newDPI)}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </>

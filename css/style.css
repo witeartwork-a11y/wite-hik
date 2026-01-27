@@ -38,3 +38,69 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Вспомогательные классы для скроллирования */
+.custom-scroll {
+    scroll-behavior: smooth;
+}
+
+/* АДАПТИВНЫЕ СТИЛИ */
+
+/* Малые экраны (до 768px) */
+@media (max-width: 768px) {
+    .responsive-sidebar {
+        width: 100% !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+    }
+
+    .responsive-layout {
+        height: auto !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    .responsive-canvas-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .responsive-mockup-container {
+        height: auto !important;
+        overflow-y: auto !important;
+    }
+
+    .responsive-canvas-area {
+        height: auto !important;
+        overflow-y: auto !important;
+        min-height: 300px !important;
+    }
+}
+
+/* Планшеты (769-1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .responsive-sidebar {
+        width: 100% !important;
+        max-height: none !important;
+    }
+
+    .responsive-layout {
+        height: auto !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    .responsive-canvas-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .responsive-canvas-area {
+        height: auto !important;
+    }
+}
+
+/* Десктоп (>=1025px) */
+@media (min-width: 1025px) {
+    .responsive-layout {
+        height: calc(100vh - 140px) !important;
+    }
+}
