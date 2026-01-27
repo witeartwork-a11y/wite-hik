@@ -240,7 +240,7 @@ function App() {
                                 <div className="responsive-sidebar w-full lg:w-96 flex flex-col gap-4 lg:h-full overflow-y-auto custom-scroll pr-1">
                                     {/* Выбор принта */}
                                     <div
-                                        className="bg-slate-800 rounded-xl border border-slate-700 p-4 flex flex-col lg:max-h-[30%] lg:shrink-0 transition-all hover:border-indigo-500/50"
+                                        className="bg-slate-800 rounded-xl border border-slate-700 p-4 flex flex-col transition-all hover:border-indigo-500/50"
                                         onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-indigo-500'); }}
                                         onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove('border-indigo-500'); }}
                                         onDrop={e => {
