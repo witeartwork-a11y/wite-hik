@@ -1,3 +1,18 @@
+// Рекурсивное удаление папки
+function rrmdir($dir) {
+    if (!is_dir($dir)) return;
+    $objects = array_diff(scandir($dir), ['.', '..']);
+    foreach ($objects as $object) {
+        $path = $dir . '/' . $object;
+        if (is_dir($path)) {
+            rrmdir($path);
+        } else {
+            @unlink($path);
+        }
+    }
+    @rmdir($dir);
+}
+
 <?php
 // === НАСТРОЙКИ ===
 @ini_set('upload_max_filesize', '256M');
@@ -294,6 +309,58 @@ if ($action === 'delete') {
         jsonResponse(true);
     }
     jsonResponse(false, [], 'File not found');
+}
+
+// Удалить всю категорию внутри артикула (например только mockups)
+if ($action === 'delete_category') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
+    $article = sanitize($input['article'] ?? '');
+    $category = $input['category'] ?? '';
+    if (!$article || !$category) jsonResponse(false, [], 'Invalid params');
+
+    $targetDir = $CLOUD_DIR . '/' . $article . '/' . $category;
+    if (!is_dir($targetDir)) jsonResponse(false, [], 'Category not found');
+
+    // Удаляем превью для файлов категории
+    $files = array_diff(scandir($targetDir), ['.', '..']);
+    foreach ($files as $f) {
+        $thumbName = getThumbnailName($f);
+        $thumbPath = $THUMBS_DIR . '/' . $thumbName;
+        if (file_exists($thumbPath)) @unlink($thumbPath);
+    }
+
+    rrmdir($targetDir);
+
+    jsonResponse(true);
+}
+
+// Удалить весь артикул целиком
+if ($action === 'delete_article') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
+    $article = sanitize($input['article'] ?? '');
+    if (!$article) jsonResponse(false, [], 'Invalid params');
+
+    $targetDir = $CLOUD_DIR . '/' . $article;
+    if (!is_dir($targetDir)) jsonResponse(false, [], 'Article not found');
+
+    // Удаляем превью всех файлов артикула
+    $categories = array_diff(scandir($targetDir), ['.', '..']);
+    foreach ($categories as $cat) {
+        $categoryPath = $targetDir . '/' . $cat;
+        if (!is_dir($categoryPath)) continue;
+        $files = array_diff(scandir($categoryPath), ['.', '..']);
+        foreach ($files as $f) {
+            $thumbName = getThumbnailName($f);
+            $thumbPath = $THUMBS_DIR . '/' . $thumbName;
+            if (file_exists($thumbPath)) @unlink($thumbPath);
+        }
+    }
+
+    rrmdir($targetDir);
+
+    jsonResponse(true);
 }
 
 jsonResponse(false, [], 'Unknown action');

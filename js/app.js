@@ -237,14 +237,8 @@ function App() {
     };
 
     const handleSelectPrintInCollection = async (printId) => {
-        // Отображаем принт из коллекции на канве и подтягиваем сохраненные трансформации
-        setSelectedPrintIds(prev => {
-            if (prev.includes(printId)) {
-                return prev.filter(id => id !== printId);
-            } else {
-                return [...prev, printId];
-            }
-        });
+        // По клику просто выбираем принт (без переключения галочки туда-сюда)
+        setSelectedPrintIds(prev => (prev.includes(printId) ? prev : [...prev, printId]));
 
         const print = printCollection.find(p => p.id === printId);
         if (!print) return;
@@ -416,7 +410,7 @@ function App() {
                                 onDeleteFile={handleDeleteFileFromGallery} 
                             />
                         ) : (
-                            <window.CloudSaver files={files} />
+                            <window.CloudSaver files={files} password={auth.password} onChanged={init} />
                         )}
                     </div>
                 ) : (
@@ -428,6 +422,20 @@ function App() {
                                 setProductTransforms(prev => ({ ...prev, [id]: newT }));
                             } else {
                                 setTransforms(prev => ({ ...prev, [id]: newT }));
+                            }
+
+                            // Сохраняем актуальные позиции в коллекции выбранного принта, чтобы не сбрасывались при переключении
+                            if (selectedPrint && selectedPrint.id) {
+                                setPrintCollection(prev => prev.map(p => {
+                                    if (p.id !== selectedPrint.id) return p;
+                                    return {
+                                        ...p,
+                                        positions: {
+                                            ...(p.positions || {}),
+                                            [id]: newT
+                                        }
+                                    };
+                                }));
                             }
                         };
 

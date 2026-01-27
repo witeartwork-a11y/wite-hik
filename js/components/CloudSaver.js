@@ -1,9 +1,10 @@
-window.CloudSaver = ({ files }) => {
+window.CloudSaver = ({ files, password, onChanged }) => {
     const { useState, useMemo } = React;
     const [expandedArticle, setExpandedArticle] = useState(null);
     const [isZipping, setIsZipping] = useState(false);
     const [previewFile, setPreviewFile] = useState(null);
     const [previewZoom, setPreviewZoom] = useState(1);
+    const [busy, setBusy] = useState({ type: null, key: null });
 
     // Группируем файлы облака по артикулам
     const articles = useMemo(() => {
@@ -97,6 +98,44 @@ window.CloudSaver = ({ files }) => {
         alert('Ссылка скопирована в буфер обмена');
     };
 
+    const refresh = async () => {
+        if (onChanged) await onChanged();
+    };
+
+    const handleDeleteArticle = async (articleKey) => {
+        if (!password) return alert('Нет пароля для удаления');
+        if (!confirm(`Удалить артикул "${articleKey}" со всеми файлами?`)) return;
+        setBusy({ type: 'article', key: articleKey });
+        const ok = await window.DataService.deleteCloudArticle(password, { article: articleKey });
+        setBusy({ type: null, key: null });
+        if (!ok) return alert('Не удалось удалить артикул');
+        await refresh();
+    };
+
+    const handleDeleteCategory = async (articleKey, category) => {
+        if (!password) return alert('Нет пароля для удаления');
+        if (!confirm(`Удалить категорию "${category}" внутри артикула "${articleKey}"?`)) return;
+        setBusy({ type: 'category', key: `${articleKey}:${category}` });
+        const ok = await window.DataService.deleteCloudCategory(password, { article: articleKey, category });
+        setBusy({ type: null, key: null });
+        if (!ok) return alert('Не удалось удалить категорию');
+        await refresh();
+    };
+
+    const handleDeleteFile = async (file) => {
+        if (!password) return alert('Нет пароля для удаления');
+        if (!confirm(`Удалить файл "${file.name}"?`)) return;
+        setBusy({ type: 'file', key: file.url });
+        const ok = await window.DataService.deleteCloudFile(password, {
+            filename: file.name,
+            article: file.article,
+            category: file.category
+        });
+        setBusy({ type: null, key: null });
+        if (!ok) return alert('Не удалось удалить файл');
+        await refresh();
+    };
+
     if (articles.length === 0) {
         return (
             <div className="text-center py-20 text-slate-500">
@@ -126,6 +165,17 @@ window.CloudSaver = ({ files }) => {
                                 {Object.keys(article.categories).length} категорий · {Object.values(article.categories).flat().length} файлов
                             </p>
                         </div>
+
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteArticle(article.key); }}
+                            className="p-2 rounded bg-red-500/10 text-red-300 hover:bg-red-500/20 border border-red-500/30"
+                            title="Удалить весь артикул"
+                            disabled={busy.type === 'article' && busy.key === article.key}
+                        >
+                            {busy.type === 'article' && busy.key === article.key
+                                ? <window.Icon name="loader-2" className="w-4 h-4 animate-spin" />
+                                : <window.Icon name="trash-2" className="w-4 h-4" />}
+                        </button>
                         
                         {/* Expand arrow */}
                         <window.Icon name={expandedArticle === article.key ? "chevron-up" : "chevron-down"} className="w-5 h-5 text-slate-400 flex-shrink-0" />
@@ -149,6 +199,16 @@ window.CloudSaver = ({ files }) => {
                                                 {isZipping ? <window.Icon name="loader-2" className="animate-spin w-3 h-3" /> : <window.Icon name="download" className="w-3 h-3" />}
                                                 <span>Скачать</span>
                                             </button>
+                                            <button
+                                                onClick={() => handleDeleteCategory(article.key, catName)}
+                                                disabled={busy.type === 'category' && busy.key === `${article.key}:${catName}`}
+                                                className="flex items-center gap-1 px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-200 text-xs rounded border border-red-500/30 transition-colors disabled:opacity-50"
+                                            >
+                                                {busy.type === 'category' && busy.key === `${article.key}:${catName}`
+                                                    ? <window.Icon name="loader-2" className="animate-spin w-3 h-3" />
+                                                    : <window.Icon name="trash-2" className="w-3 h-3" />}
+                                                <span>Удалить категорию</span>
+                                            </button>
                                         </div>
                                     </div>
                                     
@@ -165,6 +225,11 @@ window.CloudSaver = ({ files }) => {
                                                     </button>
                                                     <button onClick={() => window.open(f.url, '_blank')} title="Открыть" className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white">
                                                         <window.Icon name="external-link" className="w-3 h-3" />
+                                                    </button>
+                                                    <button onClick={() => handleDeleteFile(f)} title="Удалить файл" className="p-1.5 bg-red-600/20 hover:bg-red-600/30 rounded text-red-200 border border-red-500/30 disabled:opacity-50" disabled={busy.type === 'file' && busy.key === f.url}>
+                                                        {busy.type === 'file' && busy.key === f.url
+                                                            ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" />
+                                                            : <window.Icon name="trash-2" className="w-3 h-3" />}
                                                     </button>
                                                 </div>
                                             </div>

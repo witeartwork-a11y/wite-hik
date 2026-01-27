@@ -117,5 +117,47 @@ window.DataService = {
             console.error("Ошибка инициализации данных:", e);
             return { files: [], products: [] };
         }
+    },
+
+    deleteCloudFile: async (password, { filename, article, category }) => {
+        try {
+            const res = await fetch('/api.php?action=delete', {
+                method: 'POST',
+                body: JSON.stringify({ password, filename, article, category })
+            });
+            const data = await res.json();
+            return data.success;
+        } catch (e) {
+            console.error('Ошибка удаления файла из облака:', e);
+            return false;
+        }
+    },
+
+    deleteCloudCategory: async (password, { article, category }) => {
+        try {
+            const res = await fetch('/api.php?action=delete_category', {
+                method: 'POST',
+                body: JSON.stringify({ password, article, category })
+            });
+            const data = await res.json();
+            return data.success;
+        } catch (e) {
+            console.error('Ошибка удаления категории облака:', e);
+            return false;
+        }
+    },
+
+    deleteCloudArticle: async (password, { article }) => {
+        try {
+            const res = await fetch('/api.php?action=delete_article', {
+                method: 'POST',
+                body: JSON.stringify({ password, article })
+            });
+            const data = await res.json();
+            return data.success;
+        } catch (e) {
+            console.error('Ошибка удаления артикула из облака:', e);
+            return false;
+        }
     }
 };
