@@ -30,6 +30,9 @@ function App() {
     const [products, setProducts] = useState([]);
     const [printsConfig, setPrintsConfig] = useState({});
 
+    // Хук для управления пресетами
+    const { presets, savePreset, deletePreset, getPreset, isSingleTransformPreset } = window.usePresets();
+
     const [selectedPrint, setSelectedPrint] = useState(null);
     const [transforms, setTransforms] = useState({});
     const [productTransforms, setProductTransforms] = useState({});
@@ -40,15 +43,6 @@ function App() {
     const [cloudMode, setCloudMode] = useState('mockups');
     const [isCloudSaving, setIsCloudSaving] = useState(false);
     const [cloudProgress, setCloudProgress] = useState({ total: 0, done: 0, current: '' });
-    
-    // Presets state
-    const [presets, setPresets] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('user_transform_presets') || '{}');
-        } catch (e) {
-            return {};
-        }
-    });
 
     const handleSavePreset = useCallback((name, printTransforms) => {
          let dataToSave;
@@ -62,27 +56,18 @@ function App() {
              dataToSave = printTransforms || (activeTab === 'products' ? productTransforms : transforms);
          }
          
-         const newPresets = { ...presets, [name]: dataToSave };
-         setPresets(newPresets);
-         localStorage.setItem('user_transform_presets', JSON.stringify(newPresets));
-    }, [presets, transforms, productTransforms, activeProductId, activeTab]);
+         savePreset(name, dataToSave);
+    }, [presets, transforms, productTransforms, activeProductId, activeTab, savePreset]);
 
     const handleDeletePreset = useCallback((name) => {
-        const newPresets = { ...presets };
-        delete newPresets[name];
-        setPresets(newPresets);
-        localStorage.setItem('user_transform_presets', JSON.stringify(newPresets));
-    }, [presets]);
+        deletePreset(name);
+    }, [deletePreset]);
 
     const handleApplyPreset = useCallback((name) => {
-        const preset = presets[name];
+        const preset = getPreset(name);
         if (!preset) return;
-        
-        // If it's a full map of product_id -> transform
-        // OR if it's a single transform object (new behavior)
-        const isSingleTransform = preset.x !== undefined || preset.scale !== undefined;
 
-        if (isSingleTransform) {
+        if (isSingleTransformPreset(preset)) {
             // Если выбран товар, применяем пресет к нему
             if (activeProductId) {
                 if (activeTab === 'products') {
@@ -122,12 +107,22 @@ function App() {
                 }));
             }
         }
-    }, [presets, activeTab, selectedPrint, activeProductId]);
+    }, [getPreset, isSingleTransformPreset, activeTab, selectedPrint, activeProductId]);
 
 
-    // Состояние для коллекции принтов
-    const [printCollection, setPrintCollection] = useState([]);
-    const [selectedPrintIds, setSelectedPrintIds] = useState([]);
+    // Хук для управления коллекцией принтов
+    const {
+        printCollection,
+        selectedPrintIds,
+        addPrintToCollection,
+        selectPrintInCollection,
+        removePrintFromCollection,
+        updateArticle,
+        removeByFileName,
+        getPrintsByIds,
+        removePrintsByIds
+    } = window.usePrintCollection();
+
     const [activeProductId, setActiveProductId] = useState(null);
     const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
 
@@ -366,28 +361,7 @@ function App() {
         
         try {
             console.log('Добавление принта в коллекцию:', file.name);
-            
-            const printId = 'print_' + Date.now();
-            // Сохраняем позиции всех включенных товаров
-            const enabledProducts = products.filter(p => p.enabled);
-            const positions = {};
-            
-            enabledProducts.forEach(prod => {
-                const currentTransforms = activeTab === 'products' ? productTransforms : transforms;
-                positions[prod.id] = currentTransforms[prod.id] || { x: 0, y: 0, scale: 0.5, rotation: 0 };
-            });
-            
-            setPrintCollection(prev => [...prev, {
-                id: printId,
-                name: file.name,
-                url: file.url,
-                thumb: file.thumb || file.url,
-                article: file.name.split('.')[0],
-                positions: positions
-            }]);
-            
-            setSelectedPrintIds(prev => [...prev, printId]);
-            
+            addPrintToCollection(file, products, transforms, productTransforms, activeTab);
             console.log('Принт успешно добавлен в коллекцию');
         } catch (e) {
             console.error('Ошибка при добавлении принта в коллекцию:', e);
@@ -397,7 +371,7 @@ function App() {
 
     const handleSelectPrintInCollection = async (printId) => {
         // По клику просто выбираем принт (без переключения галочки туда-сюда)
-        setSelectedPrintIds(prev => (prev.includes(printId) ? prev : [...prev, printId]));
+        selectPrintInCollection(printId);
 
         const print = printCollection.find(p => p.id === printId);
         if (!print) return;
@@ -424,27 +398,20 @@ function App() {
     };
 
     const handleRemovePrintFromCollection = (printId) => {
-        setPrintCollection(prev => prev.filter(p => p.id !== printId));
-        setSelectedPrintIds(prev => prev.filter(id => id !== printId));
+        removePrintFromCollection(printId);
     };
 
     const handleUpdateArticle = (printId, newArticle) => {
-        setPrintCollection(prev => 
-            prev.map(p => p.id === printId ? { ...p, article: newArticle } : p)
-        );
+        updateArticle(printId, newArticle);
     };
 
     // Удаляем все записи о принте, если исходный файл был удален из галереи
     const handleDeleteFileFromGallery = useCallback(async (fileName) => {
-        setPrintCollection(prev => {
-            const next = prev.filter(p => p.name !== fileName);
-            setSelectedPrintIds(ids => ids.filter(id => next.some(p => p.id === id)));
-            return next;
-        });
-    }, []);
+        removeByFileName(fileName);
+    }, [removeByFileName]);
 
     const handleSaveCollectionToCloud = useCallback(async (printIds) => {
-        const printsToSave = printCollection.filter(p => printIds.includes(p.id));
+        const printsToSave = getPrintsByIds(printIds);
         if (printsToSave.length === 0) return alert('Нет выбранных принтов');
 
         setIsCloudSaving(true);
@@ -470,8 +437,7 @@ function App() {
             alert(`Готово! ${printsToSave.length} принт(ов) сохранено в облако.`);
             
             // Очищаем коллекцию после успешного сохранения
-            setPrintCollection(prev => prev.filter(p => !printIds.includes(p.id)));
-            setSelectedPrintIds([]);
+            removePrintsByIds(printIds);
             
             await init();
         } catch (e) {
@@ -481,7 +447,7 @@ function App() {
             setIsCloudSaving(false);
             setCloudProgress({ total: 0, done: 0, current: '' });
         }
-    }, [auth.password, cloudMode, activeTab, products, transforms, productTransforms, printCollection, init]);
+    }, [auth.password, cloudMode, activeTab, products, transforms, productTransforms, printCollection, init, getPrintsByIds, removePrintsByIds]);
 
     const handleSaveToCloud = useCallback(async (arg) => {
         if (!selectedPrint) return alert('Выберите принт для сохранения');
