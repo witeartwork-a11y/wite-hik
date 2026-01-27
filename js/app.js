@@ -52,12 +52,17 @@ function App() {
     // Подгружаем/перерисовываем иконки; защищаемся от падения lucide
     useEffect(() => {
         if (!window.lucide) return;
-        try {
-            window.lucide.createIcons();
-        } catch (err) {
-            console.error('Не удалось отрисовать иконки Lucide', err);
-        }
-    }, [auth, activeTab, files, products, isUploading]);
+        // Откладываем вызов до завершения React рендеринга
+        const timer = setTimeout(() => {
+            try {
+                window.lucide.createIcons();
+            } catch (err) {
+                console.error('Не удалось отрисовать иконки Lucide', err);
+            }
+        }, 0);
+        
+        return () => clearTimeout(timer);
+    }, [auth, activeTab, files, products, isUploading, printCollection, selectedPrintIds]);
 
     // Автовход, если пароль уже сохранен в localStorage
     useEffect(() => {
