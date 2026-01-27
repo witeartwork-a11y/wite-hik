@@ -32,6 +32,14 @@ function sanitize($name) {
     return $clean . '.' . strtolower($ext);
 }
 
+// Функция для правильного имени превью (без дублирования расширения)
+function getThumbnailName($filename) {
+    $info = pathinfo($filename);
+    $filename_clean = preg_replace('/[^a-zA-Z0-9\-_]/', '', $info['filename']);
+    if (!$filename_clean) $filename_clean = 'file_' . time();
+    return 'thumb_' . $filename_clean . '.jpg';
+}
+
 // Исправление 2: .jpg для превью
 function createThumbnail($src, $dest, $targetWidth = 300) {
     if (!extension_loaded('gd')) return false;
@@ -107,7 +115,7 @@ if ($action === 'list') {
         $path = $UPLOADS_DIR . '/' . $f;
         if (!is_file($path)) continue;
         
-        $thumbName = 'thumb_' . $f . '.jpg';
+        $thumbName = getThumbnailName($f);
         $thumbPath = $THUMBS_DIR . '/' . $thumbName;
         $thumbUrl = null;
 
@@ -150,7 +158,7 @@ if ($action === 'list') {
                     $path = $categoryPath . '/' . $f;
                     if (!is_file($path)) continue;
                     
-                    $thumbName = 'thumb_' . $f . '.jpg';
+                    $thumbName = getThumbnailName($f);
                     $thumbPath = $THUMBS_DIR . '/' . $thumbName;
                     $thumbUrl = null;
 
@@ -249,7 +257,8 @@ if ($action === 'delete') {
     
     if (file_exists($path)) {
         unlink($path);
-        $thumbPath = $THUMBS_DIR . '/thumb_' . $filename . '.jpg';
+        $thumbName = getThumbnailName($filename);
+        $thumbPath = $THUMBS_DIR . '/' . $thumbName;
         if (file_exists($thumbPath)) unlink($thumbPath);
         jsonResponse(true);
     }

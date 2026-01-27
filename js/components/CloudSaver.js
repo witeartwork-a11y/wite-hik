@@ -2,6 +2,8 @@ window.CloudSaver = ({ files }) => {
     const { useState, useMemo } = React;
     const [expandedArticle, setExpandedArticle] = useState(null);
     const [isZipping, setIsZipping] = useState(false);
+    const [previewFile, setPreviewFile] = useState(null);
+    const [previewZoom, setPreviewZoom] = useState(1);
 
     // Группируем файлы облака по артикулам
     const articles = useMemo(() => {
@@ -89,6 +91,12 @@ window.CloudSaver = ({ files }) => {
         }
     };
 
+    const handleCopyLink = (url) => {
+        const fullUrl = window.location.origin + url;
+        navigator.clipboard.writeText(fullUrl);
+        alert('Ссылка скопирована в буфер обмена');
+    };
+
     if (articles.length === 0) {
         return (
             <div className="text-center py-20 text-slate-500">
@@ -147,9 +155,17 @@ window.CloudSaver = ({ files }) => {
                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                                         {fileList.map(f => (
                                             <div key={f.name} className="group relative bg-slate-900 rounded-lg overflow-hidden border border-slate-700 aspect-square">
-                                                <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer" onClick={() => window.open(f.url, '_blank')} />
-                                                <div className="absolute inset-0 bg-slate-900/90 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
-                                                    <span className="text-white text-xs px-2 text-center break-all line-clamp-2">{f.name}</span>
+                                                <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer" onClick={() => setPreviewFile(f)} />
+                                                <div className="absolute inset-0 bg-slate-900/90 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-1">
+                                                    <button onClick={() => setPreviewFile(f)} title="Предпросмотр" className="p-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-white">
+                                                        <i data-lucide="eye" className="w-3 h-3"></i>
+                                                    </button>
+                                                    <button onClick={() => handleCopyLink(f.url)} title="Копировать ссылку" className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white">
+                                                        <i data-lucide="copy" className="w-3 h-3"></i>
+                                                    </button>
+                                                    <button onClick={() => window.open(f.url, '_blank')} title="Открыть" className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white">
+                                                        <i data-lucide="external-link" className="w-3 h-3"></i>
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
@@ -169,6 +185,67 @@ window.CloudSaver = ({ files }) => {
                     )}
                 </div>
             ))}
+            
+            {/* Modal Preview */}
+            {previewFile && (
+                <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 fade-in" onClick={() => { setPreviewFile(null); setPreviewZoom(1); }}>
+                    <div className="bg-slate-900 rounded-lg border border-slate-700 max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                            <h3 className="font-semibold text-white truncate">{previewFile.name}</h3>
+                            <button onClick={() => { setPreviewFile(null); setPreviewZoom(1); }} className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
+                                <i data-lucide="x" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-auto flex items-center justify-center p-4 bg-slate-950">
+                            <img src={previewFile.url} alt={previewFile.name} style={{ transform: `scale(${previewZoom})`, transition: 'transform 0.2s' }} className="max-w-full max-h-full object-contain cursor-zoom-in" />
+                        </div>
+                        
+                        <div className="p-4 border-t border-slate-700 flex items-center justify-between gap-3 bg-slate-800">
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => setPreviewZoom(Math.max(0.5, previewZoom - 0.2))}
+                                    className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 hover:text-white"
+                                    title="Уменьшить"
+                                >
+                                    <i data-lucide="zoom-out" className="w-4 h-4"></i>
+                                </button>
+                                <span className="text-xs text-slate-400 w-12 text-center">{Math.round(previewZoom * 100)}%</span>
+                                <button 
+                                    onClick={() => setPreviewZoom(Math.min(3, previewZoom + 0.2))}
+                                    className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 hover:text-white"
+                                    title="Увеличить"
+                                >
+                                    <i data-lucide="zoom-in" className="w-4 h-4"></i>
+                                </button>
+                                <button 
+                                    onClick={() => setPreviewZoom(1)}
+                                    className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 hover:text-white text-xs"
+                                    title="Сбросить"
+                                >
+                                    100%
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => handleCopyLink(previewFile.url)}
+                                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs flex items-center gap-1.5"
+                                >
+                                    <i data-lucide="copy" className="w-3 h-3"></i>
+                                    Копировать ссылку
+                                </button>
+                                <button 
+                                    onClick={() => window.open(previewFile.url, '_blank')}
+                                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-white text-xs flex items-center gap-1.5"
+                                >
+                                    <i data-lucide="external-link" className="w-3 h-3"></i>
+                                    Открыть
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

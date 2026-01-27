@@ -6,6 +6,7 @@ window.Gallery = ({ files, auth, init }) => {
     const { useState, useEffect } = React;
     const [isUploading, setIsUploading] = useState(false);
     const [filter, setFilter] = useState('');
+    const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
 
     useEffect(() => {
         if (window.lucide) window.lucide.createIcons();
@@ -31,12 +32,40 @@ window.Gallery = ({ files, auth, init }) => {
     const filteredFiles = files.filter(f => {
         // Show only user uploads (or legacy files without type)
         const isUpload = !f.type || f.type === 'upload';
-        return isUpload && f.name.toLowerCase().includes(filter.toLowerCase());
+        if (!isUpload) return false;
+        
+        // Filter by name
+        const matchesName = f.name.toLowerCase().includes(filter.toLowerCase());
+        if (!matchesName) return false;
+        
+        // Filter by date
+        if (dateFilter !== 'all') {
+            const now = Date.now();
+            const fileTime = f.mtime * 1000; // Convert from seconds to milliseconds
+            const dayInMs = 24 * 60 * 60 * 1000;
+            
+            switch (dateFilter) {
+                case 'today':
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+                    if (fileTime < todayStart.getTime()) return false;
+                    break;
+                case 'week':
+                    if (now - fileTime > 7 * dayInMs) return false;
+                    break;
+                case 'month':
+                    if (now - fileTime > 30 * dayInMs) return false;
+                    break;
+            }
+        }
+        
+        return true;
     });
 
     return (
         <div className="space-y-6 fade-in">
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="flex flex-col gap-3">
+                {/* Фильтр по названию */}
                 <div className="flex items-center gap-2 text-sm text-slate-400">
                     <i data-lucide="filter" className="w-4 h-4"></i>
                     <input
@@ -44,8 +73,23 @@ window.Gallery = ({ files, auth, init }) => {
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
                         placeholder="Фильтр по имени файла"
-                        className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white w-64 focus:border-indigo-500 outline-none"
+                        className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white flex-1 focus:border-indigo-500 outline-none"
                     />
+                </div>
+                
+                {/* Фильтр по дате */}
+                <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
+                    <i data-lucide="calendar" className="w-4 h-4"></i>
+                    <select
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                    >
+                        <option value="all">Все файлы</option>
+                        <option value="today">Сегодня</option>
+                        <option value="week">За неделю</option>
+                        <option value="month">За месяц</option>
+                    </select>
                 </div>
             </div>
             <div className={`border-2 border-dashed border-slate-700 bg-slate-800/30 rounded-2xl p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-slate-800/50 transition-all relative ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>

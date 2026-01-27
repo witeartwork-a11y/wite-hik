@@ -378,6 +378,7 @@ function App() {
 
     return (
         <div className="min-h-screen pb-10">
+            <window.CloudProgress progress={cloudProgress} isVisible={isCloudSaving} />
             <window.Navbar 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
@@ -437,7 +438,7 @@ function App() {
                                                 <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
                                                 {isUploading ? <i data-lucide="loader-2" className="w-6 h-6 text-indigo-400 animate-spin"></i> : <i data-lucide="plus" className="w-6 h-6 text-slate-500"></i>}
                                             </div>
-                                            {files.map(f => (
+                                            {files.filter(f => f.type === 'upload').map(f => (
                                                 <div key={f.name} onClick={() => handleSelectPrint(f)} 
                                                     className={`aspect-square rounded border cursor-pointer overflow-hidden bg-slate-900 ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}>
                                                     <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover"/>
@@ -496,30 +497,40 @@ function App() {
                                                 <span className="tabular-nums text-slate-300">{Math.round(previewScale*100)}%</span>
                                             </div>
 
-                                            <div className="grid grid-cols-1 gap-6" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(280 * previewScale)}px, 1fr))` }}>
-                                            {products.filter(p => p.enabled).map(product => {
-                                                const displayProduct = isProductsTab ? { ...product, width: 900, height: 1200 } : product;
-                                                const fallbackScale = isProductsTab ? 0.6 : 0.5;
-                                                return (
-                                                    <div key={product.id} className="w-full">
-                                                        <div className="mb-2 px-2 flex justify-between items-end">
-                                                            <span className="text-slate-400 text-sm font-medium">{product.name}</span>
-                                                            <span className="text-slate-600 text-xs font-mono">{displayProduct.width}x{displayProduct.height}</span>
-                                                        </div>
-                                                        <div className="aspect-[3/4] w-full bg-slate-900 rounded-lg border border-slate-800/50">
-                                                            <window.MockupCanvas 
-                                                                product={displayProduct}
-                                                                imageUrl={selectedPrint.url}
-                                                                maskUrl={displayProduct.mask}
-                                                                overlayUrl={displayProduct.overlay}
-                                                                transform={currentTransforms[product.id] || {x:0, y:0, scale: fallbackScale, rotation: 0}}
-                                                                onUpdateTransform={(newT) => updateTransform(product.id, newT)}
-                                                            />
-                                                        </div>
+                                            {products.filter(p => p.enabled).length === 0 ? (
+                                                <div className="col-span-full h-80 flex flex-col items-center justify-center text-slate-500 gap-4">
+                                                    <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-slate-800">
+                                                        <i data-lucide="eye-off" className="w-8 h-8 opacity-50"></i>
                                                     </div>
-                                                );
-                                            })}
-                                            </div>
+                                                    <p>Все мокапы отключены</p>
+                                                    <p className="text-xs">Включите мокапы в списке слева галочкой</p>
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-1 gap-6" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(280 * previewScale)}px, 1fr))` }}>
+                                                {products.filter(p => p.enabled).map(product => {
+                                                    const displayProduct = isProductsTab ? { ...product, width: 900, height: 1200 } : product;
+                                                    const fallbackScale = isProductsTab ? 0.6 : 0.5;
+                                                    return (
+                                                        <div key={product.id} className="w-full">
+                                                            <div className="mb-2 px-2 flex justify-between items-end">
+                                                                <span className="text-slate-400 text-sm font-medium">{product.name}</span>
+                                                                <span className="text-slate-600 text-xs font-mono">{displayProduct.width}x{displayProduct.height}</span>
+                                                            </div>
+                                                            <div className="aspect-[3/4] w-full bg-slate-900 rounded-lg border border-slate-800/50">
+                                                                <window.MockupCanvas 
+                                                                    product={displayProduct}
+                                                                    imageUrl={selectedPrint.url}
+                                                                    maskUrl={displayProduct.mask}
+                                                                    overlayUrl={displayProduct.overlay}
+                                                                    transform={currentTransforms[product.id] || {x:0, y:0, scale: fallbackScale, rotation: 0}}
+                                                                    onUpdateTransform={(newT) => updateTransform(product.id, newT)}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                </div>
+                                            )}
                                         </>
                                     )}
                                 </div>
