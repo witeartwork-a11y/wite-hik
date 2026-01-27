@@ -12,7 +12,9 @@ window.TransformPanel = ({
     onSavePreset,
     onDeletePreset,
     onApplyPreset,
-    saveStatus = 'saved' // 'saved' | 'saving' | 'error'
+    saveStatus = 'saved', // 'saved' | 'saving' | 'error'
+    selectedPrint,
+    onForceLoadConfig
 }) => {
     const [presetName, setPresetName] = React.useState('');
 
@@ -48,6 +50,16 @@ window.TransformPanel = ({
                     <window.Icon name="alert-circle" className="w-3 h-3"/>
                     <span>Ошибка сохранения</span>
                 </div>
+            )}
+            {/* Кнопка для принудительной загрузки конфига */}
+            {selectedPrint && onForceLoadConfig && (
+                <button
+                    onClick={onForceLoadConfig}
+                    className="w-full px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs rounded border border-purple-500/30 transition-colors"
+                >
+                    <window.Icon name="refresh-cw" className="w-3 h-3 inline mr-1"/>
+                    Загрузить сохраненные настройки
+                </button>
             )}
             {/* Мокапов в строку - Всегда доступно */}
             {setMockupsPerRow && (

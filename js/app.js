@@ -131,7 +131,30 @@ function App() {
     const [activeProductId, setActiveProductId] = useState(null);
     const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
 
-    // Установка активного мокапа по умолчанию при загрузке или смене visibility
+    // Функция для принудительной загрузки конфига (для дебага)
+    const handleForceLoadConfig = useCallback(async () => {
+        if (!selectedPrint || !auth.isAuth) return;
+        
+        console.log('🔄 Принудительно загружаю конфиг...');
+        const newPrintsConfig = await window.DataService.loadPrintsConfig();
+        console.log('Загруженный конфиг:', newPrintsConfig);
+        
+        setPrintsConfig(newPrintsConfig);
+        
+        if (newPrintsConfig && newPrintsConfig[selectedPrint.name]) {
+            const saved = newPrintsConfig[selectedPrint.name];
+            console.log('✓ Найден конфиг для файла:', saved);
+            
+            if (saved.transforms && saved.productTransforms) {
+                setTransforms(saved.transforms);
+                setProductTransforms(saved.productTransforms);
+                alert('✓ Конфиг загружен успешно!');
+            }
+        } else {
+            console.log('❌ Конфиг для файла не найден');
+            alert('❌ Конфиг для этого файла не найден');
+        }
+    }, [selectedPrint, auth.isAuth]);
     useEffect(() => {
         if (activeProductId === null && products.length > 0) {
             const firstEnabled = products.find(p => p.enabled);
@@ -812,6 +835,8 @@ function App() {
                                         onDeletePreset={handleDeletePreset}
                                         onApplyPreset={handleApplyPreset}
                                         saveStatus={saveStatus}
+                                        selectedPrint={selectedPrint}
+                                        onForceLoadConfig={handleForceLoadConfig}
                                     />
                                 </div>
                             </div>
