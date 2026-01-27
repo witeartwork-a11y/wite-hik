@@ -2,7 +2,7 @@
 const { Upload, Loader2 } = lucide;
 // const { useState, useEffect } = React; // Removed global destructuring
 
-window.Gallery = ({ files, auth, init }) => {
+window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
     const { useState, useEffect } = React;
     const [isUploading, setIsUploading] = useState(false);
     const [filter, setFilter] = useState('');
@@ -119,9 +119,20 @@ window.Gallery = ({ files, auth, init }) => {
                         </div>
                         <div className="absolute inset-0 bg-slate-900/90 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-2">
                             <button onClick={() => { navigator.clipboard.writeText(window.location.origin + f.url); alert('Ссылка скопирована'); }} className="bg-indigo-600 px-3 py-1 rounded text-xs text-white">Copy Link</button>
+                            {onAddToCollection && (
+                                <button 
+                                    onClick={() => onAddToCollection(f)}
+                                    className="bg-green-600/20 text-green-400 px-3 py-1 rounded text-xs hover:bg-green-600/40 transition-colors"
+                                >
+                                    Add to Cloud
+                                </button>
+                            )}
                             <button onClick={async () => { 
                                 if(confirm('Удалить?')) {
                                     await fetch('/api.php?action=delete', { method:'POST', body: JSON.stringify({filename: f.name, password: auth.password}) });
+                                    if (onDeleteFile) {
+                                        onDeleteFile(f.name);
+                                    }
                                     init();
                                 }
                             }} className="bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs">Delete</button>

@@ -18,6 +18,10 @@ function App() {
     const [cloudMode, setCloudMode] = useState('mockups');
     const [isCloudSaving, setIsCloudSaving] = useState(false);
     const [cloudProgress, setCloudProgress] = useState({ total: 0, done: 0, current: '' });
+    
+    // Состояние для коллекции принтов
+    const [printCollection, setPrintCollection] = useState([]);
+    const [selectedPrintIds, setSelectedPrintIds] = useState([]);
 
     const handleLoginSuccess = useCallback((pwd) => {
         window.AuthService.savePassword(pwd);
@@ -155,6 +159,144 @@ function App() {
         }
     };
 
+    // === УПРАВЛЕНИЕ КОЛЛЕКЦИЕЙ ПРИНТОВ ===
+    const handleAddPrintToCollection = (file) => {
+        const printId = 'print_' + Date.now();
+        // Сохраняем позиции всех включенных товаров
+        const enabledProducts = products.filter(p => p.enabled);
+        const positions = {};
+        
+        enabledProducts.forEach(prod => {
+            const currentTransforms = activeTab === 'products' ? productTransforms : transforms;
+            positions[prod.id] = currentTransforms[prod.id] || { x: 0, y: 0, scale: 0.5, rotation: 0 };
+        });
+        
+        setPrintCollection(prev => [...prev, {
+            id: printId,
+            name: file.name,
+            url: file.url,
+            article: file.name.split('.')[0],
+            positions: positions
+        }]);
+        
+        setSelectedPrintIds(prev => [...prev, printId]);
+    };
+
+    const handleSelectPrintInCollection = (printId) => {
+        setSelectedPrintIds(prev => {
+            if (prev.includes(printId)) {
+                return prev.filter(id => id !== printId);
+            } else {
+                return [...prev, printId];
+            }
+        });
+    };
+
+    const handleRemovePrintFromCollection = (printId) => {
+        setPrintCollection(prev => prev.filter(p => p.id !== printId));
+        setSelectedPrintIds(prev => prev.filter(id => id !== printId));
+    };
+
+    const handleUpdateArticle = (printId, newArticle) => {
+        setPrintCollection(prev => 
+            prev.map(p => p.id === printId ? { ...p, article: newArticle } : p)
+        );
+    };
+
+    const handleDeleteFile = useCallback(async (fileName) => {
+        // Удаляем все принты связанные с этим файлом из коллекции
+        const printsToRemove = printCollection.filter(p => p.name === fileName).map(p => p.id);
+        if (printsToRemove.length > 0) {
+            setPrintCollection(prev => prev.filter(p => p.name !== fileName));
+            setSelectedPrintIds(prev => prev.filter(id => !printsToRemove.includes(id)));
+        }
+    }, [printCollection]);
+
+    const handleSaveCollectionToCloud = useCallback(async (printIds) => {
+        const printsToSave = printCollection.filter(p => printIds.includes(p.id));
+        if (printsToSave.length === 0) return alert('Нет выбранных принтов');
+
+        setIsCloudSaving(true);
+
+        try {
+            if (!window.Utils) throw new Error("Библиотеки не загружены");
+            
+            const enabledProducts = products.filter(p => p.enabled);
+            if (enabledProducts.length === 0) {
+                throw new Error("Нет включенных товаров для сохранения");
+            }
+
+            let totalProcessed = 0;
+            const totalItems = printsToSave.length * enabledProducts.length;
+
+            for (const printItem of printsToSave) {
+                const printImg = await window.Utils.loadImage(printItem.url);
+                if (!printImg) continue;
+
+                const modeToUse = activeTab === 'base' ? cloudMode : activeTab;
+
+                for (const prod of enabledProducts) {
+                    // Используем сохраненные позиции из printItem или текущие трансформы
+                    const tr = printItem.positions && printItem.positions[prod.id]
+                        ? printItem.positions[prod.id]
+                        : window.RenderService.getTransformByMode(
+                            transforms,
+                            productTransforms,
+                            modeToUse,
+                            prod.id,
+                            modeToUse === 'products' ? 0.6 : 0.5
+                        );
+
+                    const productDPI = prod.dpi || 300;
+
+                    const blob = await window.RenderService.renderMockupBlob(
+                        prod,
+                        printImg,
+                        tr,
+                        productDPI,
+                        null,
+                        null,
+                        { mimeType: 'image/png' }
+                    );
+
+                    if (blob) {
+                        const categoryFolder = modeToUse === 'products' ? 'products' : 'mockups';
+                        const fileName = `${prod.defaultPrefix}_${printItem.article}.png`;
+                        
+                        await window.DataService.uploadToCloud(
+                            auth.password,
+                            blob,
+                            fileName,
+                            printItem.article,
+                            categoryFolder
+                        );
+                    }
+
+                    totalProcessed++;
+                    setCloudProgress({
+                        total: totalItems,
+                        done: totalProcessed,
+                        current: `${printItem.article} - ${prod.name}`
+                    });
+                }
+            }
+
+            alert(`Готово! ${printsToSave.length} принт(ов) сохранено в облако.`);
+            
+            // Очищаем коллекцию после успешного сохранения
+            setPrintCollection(prev => prev.filter(p => !printIds.includes(p.id)));
+            setSelectedPrintIds([]);
+            
+            await init();
+        } catch (e) {
+            console.error(e);
+            alert('Ошибка сохранения: ' + e.message);
+        } finally {
+            setIsCloudSaving(false);
+            setCloudProgress({ total: 0, done: 0, current: '' });
+        }
+    }, [auth.password, cloudMode, activeTab, products, transforms, productTransforms, printCollection, init]);
+
     const handleSaveToCloud = useCallback(async (arg) => {
         if (!selectedPrint) return alert('Выберите принт для сохранения');
 
@@ -217,7 +359,7 @@ function App() {
                         </div>
 
                         {galleryTab === 'files' ? (
-                            <window.Gallery files={files} auth={auth} init={init} />
+                            <window.Gallery files={files} auth={auth} init={init} onAddToCollection={handleAddPrintToCollection} onDeleteFile={handleDeleteFile} />
                         ) : (
                             <window.CloudSaver files={files} />
                         )}
@@ -256,13 +398,38 @@ function App() {
                                                 {isUploading ? <i data-lucide="loader-2" className="w-6 h-6 text-indigo-400 animate-spin"></i> : <i data-lucide="plus" className="w-6 h-6 text-slate-500"></i>}
                                             </div>
                                             {files.filter(f => f.type === 'upload').map(f => (
-                                                <div key={f.name} onClick={() => handleSelectPrint(f)}
-                                                    className={`aspect-square rounded border cursor-pointer overflow-hidden bg-slate-900 ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}>
-                                                    <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover" />
+                                                <div 
+                                                    key={f.name} 
+                                                    className={`aspect-square rounded border cursor-pointer overflow-hidden bg-slate-900 relative group ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}
+                                                >
+                                                    <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover" onClick={() => handleSelectPrint(f)} />
+                                                    {/* Кнопка добавления в коллекцию */}
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleAddPrintToCollection(f);
+                                                        }}
+                                                        className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/0 hover:bg-black/40 transition-colors"
+                                                        title="Добавить в коллекцию"
+                                                    >
+                                                        <i data-lucide="plus-circle" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
+
+                                    {/* Коллекция принтов для облака */}
+                                    <window.PrintCollection
+                                        prints={printCollection}
+                                        selectedPrints={selectedPrintIds}
+                                        onAddPrint={handleAddPrintToCollection}
+                                        onSelectPrint={handleSelectPrintInCollection}
+                                        onRemovePrint={handleRemovePrintFromCollection}
+                                        onUpdateArticle={handleUpdateArticle}
+                                        onSaveToCloud={handleSaveCollectionToCloud}
+                                        isSaving={isCloudSaving}
+                                    />
 
                                     {/* Sidebar с товарами */}
                                     <window.Sidebar
