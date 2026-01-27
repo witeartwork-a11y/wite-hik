@@ -58,7 +58,7 @@ const ProductCard = ({
                             : 'border-slate-600 hover:border-slate-500 bg-transparent'}
                     `}
                 >
-                    {product.enabled && <i data-lucide="check" className="w-3.5 h-3.5"></i>}
+                    {product.enabled && <span><i data-lucide="check" className="w-3.5 h-3.5"></i></span>}
                 </button>
 
                 {/* Название (Редактируемое) */}
