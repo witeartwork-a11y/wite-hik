@@ -85,17 +85,30 @@ function App() {
 
     // === ВЫБОР ПРИНТА ===
     const handleSelectPrint = async (file) => {
+        if (!file) {
+            console.warn('handleSelectPrint: файл не передан');
+            return;
+        }
+        
         try {
             setSelectedPrint(file);
+            
+            if (!window.RenderService) {
+                console.error('RenderService не загружен');
+                return;
+            }
+            
             const newTransforms = await window.RenderService.initializeTransforms(file, products, 'mockups');
             const newProductTransforms = await window.RenderService.initializeTransforms(file, products, 'products');
             setTransforms(newTransforms);
             setProductTransforms(newProductTransforms);
         } catch (e) {
             console.error('Ошибка при выборе принта:', e);
-            const defaults = window.RenderService.buildDefaultTransforms(products);
-            setTransforms(defaults);
-            setProductTransforms(defaults);
+            if (window.RenderService && window.RenderService.buildDefaultTransforms) {
+                const defaults = window.RenderService.buildDefaultTransforms(products);
+                setTransforms(defaults);
+                setProductTransforms(defaults);
+            }
         }
     };
 
@@ -363,19 +376,27 @@ function App() {
                                                 <div 
                                                     key={f.name} 
                                                     className={`aspect-square rounded border cursor-pointer overflow-hidden bg-slate-900 relative group ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}
-                                                    onClick={() => handleSelectPrint(f)}
                                                 >
-                                                    <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover" />
-                                                    {/* Кнопка добавления в коллекцию (маленькая, не перекрывает клики) */}
+                                                    <img 
+                                                        src={f.thumb || f.url} 
+                                                        loading="lazy" 
+                                                        className="w-full h-full object-cover" 
+                                                        onClick={() => handleSelectPrint(f)}
+                                                    />
+                                                    {/* Кнопка добавления в коллекцию (по центру, полупрозрачная) */}
                                                     <button 
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleAddPrintToCollection(f);
+                                                            if (typeof handleAddPrintToCollection === 'function') {
+                                                                handleAddPrintToCollection(f);
+                                                            }
                                                         }}
-                                                        className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900/70 text-slate-200 shadow border border-slate-700 hover:bg-indigo-500 hover:text-white"
+                                                        className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/0 hover:bg-black/40 transition-all duration-200"
                                                         title="Добавить в коллекцию"
                                                     >
-                                                        <i data-lucide="plus" className="w-4 h-4"></i>
+                                                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-400/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                            <i data-lucide="plus" className="w-6 h-6 text-white"></i>
+                                                        </div>
                                                     </button>
                                                 </div>
                                             ))}
