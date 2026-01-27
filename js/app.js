@@ -124,8 +124,22 @@ function App() {
         if (!auth.isAuth) return;
         try {
             const { files: loadedFiles, products: loadedProducts } = await window.DataService.initialize();
+            
+            // Назначаем вкладку, если её нет.
+            // Стандартные (не custom) -> mockups, кастомные -> products (как наиболее частый кейс для "мокапов"),
+            // но если они уже имеют tab, оставляем как есть.
+            const processedProducts = loadedProducts.map(p => {
+                if (p.tab) return p;
+                
+                // Если это стандартный товар (нет custom_ в id) -> 'mockups' (Заготовки)
+                if (!p.id.startsWith('custom_')) return { ...p, tab: 'mockups' };
+                
+                // Если кастомный -> 'products' (Мокапы)
+                return { ...p, tab: 'products' };
+            });
+
             setFiles(loadedFiles);
-            setProducts(loadedProducts);
+            setProducts(processedProducts);
         } catch (e) {
             console.error('Ошибка инициализации:', e);
         }
@@ -223,7 +237,8 @@ function App() {
                     overlay: '',
                     defaultPrefix: 'CUST',
                     width: template.width,
-                    height: template.height
+                    height: template.height,
+                    tab: activeTab // Привязываем к текущей вкладке
                 }));
                 handleSaveConfig([...products, ...newProds]);
             }
@@ -471,6 +486,9 @@ function App() {
                         const isProductsTab = activeTab === 'products';
                         const currentTransforms = isProductsTab ? productTransforms : transforms;
                         
+                        // Фильтруем товары для текущей вкладки
+                        const currentTabProducts = products.filter(p => (p.tab === activeTab));
+
                         const updateTransform = (id, newT) => {
                             if (isProductsTab) {
                                 setProductTransforms(prev => ({ ...prev, [id]: newT }));
@@ -491,6 +509,15 @@ function App() {
                                     };
                                 }));
                             }
+                        };
+                        
+                        // Обработчик сохранения конфига только для текущей вкладки
+                        const handleSaveTabConfig = (newTabProds) => {
+                            // Берем товары из ДРУГИХ вкладок
+                            const otherProds = products.filter(p => p.tab !== activeTab);
+                            // Объединяем
+                            const merged = [...otherProds, ...newTabProds];
+                            handleSaveConfig(merged);
                         };
 
                         return (
@@ -581,10 +608,10 @@ function App() {
 
                                     {/* Sidebar с товарами */}
                                     <window.Sidebar
-                                        products={products}
+                                        products={currentTabProducts}
                                         password={auth.password}
                                         onAddProduct={addProduct}
-                                        onSaveConfig={handleSaveConfig}
+                                        onSaveConfig={handleSaveTabConfig}
                                         onExport={handleExportZip}
                                         onSaveCloud={handleSaveToCloud}
                                         isExporting={isExporting}
@@ -607,7 +634,7 @@ function App() {
                                                  {/* Controls moved to right panel */}
                                             </div>
 
-                                            {products.filter(p => p.enabled).length === 0 ? (
+                                            {currentTabProducts.filter(p => p.enabled).length === 0 ? (
                                                 <div className="col-span-full h-80 flex flex-col items-center justify-center text-slate-500 gap-4">
                                                     <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center border border-slate-800">
                                                         <window.Icon name="eye-off" className="w-8 h-8 opacity-50" />
@@ -617,7 +644,7 @@ function App() {
                                                 </div>
                                             ) : (
                                                 <div className="responsive-canvas-grid grid gap-6" style={{ gridTemplateColumns: `repeat(${mockupsPerRow}, 1fr)` }}>
-                                                    {products.filter(p => p.enabled).map(product => {
+                                                    {currentTabProducts.filter(p => p.enabled).map(product => {
                                                         const isProductsTab = activeTab === 'products';
                                                         const isActive = activeProductId === product.id;
 

@@ -399,7 +399,9 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
 
             {/* Заголовок списка */}
             <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Список мокапов</span>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {activeTab === 'mockups' ? 'Список заготовок' : 'Список мокапов'}
+                </span>
                 <span className="text-[10px] font-mono text-slate-500">{filteredProducts.length} шт.</span>
             </div>
 

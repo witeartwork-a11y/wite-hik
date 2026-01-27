@@ -88,14 +88,9 @@ window.DataService = {
 
         const mergedProducts = window.PRODUCTS_DATA.map(def => {
             const saved = savedConfig.find(s => s.id === def.id);
-            return {
-                ...def,
-                enabled: saved ? saved.enabled : true,
-                image: saved ? saved.image : '',
-                mask: saved ? saved.mask : '',
-                overlay: saved ? saved.overlay : '',
-                defaultPrefix: saved ? saved.defaultPrefix : def.defaultPrefix
-            };
+            // Используем сохраненные данные, если они есть, иначе дефолтные
+            // Важно: сохраняем tab и другие новые поля
+            return saved ? { ...def, ...saved } : { ...def, enabled: true, tab: 'mockups' };
         });
 
         // Добавляем кастомные товары, которые пользователь создал
