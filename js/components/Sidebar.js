@@ -219,7 +219,7 @@ const ProductCard = ({
                             }`}
                         >
                             <window.Icon name="image" className="w-3 h-3" />
-                            Мокап
+                            Заготовка
                         </button>
                         <button
                             onClick={() => setConfigTab('product')}
@@ -230,7 +230,7 @@ const ProductCard = ({
                             }`}
                         >
                             <window.Icon name="archive" className="w-3 h-3" />
-                            Товар
+                            Мокап
                         </button>
                     </div>
 
@@ -327,24 +327,11 @@ const ProductCard = ({
 
 // --- ОСНОВНОЙ САЙДБАР ---
 window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, onSaveCloud, isExporting }) => {
-    const [selectedCategory, setSelectedCategory] = useState('Все');
     const [searchTerm, setSearchTerm] = useState('');
-
-    // Получаем список категорий из товаров
-    const categories = useMemo(() => {
-        const cats = new Set(['Все']);
-        if (window.CATEGORIES_RU) {
-            Object.values(window.CATEGORIES_RU).forEach(c => cats.add(c));
-        }
-        products.forEach(p => p.category && cats.add(p.category));
-        return Array.from(cats);
-    }, [products]);
 
     // Фильтрация
     const filteredProducts = products.filter(p => {
-        const matchCat = selectedCategory === 'Все' || p.category === selectedCategory;
-        const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchCat && matchSearch;
+        return p.name.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     // Хендлеры для карточки
@@ -377,11 +364,6 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
     };
 
     const handleMove = (index, direction) => {
-        if (selectedCategory !== 'Все') {
-            alert('Сортировка доступна только в категории "Все"');
-            return;
-        }
-
         const newProducts = [...products];
         const targetIndex = direction === 'up' ? index - 1 : index + 1;
         if (targetIndex < 0 || targetIndex >= newProducts.length) return;
@@ -404,34 +386,11 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
     };
 
     return (
-        <div className="flex flex-col h-full gap-4">
+        <div className="flex flex-col gap-4">
             
             {/* Панель управления и фильтров */}
             <div className="flex flex-col gap-3 glass-card rounded-xl p-4">
                 
-                {/* Глобальные действия (Зип и Облако) */}
-                 <div className="grid grid-cols-2 gap-3 mb-1">
-                     <button
-                        onClick={onSaveCloud}
-                        disabled={isExporting}
-                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold uppercase tracking-wide transition-all shadow-lg shadow-indigo-500/20 transform hover:-translate-y-0.5"
-                     >
-                        <window.Icon name="cloud-upload" className="w-4 h-4" />
-                        <span>В облако</span>
-                     </button>
-                     
-                     <button
-                        onClick={onExport}
-                        disabled={isExporting}
-                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold uppercase tracking-wide transition-all shadow-lg shadow-emerald-500/20 transform hover:-translate-y-0.5"
-                     >
-                        {isExporting ? <window.Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <window.Icon name="download" className="w-4 h-4" />}
-                        <span>{isExporting ? 'ZIP...' : 'Скачать ZIP'}</span>
-                     </button>
-                </div>
-
-                <div className="h-px bg-white/10 w-full"></div>
-
                 {/* Поиск */}
                 <div className="relative group">
                     <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
@@ -442,24 +401,6 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
                         onChange={e => setSearchTerm(e.target.value)}
                         className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-indigo-500/50 focus:bg-slate-900 transition-all placeholder:text-slate-600"
                     />
-                </div>
-
-                {/* Категории */}
-                <div className="flex gap-2 overflow-x-auto pb-2 custom-scroll touch-pan-x">
-                    {categories.map(cat => (
-                        <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            className={`
-                                whitespace-nowrap px-3 py-1.5 rounded-full text-[10px] font-semibold transition-all shadow-sm
-                                ${selectedCategory === cat 
-                                    ? 'bg-indigo-500 text-white shadow-indigo-500/25' 
-                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border border-slate-700'}
-                            `}
-                        >
-                            {cat}
-                        </button>
-                    ))}
                 </div>
 
                 {/* Массовые действия */}
@@ -488,7 +429,7 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
             </div>
 
             {/* Список товаров */}
-            <div className="flex-1 space-y-3 overflow-y-auto px-1 -mx-1 custom-scroll">
+            <div className="space-y-3 px-1 -mx-1">
                 {filteredProducts.map((p, idx) => (
                     <ProductCard 
                         key={p.id}

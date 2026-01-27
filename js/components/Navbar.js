@@ -12,8 +12,8 @@ window.Navbar = ({ activeTab, setActiveTab }) => {
             </div>
 
             <div className="flex bg-slate-900/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
-                <button onClick={() => setActiveTab('mockups')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === 'mockups' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm ring-1 ring-indigo-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Мокапы</button>
-                <button onClick={() => setActiveTab('products')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === 'products' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm ring-1 ring-indigo-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Товары</button>
+                <button onClick={() => setActiveTab('mockups')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === 'mockups' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm ring-1 ring-indigo-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Заготовки</button>
+                <button onClick={() => setActiveTab('products')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === 'products' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm ring-1 ring-indigo-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Мокапы</button>
                 <button onClick={() => setActiveTab('base')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === 'base' ? 'bg-indigo-500/20 text-indigo-300 shadow-sm ring-1 ring-indigo-500/50' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Галерея</button>
             </div>
 
