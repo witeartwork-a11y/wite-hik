@@ -23,11 +23,14 @@ window.ExportService = {
                 exportMode === 'products' ? 0.6 : 0.5
             );
             
+            // Использовать DPI продукта, если установлен, иначе глобальный DPI
+            const productDPI = prod.dpi || mockupDPI;
+            
             const blob = await window.RenderService.renderMockupBlob(
                 prod,
                 printImg,
                 tr,
-                mockupDPI,
+                productDPI,
                 mockupWidth,
                 mockupHeight,
                 { mimeType: 'image/png' }
@@ -94,11 +97,14 @@ window.ExportService = {
                 onProgress(prev => ({ ...prev, current: prod.name }));
             }
 
+            // Использовать DPI продукта, если установлен, иначе глобальный DPI
+            const productDPI = prod.dpi || mockupDPI;
+
             const blob = await window.RenderService.renderMockupBlob(
                 prod,
                 printImg,
                 tr,
-                mockupDPI,
+                productDPI,
                 mockupWidth,
                 mockupHeight,
                 { mimeType: 'image/png' }

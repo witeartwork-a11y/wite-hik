@@ -15,6 +15,16 @@ const ProductCard = ({
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localName, setLocalName] = useState(product.name);
+    const [isEditingResolution, setIsEditingResolution] = useState(false);
+    const [localWidth, setLocalWidth] = useState(product.width);
+    const [localHeight, setLocalHeight] = useState(product.height);
+
+    // Синхронизируем локальные значения при изменении продукта
+    React.useEffect(() => {
+        setLocalName(product.name);
+        setLocalWidth(product.width);
+        setLocalHeight(product.height);
+    }, [product.id]);
 
     // Загрузка файлов (маска/оверлей)
     const handleFileUpload = async (e, type) => {
@@ -78,8 +88,41 @@ const ProductCard = ({
                             <i data-lucide="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/name:opacity-100 transition-opacity"></i>
                         </div>
                     )}
-                    <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex gap-2">
-                        <span>{product.width}x{product.height}px</span>
+                    <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex gap-2 items-center">
+                        {isEditingResolution ? (
+                            <div className="flex gap-1 items-center">
+                                <input 
+                                    type="number"
+                                    value={localWidth}
+                                    onChange={(e) => setLocalWidth(parseInt(e.target.value) || 1)}
+                                    onBlur={() => {
+                                        setIsEditingResolution(false);
+                                        onUpdate(product.id, { width: localWidth, height: localHeight });
+                                    }}
+                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                    autoFocus
+                                    className="w-12 bg-slate-900 border border-indigo-500 rounded px-1 py-0.5 text-[10px] text-white outline-none"
+                                />
+                                <span className="text-slate-400">x</span>
+                                <input 
+                                    type="number"
+                                    value={localHeight}
+                                    onChange={(e) => setLocalHeight(parseInt(e.target.value) || 1)}
+                                    onBlur={() => {
+                                        setIsEditingResolution(false);
+                                        onUpdate(product.id, { width: localWidth, height: localHeight });
+                                    }}
+                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                    className="w-12 bg-slate-900 border border-indigo-500 rounded px-1 py-0.5 text-[10px] text-white outline-none"
+                                />
+                                <span>px</span>
+                            </div>
+                        ) : (
+                            <span className="cursor-pointer hover:text-slate-300 transition-colors group/res flex items-center gap-1" onClick={() => setIsEditingResolution(true)}>
+                                {product.width}x{product.height}px
+                                <i data-lucide="pencil" className="w-2.5 h-2.5 text-slate-600 opacity-0 group-hover/res:opacity-100 transition-opacity"></i>
+                            </span>
+                        )}
                         <span>|</span>
                         <span>{product.category}</span>
                     </div>

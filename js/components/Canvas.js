@@ -1,6 +1,6 @@
 // js/components/Canvas.js
 
-window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUpdateTransform }) => {
+window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUpdateTransform, productId, dpi, onDPIChange }) => {
     const { useRef, useState, useEffect } = React;
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
@@ -216,6 +216,21 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
                     />
                     <span className="w-12 text-right tabular-nums">{Math.round(t.scale * 100)}%</span>
                 </label>
+
+                {onDPIChange && (
+                    <label className="flex items-center gap-3 text-xs text-slate-300">
+                        <span className="whitespace-nowrap">DPI</span>
+                        <input
+                            type="range"
+                            min="72" max="600" step="1"
+                            value={dpi || 300}
+                            onChange={(e) => onDPIChange(parseInt(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 accent-indigo-400"
+                        />
+                        <span className="w-12 text-right tabular-nums">{dpi || 300}</span>
+                    </label>
+                )}
             </div>
         </div>
     );

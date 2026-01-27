@@ -13,7 +13,7 @@ function App() {
     const [productTransforms, setProductTransforms] = useState({});
     const [isExporting, setIsExporting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [previewScale, setPreviewScale] = useState(1.1);
+    const [mockupsPerRow, setMockupsPerRow] = useState(2);
     const [galleryTab, setGalleryTab] = useState('files');
     const [cloudMode, setCloudMode] = useState('mockups');
     const [isCloudSaving, setIsCloudSaving] = useState(false);
@@ -101,6 +101,13 @@ function App() {
     const handleSaveConfig = async (newProducts) => {
         setProducts(newProducts);
         await window.DataService.saveConfig(auth.password, newProducts);
+    };
+
+    const updateProductDPI = (productId, newDPI) => {
+        const updatedProducts = products.map(p => 
+            p.id === productId ? { ...p, dpi: newDPI } : p
+        );
+        handleSaveConfig(updatedProducts);
     };
 
     const addProduct = async (fileList) => {
@@ -287,18 +294,25 @@ function App() {
                                     ) : (
                                         <>
                                             <div className="flex flex-wrap items-center gap-3">
-                                                {/* Масштаб превью */}
+                                                {/* Выбор количества мокапов в строку */}
                                                 <div className="flex items-center gap-3 text-slate-400 text-xs bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2">
-                                                    <i data-lucide="maximize" className="w-4 h-4"></i>
-                                                    <span className="whitespace-nowrap">Масштаб превью</span>
-                                                    <input 
-                                                        type="range" 
-                                                        min="0.8" max="1.4" step="0.05"
-                                                        value={previewScale}
-                                                        onChange={e => setPreviewScale(parseFloat(e.target.value))}
-                                                        className="w-40 accent-indigo-400"
-                                                    />
-                                                    <span className="tabular-nums text-slate-300">{Math.round(previewScale*100)}%</span>
+                                                    <i data-lucide="layout-grid" className="w-4 h-4"></i>
+                                                    <span className="whitespace-nowrap">Мокапов в строку:</span>
+                                                    <div className="flex gap-1">
+                                                        {[1, 2, 3].map(num => (
+                                                            <button
+                                                                key={num}
+                                                                onClick={() => setMockupsPerRow(num)}
+                                                                className={`w-8 h-8 rounded border font-medium transition-all ${
+                                                                    mockupsPerRow === num
+                                                                        ? 'bg-indigo-500 border-indigo-400 text-white'
+                                                                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
+                                                                }`}
+                                                            >
+                                                                {num}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
 
                                                 {/* Настройки разрешения мокапов */}
@@ -351,15 +365,16 @@ function App() {
                                                     <p className="text-xs">Включите мокапы в списке слева галочкой</p>
                                                 </div>
                                             ) : (
-                                                <div className="grid grid-cols-1 gap-6" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(280 * previewScale)}px, 1fr))` }}>
+                                                <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${mockupsPerRow}, 1fr)` }}>
                                                 {products.filter(p => p.enabled).map(product => {
                                                     const displayProduct = isProductsTab ? { ...product, width: 900, height: 1200 } : product;
                                                     const fallbackScale = isProductsTab ? 0.6 : 0.5;
+                                                    const productDPI = product.dpi || 300;
                                                     return (
                                                         <div key={product.id} className="w-full">
                                                             <div className="mb-2 px-2 flex justify-between items-end">
                                                                 <span className="text-slate-400 text-sm font-medium">{product.name}</span>
-                                                                <span className="text-slate-600 text-xs font-mono">{displayProduct.width}x{displayProduct.height}</span>
+                                                                <span className="text-slate-600 text-xs font-mono">{product.width}x{product.height}</span>
                                                             </div>
                                                             <div className="aspect-[3/4] w-full bg-slate-900 rounded-lg border border-slate-800/50">
                                                                 <window.MockupCanvas 
@@ -369,6 +384,9 @@ function App() {
                                                                     overlayUrl={displayProduct.overlay}
                                                                     transform={currentTransforms[product.id] || {x:0, y:0, scale: fallbackScale, rotation: 0}}
                                                                     onUpdateTransform={(newT) => updateTransform(product.id, newT)}
+                                                                    productId={product.id}
+                                                                    dpi={productDPI}
+                                                                    onDPIChange={(newDPI) => updateProductDPI(product.id, newDPI)}
                                                                 />
                                                             </div>
                                                         </div>
