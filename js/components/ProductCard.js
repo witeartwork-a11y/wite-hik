@@ -108,11 +108,14 @@ window.ProductCard = ({
         onUpdate(product.id, { [fieldName]: '' });
         
         try {
+            // Extract filename from URL (e.g., '/uploads/assets/filename.png' -> 'filename.png')
+            const filename = fileUrl.split('/').pop();
+            
             await fetch('/api.php?action=delete', {
                 method: 'POST',
                 body: JSON.stringify({
                     password: password,
-                    filename: fileUrl,
+                    filename: filename,
                     isAsset: true
                 })
             });

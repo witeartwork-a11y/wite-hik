@@ -45,12 +45,48 @@ function rrmdir($dir) {
     }
     @rmdir($dir);
 }
+// Транслитерация кириллицы в латиницу
+function transliterate($str) {
+    $cyrillicToLatin = [
+        'а' => 'a', 'б' => 'b', 'в' => 'v', 'г' => 'g', 'д' => 'd', 
+        'е' => 'e', 'ё' => 'yo', 'ж' => 'zh', 'з' => 'z', 'и' => 'i',
+        'й' => 'y', 'к' => 'k', 'л' => 'l', 'м' => 'm', 'н' => 'n',
+        'о' => 'o', 'п' => 'p', 'р' => 'r', 'с' => 's', 'т' => 't',
+        'у' => 'u', 'ф' => 'f', 'х' => 'h', 'ц' => 'ts', 'ч' => 'ch',
+        'ш' => 'sh', 'щ' => 'sch', 'ъ' => '', 'ы' => 'y', 'ь' => '',
+        'э' => 'e', 'ю' => 'yu', 'я' => 'ya',
+        'А' => 'A', 'Б' => 'B', 'В' => 'V', 'Г' => 'G', 'Д' => 'D',
+        'Е' => 'E', 'Ё' => 'Yo', 'Ж' => 'Zh', 'З' => 'Z', 'И' => 'I',
+        'Й' => 'Y', 'К' => 'K', 'Л' => 'L', 'М' => 'M', 'Н' => 'N',
+        'О' => 'O', 'П' => 'P', 'Р' => 'R', 'С' => 'S', 'Т' => 'T',
+        'У' => 'U', 'Ф' => 'F', 'Х' => 'H', 'Ц' => 'Ts', 'Ч' => 'Ch',
+        'Ш' => 'Sh', 'Щ' => 'Sch', 'Ъ' => '', 'Ы' => 'Y', 'Ь' => '',
+        'Э' => 'E', 'Ю' => 'Yu', 'Я' => 'Ya'
+    ];
+    
+    $result = '';
+    for ($i = 0; $i < mb_strlen($str); $i++) {
+        $char = mb_substr($str, $i, 1);
+        $result .= $cyrillicToLatin[$char] ?? $char;
+    }
+    return $result;
+}
+
 // Исправление 1: Убираем лишнее расширение
 function sanitize($name) {
     $info = pathinfo($name);
     $ext = $info['extension'] ?? '';
     $filename = $info['filename'];
+    
+    // Сначала транслитерируем кириллицу
+    $filename = transliterate($filename);
+    
+    // Затем удаляем все символы кроме латиницы, цифр, дефиса и подчеркивания
     $clean = preg_replace('/[^a-zA-Z0-9\-_]/', '', $filename);
+    
+    // Заменяем множественные подряд идущие дефисы/подчеркивания на один
+    $clean = preg_replace('/[\-_]+/', '_', $clean);
+    
     if (!$clean) $clean = 'file_' . time();
     return $clean . '.' . strtolower($ext);
 }
@@ -68,7 +104,9 @@ function sanitizeArticle($article) {
 // Функция для правильного имени превью (без дублирования расширения)
 function getThumbnailName($filename) {
     $info = pathinfo($filename);
-    $filename_clean = preg_replace('/[^a-zA-Z0-9\-_]/', '', $info['filename']);
+    $filename_clean = transliterate($info['filename']);
+    $filename_clean = preg_replace('/[^a-zA-Z0-9\-_]/', '', $filename_clean);
+    $filename_clean = preg_replace('/[\-_]+/', '_', $filename_clean);
     if (!$filename_clean) $filename_clean = 'file_' . time();
     return 'thumb_' . $filename_clean . '.jpg';
 }
