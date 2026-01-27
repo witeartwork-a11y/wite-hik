@@ -51,7 +51,7 @@ window.DataService = {
     // Сохранить конфигурацию одного принта
     savePrintConfig: async (password, printName, printData) => {
         try {
-            await fetch('/api.php?action=save_prints_config', {
+            const res = await fetch('/api.php?action=save_prints_config', {
                 method: 'POST',
                 body: JSON.stringify({ 
                     password, 
@@ -59,8 +59,10 @@ window.DataService = {
                     print_data: printData 
                 })
             });
+            return res.ok;
         } catch (e) {
             console.error("Ошибка сохранения конфига принта:", e);
+            return false;
         }
     },
 

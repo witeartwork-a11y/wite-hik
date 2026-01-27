@@ -11,7 +11,8 @@ window.TransformPanel = ({
     presets,
     onSavePreset,
     onDeletePreset,
-    onApplyPreset
+    onApplyPreset,
+    saveStatus = 'saved' // 'saved' | 'saving' | 'error'
 }) => {
     const [presetName, setPresetName] = React.useState('');
 
@@ -35,6 +36,19 @@ window.TransformPanel = ({
 
     return (
         <div className="flex flex-col gap-3 p-3 text-slate-200">
+            {/* Статус сохранения */}
+            {saveStatus === 'saving' && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs rounded border border-blue-500/20">
+                    <window.Icon name="loader-2" className="w-3 h-3 animate-spin"/>
+                    <span>Сохранение...</span>
+                </div>
+            )}
+            {saveStatus === 'error' && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-400 text-xs rounded border border-red-500/20">
+                    <window.Icon name="alert-circle" className="w-3 h-3"/>
+                    <span>Ошибка сохранения</span>
+                </div>
+            )}
             {/* Мокапов в строку - Всегда доступно */}
             {setMockupsPerRow && (
                 <div className="space-y-2 pb-4 border-b border-slate-700">

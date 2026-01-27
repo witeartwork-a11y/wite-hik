@@ -129,6 +129,7 @@ function App() {
     const [printCollection, setPrintCollection] = useState([]);
     const [selectedPrintIds, setSelectedPrintIds] = useState([]);
     const [activeProductId, setActiveProductId] = useState(null);
+    const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
 
     // Установка активного мокапа по умолчанию при загрузке или смене visibility
     useEffect(() => {
@@ -274,19 +275,24 @@ function App() {
     useEffect(() => {
         if (!selectedPrint || !auth.isAuth) return;
 
-        const timeoutId = setTimeout(() => {
+        setSaveStatus('saving');
+
+        const timeoutId = setTimeout(async () => {
             const printName = selectedPrint.name;
             const printData = {
                 transforms: transforms,
                 productTransforms: productTransforms
             };
 
-            // Проверяем, изменились ли данные по сравнению с загруженным конфигом, чтобы не спамить запросами (опционально)
-            // Но пока сохраняем при любом изменении стейта (с дебаунсом)
-            window.DataService.savePrintConfig(auth.password, printName, printData);
+            const success = await window.DataService.savePrintConfig(auth.password, printName, printData);
             
-            // Обновляем локальный стейт конфига
-            setPrintsConfig(prev => ({ ...prev, [printName]: printData }));
+            if (success) {
+                setSaveStatus('saved');
+                // Обновляем локальный стейт конфига только после успешного сохранения
+                setPrintsConfig(prev => ({ ...prev, [printName]: printData }));
+            } else {
+                setSaveStatus('error');
+            }
         }, 1000); // 1 секунда задержки после последнего изменения
 
         return () => clearTimeout(timeoutId);
@@ -788,6 +794,7 @@ function App() {
                                         onSavePreset={(name) => handleSavePreset(name, null)} 
                                         onDeletePreset={handleDeletePreset}
                                         onApplyPreset={handleApplyPreset}
+                                        saveStatus={saveStatus}
                                     />
                                 </div>
                             </div>
