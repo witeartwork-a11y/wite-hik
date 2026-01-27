@@ -56,9 +56,10 @@ window.TransformPanel = ({
                 <button
                     onClick={onForceLoadConfig}
                     className="w-full px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs rounded border border-purple-500/30 transition-colors"
+                    title="Если вы внесли изменения, эта кнопка вернет состояние к последнему сохранению"
                 >
                     <window.Icon name="refresh-cw" className="w-3 h-3 inline mr-1"/>
-                    Загрузить сохраненные настройки
+                    Сбросить к сохраненным
                 </button>
             )}
             {/* Мокапов в строку - Всегда доступно */}

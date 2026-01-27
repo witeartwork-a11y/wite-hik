@@ -268,19 +268,21 @@ function App() {
                 newProductTransforms = calculatedProductTransforms;
             } else {
                 // Мержим: сохраненные имеют приоритет, новые продукты добавляются из calculated
+                // ПРИОРИТЕТ СОХРАНЕННЫХ ВАЖЕН: { ...calculated, ...saved }
+                // Так мы гарантируем, что если продукт есть в saved, он перезапишет calculated
                 newTransforms = { ...calculatedTransforms, ...newTransforms };
                 newProductTransforms = { ...calculatedProductTransforms, ...newProductTransforms };
                 console.log('✓ Применены сохраненные настройки с добавлением новых товаров');
             }
             
+            // Сначала устанавливаем трансформации
             setTransforms(newTransforms);
             setProductTransforms(newProductTransforms);
             
-            // Устанавливаем флаг, что загрузка завершена
-            // Небольшая задержка чтобы пропустить первый цикл рендера
+            // И ТОЛЬКО ПОТОМ включаем автосейв с задержкой
             setTimeout(() => {
                 isPrintLoadedRef.current = true;
-            }, 500);
+            }, 1000); // Увеличил задержку до 1 сек для надежности
             
         } catch (e) {
             console.error('Ошибка при выборе принта:', e);
