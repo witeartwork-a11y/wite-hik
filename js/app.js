@@ -18,6 +18,9 @@ function App() {
     const [cloudMode, setCloudMode] = useState('mockups');
     const [isCloudSaving, setIsCloudSaving] = useState(false);
     const [cloudProgress, setCloudProgress] = useState({ total: 0, done: 0, current: '' });
+    const [mockupDPI, setMockupDPI] = useState(300);
+    const [mockupWidth, setMockupWidth] = useState(null);
+    const [mockupHeight, setMockupHeight] = useState(null);
 
     const attemptLogin = useCallback(async (pwd) => {
         if (!pwd) return false;
@@ -232,6 +235,65 @@ function App() {
         }
     };
 
+    // Функция для установки DPI в PNG
+    const setPNGDPI = async (blob, dpi) => {
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Найдем конец IHDR чанка (сигнатура PNG + IHDR)
+        let insertPosition = 33; // После PNG сигнатуры и IHDR чанка
+        
+        // Создаем pHYs чанк для установки DPI
+        // DPI to pixels per meter: DPI * 39.3701
+        const pixelsPerMeter = Math.round(dpi * 39.3701);
+        
+        const pHYs = new Uint8Array([
+            0, 0, 0, 9, // Длина чанка (9 байт)
+            0x70, 0x48, 0x59, 0x73, // 'pHYs'
+            (pixelsPerMeter >> 24) & 0xff,
+            (pixelsPerMeter >> 16) & 0xff,
+            (pixelsPerMeter >> 8) & 0xff,
+            pixelsPerMeter & 0xff,
+            (pixelsPerMeter >> 24) & 0xff,
+            (pixelsPerMeter >> 16) & 0xff,
+            (pixelsPerMeter >> 8) & 0xff,
+            pixelsPerMeter & 0xff,
+            1, // Единица измерения: метры
+        ]);
+        
+        // Вычисляем CRC32 для pHYs
+        const crcTable = new Int32Array(256);
+        for (let i = 0; i < 256; i++) {
+            let c = i;
+            for (let k = 0; k < 8; k++) {
+                c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+            }
+            crcTable[i] = c;
+        }
+        
+        let crc = -1;
+        for (let i = 4; i < pHYs.length; i++) {
+            crc = crcTable[(crc ^ pHYs[i]) & 0xff] ^ (crc >>> 8);
+        }
+        crc = crc ^ -1;
+        
+        const crcBytes = new Uint8Array([
+            (crc >> 24) & 0xff,
+            (crc >> 16) & 0xff,
+            (crc >> 8) & 0xff,
+            crc & 0xff
+        ]);
+        
+        // Собираем новый PNG
+        const newArray = new Uint8Array(uint8Array.length + pHYs.length + crcBytes.length);
+        newArray.set(uint8Array.subarray(0, insertPosition), 0);
+        newArray.set(pHYs, insertPosition);
+        newArray.set(crcBytes, insertPosition + pHYs.length);
+        newArray.set(uint8Array.subarray(insertPosition), insertPosition + pHYs.length + crcBytes.length);
+        
+        return new Blob([newArray], { type: 'image/png' });
+    };
+
     const renderMockupBlob = useCallback(async (prod, printImg, transform, options = {}) => {
         if (!window.Utils) throw new Error("Библиотеки не загружены");
         const utils = window.Utils;
@@ -243,8 +305,17 @@ function App() {
         ]);
 
         const canvas = document.createElement('canvas');
-        const width = base ? base.width : (options.outputWidth || prod.width || 1000);
-        const height = base ? base.height : (options.outputHeight || prod.height || 1000);
+        // Используем пользовательские размеры если установлены
+        let width = mockupWidth || (base ? base.width : (options.outputWidth || prod.width || 1000));
+        let height = mockupHeight || (base ? base.height : (options.outputHeight || prod.height || 1000));
+        
+        // Если заданы оба размера, используем их
+        if (mockupWidth && !mockupHeight && base) {
+            height = Math.round((mockupWidth / base.width) * base.height);
+        } else if (mockupHeight && !mockupWidth && base) {
+            width = Math.round((mockupHeight / base.height) * base.width);
+        }
+        
         canvas.width = width;
         canvas.height = height;
 
@@ -282,9 +353,15 @@ function App() {
         }
 
         const mimeType = options.mimeType || 'image/png';
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, mimeType, mimeType === 'image/png' ? undefined : 0.9));
+        let blob = await new Promise((resolve) => canvas.toBlob(resolve, mimeType, mimeType === 'image/png' ? undefined : 0.9));
+        
+        // Устанавливаем DPI для PNG
+        if (mimeType === 'image/png' && mockupDPI) {
+            blob = await setPNGDPI(blob, mockupDPI);
+        }
+        
         return blob;
-    }, []);
+    }, [mockupDPI, mockupWidth, mockupHeight]);
 
     const getTransformByMode = (mode, productId) => {
         const map = mode === 'products' ? productTransforms : transforms;
@@ -459,23 +536,6 @@ function App() {
                                         </div>
                                     </div>
 
-                                    {/* Батч загрузка принтов */}
-                                    <div
-                                        className={`border-2 border-dashed border-slate-700 bg-slate-800/30 rounded-xl p-4 text-center text-sm text-slate-400 transition-all hover:border-indigo-500 hover:bg-slate-800/60 ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-                                        onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-indigo-500'); }}
-                                        onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove('border-indigo-500'); }}
-                                        onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('border-indigo-500'); handleUploadFiles(e.dataTransfer.files); }}
-                                    >
-                                        <div className="flex flex-col items-center gap-2">
-                                            <i data-lucide="upload" className="w-6 h-6 text-indigo-400"></i>
-                                            <span>Батч загрузка принтов</span>
-                                            <button className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs hover:border-indigo-500" onClick={() => document.getElementById('batch-upload-input')?.click()}>
-                                                Выбрать файлы
-                                            </button>
-                                            <input id="batch-upload-input" type="file" multiple className="hidden" onChange={e => handleUploadFiles(e.target.files)} />
-                                        </div>
-                                    </div>
-
                                     {/* Sidebar с товарами */}
                                     <window.Sidebar 
                                         products={products} 
@@ -496,17 +556,60 @@ function App() {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="flex items-center gap-3 text-slate-400 text-xs bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2 w-fit">
-                                                <i data-lucide="maximize" className="w-4 h-4"></i>
-                                                <span className="whitespace-nowrap">Масштаб превью</span>
-                                                <input 
-                                                    type="range" 
-                                                    min="0.8" max="1.4" step="0.05"
-                                                    value={previewScale}
-                                                    onChange={e => setPreviewScale(parseFloat(e.target.value))}
-                                                    className="w-40 accent-indigo-400"
-                                                />
-                                                <span className="tabular-nums text-slate-300">{Math.round(previewScale*100)}%</span>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                {/* Масштаб превью */}
+                                                <div className="flex items-center gap-3 text-slate-400 text-xs bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2">
+                                                    <i data-lucide="maximize" className="w-4 h-4"></i>
+                                                    <span className="whitespace-nowrap">Масштаб превью</span>
+                                                    <input 
+                                                        type="range" 
+                                                        min="0.8" max="1.4" step="0.05"
+                                                        value={previewScale}
+                                                        onChange={e => setPreviewScale(parseFloat(e.target.value))}
+                                                        className="w-40 accent-indigo-400"
+                                                    />
+                                                    <span className="tabular-nums text-slate-300">{Math.round(previewScale*100)}%</span>
+                                                </div>
+
+                                                {/* Настройки разрешения мокапов */}
+                                                <div className="flex items-center gap-3 text-slate-400 text-xs bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2">
+                                                    <i data-lucide="settings" className="w-4 h-4"></i>
+                                                    <span className="whitespace-nowrap">DPI:</span>
+                                                    <input 
+                                                        type="number" 
+                                                        min="72" max="600" step="1"
+                                                        value={mockupDPI}
+                                                        onChange={e => setMockupDPI(parseInt(e.target.value) || 300)}
+                                                        className="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-300 outline-none focus:border-indigo-500"
+                                                    />
+                                                    <span className="whitespace-nowrap">Ширина:</span>
+                                                    <input 
+                                                        type="number" 
+                                                        min="0" step="1"
+                                                        placeholder="авто"
+                                                        value={mockupWidth || ''}
+                                                        onChange={e => setMockupWidth(e.target.value ? parseInt(e.target.value) : null)}
+                                                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-300 outline-none focus:border-indigo-500"
+                                                    />
+                                                    <span className="whitespace-nowrap">Высота:</span>
+                                                    <input 
+                                                        type="number" 
+                                                        min="0" step="1"
+                                                        placeholder="авто"
+                                                        value={mockupHeight || ''}
+                                                        onChange={e => setMockupHeight(e.target.value ? parseInt(e.target.value) : null)}
+                                                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-300 outline-none focus:border-indigo-500"
+                                                    />
+                                                    {(mockupWidth || mockupHeight) && (
+                                                        <button 
+                                                            onClick={() => { setMockupWidth(null); setMockupHeight(null); }}
+                                                            className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                                                            title="Сбросить размеры"
+                                                        >
+                                                            <i data-lucide="x" className="w-4 h-4"></i>
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {products.filter(p => p.enabled).length === 0 ? (

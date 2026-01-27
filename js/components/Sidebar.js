@@ -266,31 +266,7 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
     return (
         <div className="flex flex-col h-full gap-4">
             
-            {/* 1. Загрузка своего мокапа (Верхняя кнопка) */}
-            <label className="
-                relative group cursor-pointer 
-                border-2 border-dashed border-slate-700 bg-slate-800/30 rounded-xl p-4
-                hover:border-indigo-500 hover:bg-slate-800/80 transition-all
-                flex flex-col items-center justify-center text-center gap-2
-            "
-                onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-indigo-500'); }}
-                onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove('border-indigo-500'); }}
-                onDrop={e => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove('border-indigo-500');
-                    if (e.dataTransfer.files?.length) onAddProduct(e.dataTransfer.files);
-                }}
-            >
-                <input type="file" className="hidden" accept="image/*" multiple onChange={e => e.target.files && onAddProduct(e.target.files)} />
-                <div className="p-2 bg-slate-800 rounded-full group-hover:bg-indigo-500 group-hover:text-white transition-colors text-slate-400">
-                    <i data-lucide="plus" className="w-5 h-5"></i>
-                </div>
-                <div className="text-xs text-slate-400 group-hover:text-indigo-300">
-                    Добавить свой мокап
-                </div>
-            </label>
-
-            {/* 2. Панель фильтров и категорий */}
+            {/* Панель фильтров и категорий */}
             <div className="flex flex-col gap-2 bg-slate-800 rounded-xl border border-slate-700 p-3">
                 {/* Поиск */}
                 <div className="relative">
