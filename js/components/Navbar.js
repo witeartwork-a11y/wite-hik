@@ -5,8 +5,8 @@ window.Navbar = ({ activeTab, setActiveTab }) => {
     return (
         <header className="h-16 glass flex items-center px-6 justify-between sticky top-0 z-50">
             <div className="flex items-center gap-3">
-                <img src="favicon/logo.png" className="w-10 h-10 object-contain" alt="WiteHik Logo" />
-                <h1 className="text-xl font-bold text-white tracking-tight">Wite<span className="text-indigo-400">Hik</span></h1>
+                <img src="favicon/favicon-32x32.png" className="w-8 h-8 object-contain rounded-full shadow-sm" alt="Icon" />
+                <img src="favicon/logo.png" className="h-8 object-contain" alt="WiteHik Logo" />
             </div>
 
             <div className="flex bg-slate-900/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
