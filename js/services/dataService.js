@@ -125,21 +125,24 @@ window.DataService = {
 
     // Объединить товары из констант с сохраненной конфигурацией
     mergeProducts: (savedConfig) => {
-        if (!window.PRODUCTS_DATA) {
-            console.error("PRODUCTS_DATA не найдены! Проверьте constants.js");
+        // Если есть сохраненный конфиг, используем его как единственный источник истины
+        if (savedConfig && Array.isArray(savedConfig) && savedConfig.length > 0) {
             return savedConfig;
         }
 
-        const mergedProducts = window.PRODUCTS_DATA.map(def => {
-            const saved = savedConfig.find(s => s.id === def.id);
-            // Используем сохраненные данные, если они есть, иначе дефолтные
-            // Важно: сохраняем tab и другие новые поля
-            return saved ? { ...def, ...saved } : { ...def, enabled: true, tab: 'mockups' };
-        });
+        // Если конфига нет (первый запуск), берем дефолтные данные из констант
+        if (window.PRODUCTS_DATA) {
+             return window.PRODUCTS_DATA.map(d => ({ 
+                 ...d, 
+                 enabled: true, 
+                 tab: 'mockups',
+                 // Генерируем уникальные ID, чтобы отвязаться от констант
+                 // или оставляем как есть, но теперь они просто будут частью конфига
+                 id: d.id || 'prod_' + Math.random().toString(36).substr(2, 9)
+             }));
+        }
 
-        // Добавляем кастомные товары, которые пользователь создал
-        const customProducts = savedConfig.filter(s => s.id.startsWith('custom_'));
-        return [...mergedProducts, ...customProducts];
+        return [];
     },
 
     // Инициализация: загрузить файлы и товары
