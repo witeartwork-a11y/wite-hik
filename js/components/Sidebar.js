@@ -366,6 +366,33 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
             {/* Панель управления и фильтров */}
             <div className="flex flex-col gap-3 glass-card rounded-xl p-4">
                 
+                {/* Кнопки создания */}
+                <div className="flex gap-2">
+                    <label className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg cursor-pointer transition-all shadow-sm hover:shadow-indigo-500/25 font-medium group text-xs">
+                        <window.Icon name="upload" className="w-3.5 h-3.5" />
+                        <span>Из файла</span>
+                        <input 
+                            type="file" 
+                            multiple 
+                            accept="image/*"
+                            className="hidden" 
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                    onAddProduct(e.target.files);
+                                    e.target.value = '';
+                                }
+                            }} 
+                        />
+                    </label>
+                    <button
+                        onClick={() => onAddProduct()} 
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg cursor-pointer transition-all shadow-sm font-medium group text-xs border border-slate-600"
+                    >
+                        <window.Icon name="plus" className="w-3.5 h-3.5" />
+                        <span>Пустой</span>
+                    </button>
+                </div>
+
                 {/* Поиск */}
                 <div className="relative group">
                     <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />

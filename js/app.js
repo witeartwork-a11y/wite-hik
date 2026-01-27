@@ -222,29 +222,51 @@ function App() {
 
     const addProduct = async (fileList) => {
         const filesArr = Array.from(fileList || []);
-        if (filesArr.length === 0) return;
-        try {
-            const uploadedFiles = await window.DataService.uploadFiles(auth.password, filesArr);
-            if (uploadedFiles) {
-                const template = (window.PRODUCTS_DATA && window.PRODUCTS_DATA[0]) || { width: 2000, height: 2000 };
-                const newProds = uploadedFiles.map((uploaded, idx) => ({
-                    id: 'custom_' + Date.now() + '_' + idx,
-                    name: 'Новый Мокап',
-                    category: 'Custom',
-                    enabled: true,
-                    image: uploaded.url,
-                    mask: '',
-                    overlay: '',
-                    defaultPrefix: 'CUST',
-                    width: template.width,
-                    height: template.height,
-                    tab: activeTab // Привязываем к текущей вкладке
-                }));
-                handleSaveConfig([...products, ...newProds]);
+        const template = (window.PRODUCTS_DATA && window.PRODUCTS_DATA[0]) || { width: 2000, height: 2000 };
+        let newProds = [];
+
+        if (filesArr.length > 0) {
+            try {
+                const uploadedFiles = await window.DataService.uploadFiles(auth.password, filesArr);
+                if (uploadedFiles) {
+                    newProds = uploadedFiles.map((uploaded, idx) => ({
+                        id: 'custom_' + Date.now() + '_' + idx,
+                        name: 'Новый Мокап',
+                        category: 'Custom',
+                        enabled: true,
+                        image: uploaded.url,
+                        mask: '',
+                        overlay: '',
+                        defaultPrefix: 'CUST',
+                        width: template.width,
+                        height: template.height,
+                        tab: activeTab // Привязываем к текущей вкладке
+                    }));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Ошибка добавления товара');
+                return;
             }
-        } catch (e) {
-            console.error(e);
-            alert('Ошибка добавления товара');
+        } else {
+             // Создание пустого товара если файлов нет
+             newProds = [{
+                id: 'custom_' + Date.now(),
+                name: 'Новый Мокап',
+                category: 'Custom',
+                enabled: true,
+                image: '',
+                mask: '',
+                overlay: '',
+                defaultPrefix: 'CUST',
+                width: template.width,
+                height: template.height,
+                tab: activeTab
+            }];
+        }
+
+        if (newProds.length > 0) {
+            handleSaveConfig([...products, ...newProds]);
         }
     };
 
