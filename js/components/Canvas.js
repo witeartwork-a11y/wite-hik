@@ -142,7 +142,9 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
                 ctx.drawImage(tempCanvas, 0, 0);
             }
 
+            // Overlay рисуется самым последним слоем поверх всего
             if (overlayImg) {
+                ctx.globalCompositeOperation = 'source-over';
                 ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
             }
         };
