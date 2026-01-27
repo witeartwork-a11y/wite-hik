@@ -1,6 +1,7 @@
 # === КОНФИГУРАЦИЯ И ДАННЫЕ ===
 # Не затирать при git pull
 data/products_config.json
+data/prints_config.json
 data/thumbnails/
 data/files.json
 
