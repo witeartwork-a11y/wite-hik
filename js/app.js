@@ -414,6 +414,16 @@ function App() {
                     (() => {
                         const isProductsTab = activeTab === 'products';
                         const currentTransforms = isProductsTab ? productTransforms : transforms;
+                        const [activeProductId, setActiveProductId] = useState(null);
+
+                        // Установка активного мокапа по умолчанию при смене вкладки или загрузке
+                        useEffect(() => {
+                           if (activeProductId === null) {
+                               const firstEnabled = products.find(p => p.enabled);
+                               if (firstEnabled) setActiveProductId(firstEnabled.id);
+                           }
+                        }, [products, activeProductId]);
+
                         const updateTransform = (id, newT) => {
                             if (isProductsTab) {
                                 setProductTransforms(prev => ({ ...prev, [id]: newT }));
@@ -439,7 +449,7 @@ function App() {
                         return (
                             <div className="responsive-layout flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-140px)] fade-in">
                                 {/* ЛЕВАЯ КОЛОНКА (Сайдбар) */}
-                                <div className="responsive-sidebar w-full lg:w-96 flex flex-col gap-4 lg:h-full overflow-y-auto custom-scroll pr-1">
+                                <div className="responsive-sidebar w-full lg:w-72 xl:w-80 flex flex-col gap-4 lg:h-full overflow-y-auto custom-scroll pr-1 shrink-0">
                                     {/* Выбор принта */}
                                     <div
                                         className="bg-slate-800 rounded-xl border border-slate-700 p-4 flex flex-col transition-all hover:border-indigo-500/50"
@@ -597,14 +607,18 @@ function App() {
                                                         const productDPI = product.dpi || 300;
                                                         const labelWidth = isProductsTab ? product.width : (product.mockupWidth || product.width);
                                                         const labelHeight = isProductsTab ? product.height : (product.mockupHeight || product.height);
+                                                        const isActive = activeProductId === product.id;
 
                                                         return (
                                                             <div key={product.id} className="w-full">
                                                                 <div className="mb-2 px-2 flex justify-between items-end">
-                                                                    <span className="text-slate-400 text-sm font-medium">{product.name}</span>
+                                                                    <span className={`text-sm font-medium transition-colors cursor-pointer hover:text-indigo-400 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} onClick={() => setActiveProductId(product.id)}>{product.name}</span>
                                                                     <span className="text-slate-600 text-xs font-mono">{labelWidth}x{labelHeight}</span>
                                                                 </div>
-                                                                <div className="aspect-[3/4] w-full bg-slate-900 rounded-lg border border-slate-800/50">
+                                                                <div 
+                                                                    className={`w-full bg-slate-900 rounded-lg border transition-colors ${isActive ? 'border-indigo-500/50' : 'border-slate-800/50'}`}
+                                                                    style={{ aspectRatio: `${labelWidth} / ${labelHeight}` }}
+                                                                >
                                                                     <window.MockupCanvas
                                                                         product={displayProduct}
                                                                         imageUrl={selectedPrint.url}
@@ -615,6 +629,8 @@ function App() {
                                                                         productId={product.id}
                                                                         dpi={productDPI}
                                                                         onDPIChange={(newDPI) => updateProductDPI(product.id, newDPI)}
+                                                                        isActive={isActive}
+                                                                        onActivate={() => setActiveProductId(product.id)}
                                                                     />
                                                                 </div>
                                                             </div>
@@ -625,8 +641,21 @@ function App() {
                                         </>
                                     )}
                                 </div>
+
+                                {/* ПРАВАЯ КОЛОНКА (Настройки) */}
+                                <div className="responsive-sidebar w-full lg:w-64 bg-slate-900/50 rounded-xl border border-slate-800 shrink-0 lg:h-full overflow-y-auto custom-scroll">
+                                    <window.TransformPanel 
+                                        transform={activeProductId ? (currentTransforms[activeProductId] || { x: 0, y: 0, scale: 0.5, rotation: 0 }) : null}
+                                        onUpdateTransform={(newT) => activeProductId && updateTransform(activeProductId, newT)}
+                                        dpi={activeProductId ? products.find(p => p.id === activeProductId)?.dpi : 300}
+                                        onDPIChange={(newDPI) => activeProductId && updateProductDPI(activeProductId, newDPI)}
+                                        activeProductId={activeProductId}
+                                        isActive={!!activeProductId}
+                                    />
+                                </div>
                             </div>
                         );
+
                     })()
                 )}
             </div>
