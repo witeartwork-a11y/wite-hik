@@ -11,7 +11,7 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
     const t = {
         x: Number.isFinite(transform?.x) ? transform.x : 0,
         y: Number.isFinite(transform?.y) ? transform.y : 0,
-        scale: Math.min(5, Math.max(0.05, Number.isFinite(transform?.scale) ? transform.scale : 0.5)),
+        scale: Math.min(10, Math.max(0.05, Number.isFinite(transform?.scale) ? transform.scale : 0.5)),
         rotation: Number.isFinite(transform?.rotation) ? transform.rotation : 0,
     };
 
@@ -45,6 +45,15 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
                 canvas.height = baseImg ? baseImg.height : (product.height || 1000);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Рисуем шахматный паттерн для прозрачных областей
+                const checkSize = 20;
+                for (let y = 0; y < canvas.height; y += checkSize) {
+                    for (let x = 0; x < canvas.width; x += checkSize) {
+                        ctx.fillStyle = ((x / checkSize + y / checkSize) % 2 === 0) ? '#e5e7eb' : '#ffffff';
+                        ctx.fillRect(x, y, checkSize, checkSize);
+                    }
+                }
 
                 if (baseImg) ctx.drawImage(baseImg, 0, 0);
 
@@ -136,7 +145,7 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
             if (!imageUrl) return;
             // Увеличил скорость зума с 0.01 до 0.05 для удобства
             const delta = e.deltaY > 0 ? -0.05 : 0.05;
-            const newScale = Math.min(5, Math.max(0.05, t.scale + delta));
+            const newScale = Math.min(10, Math.max(0.05, t.scale + delta));
             onUpdateTransform({ ...t, scale: newScale });
         };
         // passive: false критически важен, чтобы preventDefault работал
@@ -208,7 +217,7 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
                     <span className="whitespace-nowrap">Масштаб</span>
                     <input
                         type="range"
-                        min="0.05" max="2" step="0.01"
+                        min="0.05" max="10" step="0.01"
                         value={t.scale}
                         onChange={(e) => onUpdateTransform({ ...t, scale: parseFloat(e.target.value) })}
                         onClick={(e) => e.stopPropagation()}

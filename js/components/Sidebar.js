@@ -62,6 +62,9 @@ const ProductCard = ({
             }
         } catch(err) {
             console.error(err);
+        } finally {
+            // Сбрасываем значение input, чтобы можно было загрузить файл повторно
+            e.target.value = '';
         }
     };
 
