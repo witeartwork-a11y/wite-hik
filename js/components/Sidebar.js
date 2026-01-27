@@ -418,7 +418,7 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
             </div>
 
             {/* 3. Список товаров */}
-            <div className="flex-1 overflow-y-auto custom-scroll pr-1 space-y-2">
+            <div className="flex-1 space-y-2">
                 {filteredProducts.map((p, idx) => (
                     <ProductCard 
                         key={p.id}
