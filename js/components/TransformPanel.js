@@ -165,7 +165,7 @@ window.TransformPanel = ({
                      <div className="flex gap-2">
                         <input 
                             type="text" 
-                            className="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white placeholder:text-slate-500 focus:border-indigo-500 outline-none"
+                            className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white placeholder:text-slate-500 focus:border-indigo-500 outline-none"
                             placeholder="Название конфига"
                             value={presetName}
                             onChange={(e) => setPresetName(e.target.value)}
@@ -173,7 +173,7 @@ window.TransformPanel = ({
                         />
                         <button 
                             onClick={handleSaveClick}
-                            className="px-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-sm font-medium"
+                            className="shrink-0 px-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-sm font-medium"
                         >
                             <window.Icon name="save" className="w-4 h-4" />
                         </button>

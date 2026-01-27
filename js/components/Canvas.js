@@ -2,11 +2,41 @@
 // js/components/Canvas.js
 
 window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUpdateTransform, productId, dpi, onDPIChange, isActive, onActivate }) => {
+    // В будущем здесь можно будет добавить переключение рендереров
+    const rendererType = product.renderer || 'canvas'; 
+
+    if (rendererType === 'canvas') {
+        return <CanvasRenderer 
+            product={product}
+            imageUrl={imageUrl}
+            maskUrl={maskUrl}
+            overlayUrl={overlayUrl}
+            transform={transform}
+            onUpdateTransform={onUpdateTransform}
+            productId={productId}
+            dpi={dpi}
+            onDPIChange={onDPIChange}
+            isActive={isActive}
+            onActivate={onActivate}
+        />;
+    } else if (rendererType === 'pixi') {
+         // Placeholder for PixiJS renderer
+         return <div className="text-white text-xs p-4 bg-slate-800 rounded">PixiJS Renderer (Coming Soon)</div>;
+    } else if (rendererType === 'warp') {
+         // Placeholder for Warp.js renderer
+         return <div className="text-white text-xs p-4 bg-slate-800 rounded">Warp.js Renderer (Coming Soon)</div>;
+    } else {
+        return <div className="text-red-400 text-xs p-4">Unknown Renderer: {rendererType}</div>;
+    }
+};
+
+const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUpdateTransform, productId, dpi, onDPIChange, isActive, onActivate }) => {
     const { useRef, useState, useEffect } = React;
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
     const dragStartRef = useRef(null);
+
 
     // Нормализуем трансформацию, чтобы избежать NaN/undefined
     const t = {
@@ -206,6 +236,8 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
             const newScale = Math.min(10, Math.max(0.05, t.scale + delta));
             onUpdateTransform({ ...t, scale: newScale });
         };
+};
+
         
         // passive: false критически важен, чтобы preventDefault работал
         container.addEventListener('wheel', onWheel, { passive: false });
