@@ -63,7 +63,7 @@ window.CollectionService = {
 
                 if (blob) {
                     const categoryFolder = mode === 'products' ? 'products' : 'mockups';
-                    const fileName = `${prod.defaultPrefix}_${printItem.article}.png`;
+                    const fileName = `${prod.defaultPrefix}-${printItem.article}.png`;
                     await window.DataService.uploadToCloud(
                         password,
                         blob,

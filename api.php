@@ -55,6 +55,13 @@ function sanitize($name) {
     return $clean . '.' . strtolower($ext);
 }
 
+// Функция для очистки артикула (без расширения)
+function sanitizeArticle($article) {
+    $clean = preg_replace('/[^a-zA-Z0-9\-_]/', '', $article);
+    if (!$clean) $clean = 'article_' . time();
+    return $clean;
+}
+
 // Функция для правильного имени превью (без дублирования расширения)
 function getThumbnailName($filename) {
     $info = pathinfo($filename);
@@ -236,6 +243,8 @@ if ($action === 'list') {
                 foreach ($categoryFiles as $f) {
                     $path = $categoryPath . '/' . $f;
                     if (!is_file($path)) continue;
+                    // Пропускаем файлы метаданных
+                    if (substr($f, -10) === '.meta.json') continue;
                     
                     $thumbName = getThumbnailName($f);
                     $thumbPath = $THUMBS_DIR . '/' . $thumbName;
@@ -300,7 +309,7 @@ if ($action === 'upload') {
     // Определяем папку для загрузки
     if ($uploadType === 'cloud' && $article) {
         // Путь: /uploads/cloud/[артикул]/[категория]/
-        $uploadPath = $CLOUD_DIR . '/' . sanitize($article) . '/' . $category;
+        $uploadPath = $CLOUD_DIR . '/' . sanitizeArticle($article) . '/' . $category;
         ensureDir($uploadPath);
     } elseif ($uploadType === 'asset') {
         // Путь: /uploads/assets/ для масок и оверлеев
@@ -324,7 +333,7 @@ if ($action === 'upload') {
         
         if (move_uploaded_file($tmp, $finalPath)) {
             if ($uploadType === 'cloud' && $article) {
-                $relUrl = '/uploads/cloud/' . sanitize($article) . '/' . $category . '/' . $newName;
+                $relUrl = '/uploads/cloud/' . sanitizeArticle($article) . '/' . $category . '/' . $newName;
             } elseif ($uploadType === 'asset') {
                 $relUrl = '/uploads/assets/' . $newName;
             } else {
@@ -384,7 +393,7 @@ if ($action === 'delete') {
         // Файл из папки assets (маска/оверлей)
         $path = $ASSETS_DIR . '/' . $filename;
     } elseif ($article && $category) {
-        $path = $CLOUD_DIR . '/' . sanitize($article) . '/' . $category . '/' . $filename;
+        $path = $CLOUD_DIR . '/' . sanitizeArticle($article) . '/' . $category . '/' . $filename;
     } else {
         $path = $UPLOADS_DIR . '/' . $filename;
     }
@@ -403,7 +412,7 @@ if ($action === 'delete') {
 if ($action === 'delete_category') {
     $input = json_decode(file_get_contents('php://input'), true);
     if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
-    $article = sanitize($input['article'] ?? '');
+    $article = sanitizeArticle($input['article'] ?? '');
     $category = $input['category'] ?? '';
     if (!$article || !$category) jsonResponse(false, [], 'Invalid params');
 
@@ -427,7 +436,7 @@ if ($action === 'delete_category') {
 if ($action === 'delete_article') {
     $input = json_decode(file_get_contents('php://input'), true);
     if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
-    $article = sanitize($input['article'] ?? '');
+    $article = sanitizeArticle($input['article'] ?? '');
     if (!$article) jsonResponse(false, [], 'Invalid params');
 
     $targetDir = $CLOUD_DIR . '/' . $article;
