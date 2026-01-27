@@ -1,18 +1,3 @@
-// Рекурсивное удаление папки
-function rrmdir($dir) {
-    if (!is_dir($dir)) return;
-    $objects = array_diff(scandir($dir), ['.', '..']);
-    foreach ($objects as $object) {
-        $path = $dir . '/' . $object;
-        if (is_dir($path)) {
-            rrmdir($path);
-        } else {
-            @unlink($path);
-        }
-    }
-    @rmdir($dir);
-}
-
 <?php
 // === НАСТРОЙКИ ===
 @ini_set('upload_max_filesize', '256M');
@@ -37,6 +22,21 @@ function jsonResponse($success, $data = [], $msg = '') {
 }
 function ensureDir($path) {
     if (!file_exists($path)) mkdir($path, 0775, true);
+}
+
+// Рекурсивное удаление папки (для очистки артикула/категории)
+function rrmdir($dir) {
+    if (!is_dir($dir)) return;
+    $objects = array_diff(scandir($dir), ['.', '..']);
+    foreach ($objects as $object) {
+        $path = $dir . '/' . $object;
+        if (is_dir($path)) {
+            rrmdir($path);
+        } else {
+            @unlink($path);
+        }
+    }
+    @rmdir($dir);
 }
 // Исправление 1: Убираем лишнее расширение
 function sanitize($name) {
