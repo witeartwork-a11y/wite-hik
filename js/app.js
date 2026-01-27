@@ -384,9 +384,6 @@ function App() {
             <window.Navbar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
-                onExport={handleExportZip}
-                onSaveCloud={handleSaveToCloud}
-                isExporting={isExporting}
             />
 
             <div className="container mx-auto p-4 max-w-[95vw]">
@@ -530,6 +527,9 @@ function App() {
                                         password={auth.password}
                                         onAddProduct={addProduct}
                                         onSaveConfig={handleSaveConfig}
+                                        onExport={handleExportZip}
+                                        onSaveCloud={handleSaveToCloud}
+                                        isExporting={isExporting}
                                     />
                                 </div>
 

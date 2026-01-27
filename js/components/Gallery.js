@@ -1,6 +1,5 @@
 // js/components/Gallery.js
-const { Upload, Loader2 } = lucide;
-// const { useState, useEffect } = React; // Removed global destructuring
+const { Upload, Loader2, Link, Trash2, Plus } = lucide;
 
 window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
     const { useState, useEffect } = React;
@@ -18,9 +17,8 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
             const response = await fetch('/api.php?action=upload', { method: 'POST', body: formData });
             const data = await response.json();
             
-            // Показываем успешное уведомление
             if (data.success && data.files && data.files.length > 0) {
-                alert(`Успешно загружено ${data.files.length} файлов`);
+                // Toast notification would be better, but alert is extant
             }
             
             await init(); 
@@ -33,18 +31,15 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
     };
 
     const filteredFiles = files.filter(f => {
-        // Show only user uploads (or legacy files without type)
         const isUpload = !f.type || f.type === 'upload';
         if (!isUpload) return false;
         
-        // Filter by name
         const matchesName = f.name.toLowerCase().includes(filter.toLowerCase());
         if (!matchesName) return false;
         
-        // Filter by date
         if (dateFilter !== 'all') {
             const now = Date.now();
-            const fileTime = f.mtime * 1000; // Convert from seconds to milliseconds
+            const fileTime = f.mtime * 1000;
             const dayInMs = 24 * 60 * 60 * 1000;
             
             switch (dateFilter) {
@@ -66,77 +61,114 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile }) => {
     });
 
     return (
-        <div className="space-y-6 fade-in">
-            <div className="flex flex-col gap-3">
-                {/* Фильтр по названию */}
-                <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <window.Icon name="filter" className="w-4 h-4" />
-                    <input
-                        type="text"
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        placeholder="Фильтр по имени файла"
-                        className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white flex-1 focus:border-indigo-500 outline-none"
-                    />
+        <div className="space-y-6 fade-in pb-10">
+            {/* Панель управления галереей */}
+            <div className="glass-card rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+                <div className="flex gap-4 w-full md:w-auto">
+                    {/* Фильтр по названию */}
+                    <div className="relative group w-full md:w-64">
+                        <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                        <input
+                            type="text"
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            placeholder="Поиск файлов..."
+                            className="w-full bg-slate-900 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-indigo-500/50 focus:bg-slate-900/80 transition-all placeholder:text-slate-600"
+                        />
+                    </div>
                 </div>
                 
                 {/* Фильтр по дате */}
-                <div className="flex items-center gap-2 text-sm text-slate-400 flex-wrap">
-                    <window.Icon name="calendar" className="w-4 h-4" />
+                <div className="flex items-center gap-2">
+                    <window.Icon name="calendar" className="w-4 h-4 text-slate-500" />
                     <select
                         value={dateFilter}
                         onChange={(e) => setDateFilter(e.target.value)}
-                        className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                        className="bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500/50 cursor-pointer hover:bg-slate-800 transition-colors"
                     >
-                        <option value="all">Все файлы</option>
+                        <option value="all">За все время</option>
                         <option value="today">Сегодня</option>
                         <option value="week">За неделю</option>
                         <option value="month">За месяц</option>
                     </select>
                 </div>
             </div>
-            <div className={`border-2 border-dashed border-slate-700 bg-slate-800/30 rounded-2xl p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-slate-800/50 transition-all relative ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
-                <div className="flex justify-center mb-2">
-                    {isUploading ? (
-                        <i data-lucide="loader-2" className="w-10 h-10 text-indigo-400 animate-spin"></i>
-                    ) : (
-                        <i data-lucide="upload" className="w-10 h-10 text-indigo-400"></i>
-                    )}
+
+            {/* Зона загрузки */}
+            <div className={`border-2 border-dashed border-slate-700/50 bg-slate-800/30 rounded-2xl p-8 text-center cursor-pointer hover:border-indigo-500/50 hover:bg-slate-800/50 transition-all relative group ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
+                <div className="flex flex-col items-center gap-4">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isUploading ? 'bg-indigo-500/20' : 'bg-slate-800 group-hover:scale-110 group-hover:bg-indigo-500/20 shadow-lg'}`}>
+                         {isUploading ? <window.Icon name="loader-2" className="w-7 h-7 text-indigo-400 animate-spin" /> : <window.Icon name="cloud-upload" className="w-7 h-7 text-slate-400 group-hover:text-indigo-400" />}
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-slate-300 group-hover:text-indigo-300 transition-colors">
+                            {isUploading ? "Загружаем файлы..." : "Нажмите или перетащите файлы"}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                            Поддерживаются JPG, PNG, WEBP
+                        </p>
+                    </div>
                 </div>
-                <p className="text-slate-400">{isUploading ? "Загрузка..." : "Перетащите файлы или кликните для загрузки"}</p>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+
+            {/* Сетка галереи */}
+            <div className="gallery-grid">
                 {filteredFiles.map(f => (
-                    <div key={f.name} className="group relative bg-slate-800 rounded-lg overflow-hidden border border-slate-700 hover:border-indigo-500 transition-all">
-                        <div className="aspect-square p-2">
-                            <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-contain"/>
-                        </div>
-                        <div className="absolute inset-0 bg-slate-900/90 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-2">
-                            <button onClick={() => { navigator.clipboard.writeText(window.location.origin + f.url); alert('Ссылка скопирована'); }} className="bg-indigo-600 px-3 py-1 rounded text-xs text-white">Copy Link</button>
-                            {onAddToCollection && (
+                    <div key={f.name} className="gallery-item group border border-white/5">
+                        <img 
+                            src={f.thumb || f.url} 
+                            loading="lazy" 
+                            className="gallery-image bg-slate-900"
+                            alt={f.name}
+                        />
+                        <div className="gallery-overlay">
+                            <p className="text-xs font-medium text-white truncate mb-3 drop-shadow-md">{f.name}</p>
+                            
+                            <div className="flex gap-2">
                                 <button 
-                                    onClick={() => onAddToCollection(f)}
-                                    className="bg-green-600/20 text-green-400 px-3 py-1 rounded text-xs hover:bg-green-600/40 transition-colors"
+                                    onClick={() => { navigator.clipboard.writeText(window.location.origin + f.url); }} 
+                                    className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                    title="Копировать ссылку"
                                 >
-                                    Add to Cloud
+                                    <window.Icon name="link" className="w-4 h-4" />
                                 </button>
-                            )}
-                            <button onClick={async () => { 
-                                if(confirm('Удалить?')) {
-                                    await fetch('/api.php?action=delete', { method:'POST', body: JSON.stringify({filename: f.name, password: auth.password}) });
-                                    if (onDeleteFile) {
-                                        onDeleteFile(f.name);
-                                    }
-                                    init();
-                                }
-                            }} className="bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs">Delete</button>
+                                
+                                {onAddToCollection && (
+                                    <button 
+                                        onClick={() => onAddToCollection(f)}
+                                        className="flex-1 bg-indigo-500/80 hover:bg-indigo-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                        title="Добавить в коллекцию"
+                                    >
+                                        <window.Icon name="plus" className="w-4 h-4" />
+                                    </button>
+                                )}
+                                
+                                <button 
+                                    onClick={async () => { 
+                                        if(confirm('Удалить файл навсегда?')) {
+                                            await fetch('/api.php?action=delete', { method:'POST', body: JSON.stringify({filename: f.name, password: auth.password}) });
+                                            if (onDeleteFile) onDeleteFile(f.name);
+                                            init();
+                                        }
+                                    }} 
+                                    className="flex-1 bg-red-500/80 hover:bg-red-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                    title="Удалить"
+                                >
+                                    <window.Icon name="trash-2" className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
-                        <p className="text-[10px] text-center p-1 text-slate-500 truncate">{f.name}</p>
                     </div>
                 ))}
             </div>
+            
+            {filteredFiles.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-500 opacity-50">
+                    <window.Icon name="image" className="w-12 h-12 mb-4" />
+                    <p>Галерея пуста</p>
+                </div>
+            )}
         </div>
     );
 };

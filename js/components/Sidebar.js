@@ -280,7 +280,7 @@ const ProductCard = ({
 };
 
 // --- ОСНОВНОЙ САЙДБАР ---
-window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
+window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, onSaveCloud, isExporting }) => {
     const [selectedCategory, setSelectedCategory] = useState('Все');
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -331,17 +331,12 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
     };
 
     const handleMove = (index, direction) => {
-        const newProducts = [...products];
-        // Нужно найти реальный индекс в полном массиве, если мы фильтруем? 
-        // Нет, перемещение обычно работает только когда мы видим весь список или логика сложнее.
-        // Для простоты, перемещаем только внутри filtered, но лучше применять к global products.
-        // Чтобы не усложнять, сделаем перемещение только когда выбрано "Все".
-        
         if (selectedCategory !== 'Все') {
             alert('Сортировка доступна только в категории "Все"');
             return;
         }
 
+        const newProducts = [...products];
         const targetIndex = direction === 'up' ? index - 1 : index + 1;
         if (targetIndex < 0 || targetIndex >= newProducts.length) return;
         
@@ -356,7 +351,6 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
             name: product.name + ' (Копия)',
             enabled: true
         };
-        // Вставляем сразу после оригинала
         const index = products.findIndex(p => p.id === product.id);
         const newProducts = [...products];
         newProducts.splice(index + 1, 0, newProd);
@@ -366,31 +360,55 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
     return (
         <div className="flex flex-col h-full gap-4">
             
-            {/* Панель фильтров и категорий */}
-            <div className="flex flex-col gap-2 bg-slate-800 rounded-xl border border-slate-700 p-3">
+            {/* Панель управления и фильтров */}
+            <div className="flex flex-col gap-3 glass-card rounded-xl p-4">
+                
+                {/* Глобальные действия (Зип и Облако) */}
+                 <div className="grid grid-cols-2 gap-3 mb-1">
+                     <button
+                        onClick={onSaveCloud}
+                        disabled={isExporting}
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold uppercase tracking-wide transition-all shadow-lg shadow-indigo-500/20 transform hover:-translate-y-0.5"
+                     >
+                        <window.Icon name="cloud-upload" className="w-4 h-4" />
+                        <span>В облако</span>
+                     </button>
+                     
+                     <button
+                        onClick={onExport}
+                        disabled={isExporting}
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold uppercase tracking-wide transition-all shadow-lg shadow-emerald-500/20 transform hover:-translate-y-0.5"
+                     >
+                        {isExporting ? <window.Icon name="loader-2" className="w-4 h-4 animate-spin" /> : <window.Icon name="download" className="w-4 h-4" />}
+                        <span>{isExporting ? 'ZIP...' : 'Скачать ZIP'}</span>
+                     </button>
+                </div>
+
+                <div className="h-px bg-white/10 w-full"></div>
+
                 {/* Поиск */}
-                <div className="relative">
-                    <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <div className="relative group">
+                    <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                     <input 
                         type="text" 
-                        placeholder="Поиск..." 
+                        placeholder="Поиск мокапов..." 
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-indigo-500 transition-colors"
+                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-indigo-500/50 focus:bg-slate-900 transition-all placeholder:text-slate-600"
                     />
                 </div>
 
-                {/* Категории (чипсы) */}
-                <div className="flex gap-2 overflow-x-auto pb-1 custom-scroll">
+                {/* Категории */}
+                <div className="flex gap-2 overflow-x-auto pb-2 custom-scroll touch-pan-x">
                     {categories.map(cat => (
                         <button
                             key={cat}
                             onClick={() => setSelectedCategory(cat)}
                             className={`
-                                whitespace-nowrap px-3 py-1 rounded-full text-[10px] font-medium transition-all
+                                whitespace-nowrap px-3 py-1.5 rounded-full text-[10px] font-semibold transition-all shadow-sm
                                 ${selectedCategory === cat 
-                                    ? 'bg-indigo-600 text-white' 
-                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                                    ? 'bg-indigo-500 text-white shadow-indigo-500/25' 
+                                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border border-slate-700'}
                             `}
                         >
                             {cat}
@@ -398,27 +416,33 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
                     ))}
                 </div>
 
-                {/* Кнопки выделения */}
+                {/* Массовые действия */}
                 <div className="flex gap-2">
                     <button
                         onClick={handleSelectAll}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-[10px] font-medium text-slate-300 hover:bg-slate-700 hover:border-indigo-500/50 hover:text-white transition-all"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/50 rounded-lg text-[10px] font-medium text-slate-400 hover:bg-slate-700 hover:border-indigo-500/30 hover:text-white transition-all"
                     >
-                        <window.Icon name="check-square" className="w-3 h-3" />
+                        <window.Icon name="check-square" className="w-3.5 h-3.5" />
                         <span>Выделить все</span>
                     </button>
                     <button
                         onClick={handleDeselectAll}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-[10px] font-medium text-slate-300 hover:bg-slate-700 hover:border-red-500/50 hover:text-white transition-all"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/50 rounded-lg text-[10px] font-medium text-slate-400 hover:bg-slate-700 hover:border-red-500/30 hover:text-white transition-all"
                     >
-                        <window.Icon name="square" className="w-3 h-3" />
+                        <window.Icon name="square" className="w-3.5 h-3.5" />
                         <span>Снять все</span>
                     </button>
                 </div>
             </div>
 
-            {/* 3. Список товаров */}
-            <div className="flex-1 space-y-2">
+            {/* Заголовок списка */}
+            <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Список мокапов</span>
+                <span className="text-[10px] font-mono text-slate-500">{filteredProducts.length} шт.</span>
+            </div>
+
+            {/* Список товаров */}
+            <div className="flex-1 space-y-3 overflow-y-auto px-1 -mx-1 custom-scroll">
                 {filteredProducts.map((p, idx) => (
                     <ProductCard 
                         key={p.id}
@@ -435,8 +459,9 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
                 ))}
                 
                 {filteredProducts.length === 0 && (
-                    <div className="text-center py-10 text-slate-500 text-xs">
-                        Нет товаров в этой категории
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-500 gap-3 border-2 border-dashed border-slate-800 rounded-xl">
+                        <window.Icon name="search-x" className="w-8 h-8 opacity-50" />
+                        <span className="text-xs">Ничего не найдено</span>
                     </div>
                 )}
             </div>
