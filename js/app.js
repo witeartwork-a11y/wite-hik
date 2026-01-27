@@ -226,13 +226,27 @@ function App() {
             let newProductTransforms = null;
 
             // Пытаемся загрузить сохраненную конфигурацию
+            console.log('printsConfig при выборе принта (все ключи):', Object.keys(printsConfig || {}));
+            console.log('Имя выбранного файла:', file.name);
+            console.log('Тип файла:', typeof file.name);
+            console.log('Длина имени:', file.name?.length);
+            
+            // Проверяем все ключи
+            if (printsConfig) {
+                for (const key in printsConfig) {
+                    console.log(`Сравниваю: "${key}" === "${file.name}" → ${key === file.name}`);
+                }
+            }
+            
             if (printsConfig && printsConfig[file.name]) {
                 const saved = printsConfig[file.name];
                 if (saved.transforms && saved.productTransforms) {
                     newTransforms = saved.transforms;
                     newProductTransforms = saved.productTransforms;
-                    console.log('Загружена сохраненная конфигурация принта');
+                    console.log('✓ Загружена сохраненная конфигурация принта:', saved);
                 }
+            } else {
+                console.log('⚠ Конфиг для файла не найден. Доступные ключи:', Object.keys(printsConfig || {}));
             }
 
             // Если конфигурации нет или она неполная, инициализируем заново

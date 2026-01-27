@@ -41,6 +41,7 @@ window.DataService = {
         try {
             const res = await fetch('/api.php?action=load_prints_config');
             const data = await res.json();
+            console.log('✓ loadPrintsConfig успешно загружена:', data.config);
             return data.config || {};
         } catch (e) {
             console.error("Ошибка загрузки конфига принтов:", e);
@@ -51,6 +52,7 @@ window.DataService = {
     // Сохранить конфигурацию одного принта
     savePrintConfig: async (password, printName, printData) => {
         try {
+            console.log('📤 Сохраняю конфиг принта:', { printName, printData });
             const res = await fetch('/api.php?action=save_prints_config', {
                 method: 'POST',
                 body: JSON.stringify({ 
@@ -59,7 +61,9 @@ window.DataService = {
                     print_data: printData 
                 })
             });
-            return res.ok;
+            const isOk = res.ok;
+            console.log('Ответ сервера на сохранение:', isOk);
+            return isOk;
         } catch (e) {
             console.error("Ошибка сохранения конфига принта:", e);
             return false;
