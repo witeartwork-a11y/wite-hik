@@ -311,32 +311,25 @@ function App() {
         }
     };
 
-    // Автосохранение конфигурации принта при изменении трансформаций
-    useEffect(() => {
-        if (!selectedPrint || !auth.isAuth) return;
+    // Ref для дебаунса сохранения
+    const saveTimeoutRef = React.useRef(null);
 
+    // Функция сохранения (вызывается при изменении трансформации)
+    const triggerSaveConfig = useCallback((printName, newData) => {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        
         setSaveStatus('saving');
+        saveTimeoutRef.current = setTimeout(async () => {
+             const success = await window.DataService.savePrintConfig(auth.password, printName, newData);
+             setSaveStatus(success ? 'saved' : 'error');
+             if (success) {
+                 setPrintsConfig(prev => ({ ...prev, [printName]: newData }));
+             }
+        }, 1000);
+    }, [auth.password]);
 
-        const timeoutId = setTimeout(async () => {
-            const printName = selectedPrint.name;
-            const printData = {
-                transforms: transforms,
-                productTransforms: productTransforms
-            };
-
-            const success = await window.DataService.savePrintConfig(auth.password, printName, printData);
-            
-            if (success) {
-                setSaveStatus('saved');
-                // Обновляем локальный стейт конфига только после успешного сохранения
-                setPrintsConfig(prev => ({ ...prev, [printName]: printData }));
-            } else {
-                setSaveStatus('error');
-            }
-        }, 1000); // 1 секунда задержки после последнего изменения
-
-        return () => clearTimeout(timeoutId);
-    }, [transforms, productTransforms, selectedPrint, auth.isAuth, auth.password]);
+    // УДАЛЕНО: useEffect с автосохранением, так как он вызывал перезапись при инициализации
+    // useEffect(() => { ... }, [...]);
 
     const handleSaveConfig = async (newProducts) => {
         setProducts(newProducts);
@@ -641,13 +634,17 @@ function App() {
                         const currentTabProducts = products.filter(p => (p.tab === activeTab));
 
                         const updateTransform = (id, newT) => {
+                            let nextTransforms = { ...currentTransforms };
+                            nextTransforms[id] = newT;
+
+                            // Обновляем стейт
                             if (isProductsTab) {
                                 setProductTransforms(prev => ({ ...prev, [id]: newT }));
                             } else {
                                 setTransforms(prev => ({ ...prev, [id]: newT }));
                             }
 
-                            // Сохраняем актуальные позиции в коллекции выбранного принта, чтобы не сбрасывались при переключении
+                            // Сохраняем в коллекцию (для сессии)
                             if (selectedPrint && selectedPrint.id) {
                                 setPrintCollection(prev => prev.map(p => {
                                     if (p.id !== selectedPrint.id) return p;
@@ -659,6 +656,17 @@ function App() {
                                         }
                                     };
                                 }));
+                            }
+
+                            // Вызываем явное сохранение на сервер (debounced)
+                            if (selectedPrint) {
+                                const fullTransforms = isProductsTab ? transforms : nextTransforms;
+                                const fullProductTransforms = isProductsTab ? nextTransforms : productTransforms;
+                                
+                                triggerSaveConfig(selectedPrint.name, {
+                                    transforms: fullTransforms,
+                                    productTransforms: fullProductTransforms
+                                });
                             }
                         };
                         
