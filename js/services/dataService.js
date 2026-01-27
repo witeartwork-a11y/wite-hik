@@ -36,6 +36,34 @@ window.DataService = {
         }
     },
 
+    // Загрузить конфигурацию принтов
+    loadPrintsConfig: async () => {
+        try {
+            const res = await fetch('/api.php?action=load_prints_config');
+            const data = await res.json();
+            return data.config || {};
+        } catch (e) {
+            console.error("Ошибка загрузки конфига принтов:", e);
+            return {};
+        }
+    },
+
+    // Сохранить конфигурацию одного принта
+    savePrintConfig: async (password, printName, printData) => {
+        try {
+            await fetch('/api.php?action=save_prints_config', {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    password, 
+                    print_name: printName,
+                    print_data: printData 
+                })
+            });
+        } catch (e) {
+            console.error("Ошибка сохранения конфига принта:", e);
+        }
+    },
+
     // Загрузить файлы (картинки, маски)
     uploadFiles: async (password, fileList) => {
         if (!fileList || fileList.length === 0) return null;
@@ -101,16 +129,17 @@ window.DataService = {
     // Инициализация: загрузить файлы и товары
     initialize: async () => {
         try {
-            const [files, config] = await Promise.all([
+            const [files, config, printsConfig] = await Promise.all([
                 window.DataService.loadFiles(),
-                window.DataService.loadConfig()
+                window.DataService.loadConfig(),
+                window.DataService.loadPrintsConfig()
             ]);
             
             const products = window.DataService.mergeProducts(config);
-            return { files, products };
+            return { files, products, printsConfig };
         } catch (e) {
             console.error("Ошибка инициализации данных:", e);
-            return { files: [], products: [] };
+            return { files: [], products: [], printsConfig: {} };
         }
     },
 

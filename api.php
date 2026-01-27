@@ -14,6 +14,7 @@ $ASSETS_DIR = $BASE_DIR . '/uploads/assets'; // Папка для масок и 
 $DATA_DIR = $BASE_DIR . '/data';
 $THUMBS_DIR = $BASE_DIR . '/data/thumbnails';
 $CONFIG_FILE = $DATA_DIR . '/products_config.json';
+$PRINTS_CONFIG_FILE = $DATA_DIR . '/prints_config.json';
 
 // === ПОМОЩНИКИ ===
 function jsonResponse($success, $data = [], $msg = '') {
@@ -120,6 +121,39 @@ if ($action === 'save_config') {
     $input = json_decode(file_get_contents('php://input'), true);
     if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
     file_put_contents($CONFIG_FILE, json_encode($input['products'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    jsonResponse(true);
+}
+
+if ($action === 'load_prints_config') {
+    if (file_exists($PRINTS_CONFIG_FILE)) {
+        jsonResponse(true, ['config' => json_decode(file_get_contents($PRINTS_CONFIG_FILE), true)]);
+    } else {
+        jsonResponse(true, ['config' => []]);
+    }
+}
+
+if ($action === 'save_prints_config') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
+    
+    $currentConfig = [];
+    if (file_exists($PRINTS_CONFIG_FILE)) {
+        $startData = file_get_contents($PRINTS_CONFIG_FILE);
+        if ($startData) {
+            $currentConfig = json_decode($startData, true);
+        }
+    }
+    if (!is_array($currentConfig)) $currentConfig = [];
+
+    // Поддержка частичного обновления (один файл)
+    if (isset($input['print_name']) && isset($input['print_data'])) {
+        $currentConfig[$input['print_name']] = $input['print_data'];
+    } elseif (isset($input['config'])) {
+        // Полная перезапись (если нужно)
+        $currentConfig = $input['config'];
+    }
+
+    file_put_contents($PRINTS_CONFIG_FILE, json_encode($currentConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     jsonResponse(true);
 }
 

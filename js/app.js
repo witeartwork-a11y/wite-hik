@@ -28,6 +28,7 @@ function App() {
     const [activeTab, setActiveTab] = useState('mockups');
     const [files, setFiles] = useState([]);
     const [products, setProducts] = useState([]);
+    const [printsConfig, setPrintsConfig] = useState({});
 
     const [selectedPrint, setSelectedPrint] = useState(null);
     const [transforms, setTransforms] = useState({});
@@ -160,7 +161,7 @@ function App() {
     const init = useCallback(async () => {
         if (!auth.isAuth) return;
         try {
-            const { files: loadedFiles, products: loadedProducts } = await window.DataService.initialize();
+            const { files: loadedFiles, products: loadedProducts, printsConfig: loadedPrintsConfig } = await window.DataService.initialize();
             
             // Назначаем вкладку, если её нет.
             // Стандартные (не custom) -> mockups, кастомные -> products (как наиболее частый кейс для "мокапов"),
@@ -177,6 +178,7 @@ function App() {
 
             setFiles(loadedFiles);
             setProducts(processedProducts);
+            setPrintsConfig(loadedPrintsConfig || {});
         } catch (e) {
             console.error('Ошибка инициализации:', e);
         }
@@ -219,8 +221,31 @@ function App() {
                 return;
             }
             
-            const newTransforms = await window.RenderService.initializeTransforms(file, products, 'mockups');
-            const newProductTransforms = await window.RenderService.initializeTransforms(file, products, 'products');
+            let newTransforms = null;
+            let newProductTransforms = null;
+
+            // Пытаемся загрузить сохраненную конфигурацию
+            if (printsConfig && printsConfig[file.name]) {
+                const saved = printsConfig[file.name];
+                if (saved.transforms && saved.productTransforms) {
+                    newTransforms = saved.transforms;
+                    newProductTransforms = saved.productTransforms;
+                    console.log('Загружена сохраненная конфигурация принта');
+                }
+            }
+
+            // Если конфигурации нет или она неполная, инициализируем заново
+            const calculatedTransforms = await window.RenderService.initializeTransforms(file, products, 'mockups');
+            const calculatedProductTransforms = await window.RenderService.initializeTransforms(file, products, 'products');
+
+            if (!newTransforms) {
+                newTransforms = calculatedTransforms;
+                newProductTransforms = calculatedProductTransforms;
+            } else {
+                // Мержим с рассчитанными, чтобы добавить данные для новых продуктов, если они появились
+                newTransforms = { ...calculatedTransforms, ...newTransforms };
+                newProductTransforms = { ...calculatedProductTransforms, ...newProductTransforms };
+            }
             
             console.log('Трансформации успешно инициализированы');
             
@@ -244,6 +269,28 @@ function App() {
             }
         }
     };
+
+    // Автосохранение конфигурации принта при изменении трансформаций
+    useEffect(() => {
+        if (!selectedPrint || !auth.isAuth) return;
+
+        const timeoutId = setTimeout(() => {
+            const printName = selectedPrint.name;
+            const printData = {
+                transforms: transforms,
+                productTransforms: productTransforms
+            };
+
+            // Проверяем, изменились ли данные по сравнению с загруженным конфигом, чтобы не спамить запросами (опционально)
+            // Но пока сохраняем при любом изменении стейта (с дебаунсом)
+            window.DataService.savePrintConfig(auth.password, printName, printData);
+            
+            // Обновляем локальный стейт конфига
+            setPrintsConfig(prev => ({ ...prev, [printName]: printData }));
+        }, 1000); // 1 секунда задержки после последнего изменения
+
+        return () => clearTimeout(timeoutId);
+    }, [transforms, productTransforms, selectedPrint, auth.isAuth, auth.password]);
 
     const handleSaveConfig = async (newProducts) => {
         setProducts(newProducts);
