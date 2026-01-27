@@ -18,9 +18,6 @@ function App() {
     const [cloudMode, setCloudMode] = useState('mockups');
     const [isCloudSaving, setIsCloudSaving] = useState(false);
     const [cloudProgress, setCloudProgress] = useState({ total: 0, done: 0, current: '' });
-    const [mockupDPI, setMockupDPI] = useState(300);
-    const [mockupWidth, setMockupWidth] = useState(null);
-    const [mockupHeight, setMockupHeight] = useState(null);
 
     const handleLoginSuccess = useCallback((pwd) => {
         window.AuthService.savePassword(pwd);
@@ -147,10 +144,7 @@ function App() {
                 products,
                 transforms,
                 productTransforms,
-                activeTab,
-                mockupDPI,
-                mockupWidth,
-                mockupHeight
+                activeTab
             );
             saveAs(content, `mockups_${selectedPrint.name.split('.')[0]}.zip`);
         } catch (e) {
@@ -177,9 +171,6 @@ function App() {
                 auth.password,
                 activeTab,
                 cloudMode,
-                mockupDPI,
-                mockupWidth,
-                mockupHeight,
                 (progress) => {
                     if (typeof progress === 'function') {
                         setCloudProgress(progress);
@@ -198,7 +189,7 @@ function App() {
             setIsCloudSaving(false);
             setCloudProgress({ total: 0, done: 0, current: '' });
         }
-    }, [auth.password, cloudMode, activeTab, products, selectedPrint, transforms, productTransforms, init, mockupDPI, mockupWidth, mockupHeight]);
+    }, [auth.password, cloudMode, activeTab, products, selectedPrint, transforms, productTransforms, init]);
 
     if (!auth.isAuth) return <window.LoginScreen onLogin={handleLoginSuccess} />;
 
@@ -313,46 +304,6 @@ function App() {
                                                             </button>
                                                         ))}
                                                     </div>
-                                                </div>
-
-                                                {/* Настройки разрешения мокапов */}
-                                                <div className="flex items-center gap-3 text-slate-400 text-xs bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2">
-                                                    <i data-lucide="settings" className="w-4 h-4"></i>
-                                                    <span className="whitespace-nowrap">DPI:</span>
-                                                    <input 
-                                                        type="number" 
-                                                        min="72" max="600" step="1"
-                                                        value={mockupDPI}
-                                                        onChange={e => setMockupDPI(parseInt(e.target.value) || 300)}
-                                                        className="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-300 outline-none focus:border-indigo-500"
-                                                    />
-                                                    <span className="whitespace-nowrap">Ширина:</span>
-                                                    <input 
-                                                        type="number" 
-                                                        min="0" step="1"
-                                                        placeholder="авто"
-                                                        value={mockupWidth || ''}
-                                                        onChange={e => setMockupWidth(e.target.value ? parseInt(e.target.value) : null)}
-                                                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-300 outline-none focus:border-indigo-500"
-                                                    />
-                                                    <span className="whitespace-nowrap">Высота:</span>
-                                                    <input 
-                                                        type="number" 
-                                                        min="0" step="1"
-                                                        placeholder="авто"
-                                                        value={mockupHeight || ''}
-                                                        onChange={e => setMockupHeight(e.target.value ? parseInt(e.target.value) : null)}
-                                                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-300 outline-none focus:border-indigo-500"
-                                                    />
-                                                    {(mockupWidth || mockupHeight) && (
-                                                        <button 
-                                                            onClick={() => { setMockupWidth(null); setMockupHeight(null); }}
-                                                            className="text-indigo-400 hover:text-indigo-300 transition-colors"
-                                                            title="Сбросить размеры"
-                                                        >
-                                                            <i data-lucide="x" className="w-4 h-4"></i>
-                                                        </button>
-                                                    )}
                                                 </div>
                                             </div>
 

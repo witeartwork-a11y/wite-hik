@@ -1,7 +1,7 @@
 // Сервис для экспорта мокапов в ZIP и облако
 window.ExportService = {
     // Экспортировать мокапы в ZIP файл
-    exportToZip: async (selectedPrint, products, transforms, productTransforms, activeTab, mockupDPI, mockupWidth, mockupHeight) => {
+    exportToZip: async (selectedPrint, products, transforms, productTransforms, activeTab) => {
         if (!selectedPrint) throw new Error("Выберите картинку");
         if (!window.Utils) throw new Error("Библиотеки не загружены");
 
@@ -23,16 +23,16 @@ window.ExportService = {
                 exportMode === 'products' ? 0.6 : 0.5
             );
             
-            // Использовать DPI продукта, если установлен, иначе глобальный DPI
-            const productDPI = prod.dpi || mockupDPI;
+            // Использовать DPI продукта
+            const productDPI = prod.dpi || 300;
             
             const blob = await window.RenderService.renderMockupBlob(
                 prod,
                 printImg,
                 tr,
                 productDPI,
-                mockupWidth,
-                mockupHeight,
+                null,
+                null,
                 { mimeType: 'image/png' }
             );
             
@@ -58,9 +58,6 @@ window.ExportService = {
         password,
         activeTab,
         cloudMode,
-        mockupDPI,
-        mockupWidth,
-        mockupHeight,
         onProgress
     ) => {
         if (!selectedPrint) throw new Error("Выберите принт для сохранения");
@@ -97,16 +94,16 @@ window.ExportService = {
                 onProgress(prev => ({ ...prev, current: prod.name }));
             }
 
-            // Использовать DPI продукта, если установлен, иначе глобальный DPI
-            const productDPI = prod.dpi || mockupDPI;
+            // Использовать DPI продукта
+            const productDPI = prod.dpi || 300;
 
             const blob = await window.RenderService.renderMockupBlob(
                 prod,
                 printImg,
                 tr,
                 productDPI,
-                mockupWidth,
-                mockupHeight,
+                null,
+                null,
                 { mimeType: 'image/png' }
             );
 

@@ -1,7 +1,6 @@
 // js/components/Sidebar.js
 const { useState, useMemo } = React;
 
-// Компонент одной карточки товара (ProductCard.tsx)
 const ProductCard = ({ 
     product, 
     index, 
@@ -13,18 +12,35 @@ const ProductCard = ({
     onDuplicate, 
     password 
 }) => {
+    const { useState, useEffect, useRef } = React;
     const [isEditing, setIsEditing] = useState(false);
     const [localName, setLocalName] = useState(product.name);
     const [isEditingResolution, setIsEditingResolution] = useState(false);
     const [localWidth, setLocalWidth] = useState(product.width);
     const [localHeight, setLocalHeight] = useState(product.height);
+    const resolutionContainerRef = useRef(null);
 
     // Синхронизируем локальные значения при изменении продукта
-    React.useEffect(() => {
+    useEffect(() => {
         setLocalName(product.name);
         setLocalWidth(product.width);
         setLocalHeight(product.height);
     }, [product.id]);
+
+    // Обработчик для закрытия режима редактирования при клике вне контейнера
+    useEffect(() => {
+        if (!isEditingResolution) return;
+        
+        const handleClickOutside = (e) => {
+            if (resolutionContainerRef.current && !resolutionContainerRef.current.contains(e.target)) {
+                setIsEditingResolution(false);
+                onUpdate(product.id, { width: localWidth, height: localHeight });
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isEditingResolution, localWidth, localHeight, product.id, onUpdate]);
 
     // Загрузка файлов (маска/оверлей)
     const handleFileUpload = async (e, type) => {
@@ -90,16 +106,17 @@ const ProductCard = ({
                     )}
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex gap-2 items-center">
                         {isEditingResolution ? (
-                            <div className="flex gap-1 items-center">
+                            <div ref={resolutionContainerRef} className="flex gap-1 items-center">
                                 <input 
                                     type="number"
                                     value={localWidth}
                                     onChange={(e) => setLocalWidth(parseInt(e.target.value) || 1)}
-                                    onBlur={() => {
-                                        setIsEditingResolution(false);
-                                        onUpdate(product.id, { width: localWidth, height: localHeight });
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            setIsEditingResolution(false);
+                                            onUpdate(product.id, { width: localWidth, height: localHeight });
+                                        }
                                     }}
-                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                                     autoFocus
                                     className="w-12 bg-slate-900 border border-indigo-500 rounded px-1 py-0.5 text-[10px] text-white outline-none"
                                 />
@@ -108,11 +125,12 @@ const ProductCard = ({
                                     type="number"
                                     value={localHeight}
                                     onChange={(e) => setLocalHeight(parseInt(e.target.value) || 1)}
-                                    onBlur={() => {
-                                        setIsEditingResolution(false);
-                                        onUpdate(product.id, { width: localWidth, height: localHeight });
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            setIsEditingResolution(false);
+                                            onUpdate(product.id, { width: localWidth, height: localHeight });
+                                        }
                                     }}
-                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                                     className="w-12 bg-slate-900 border border-indigo-500 rounded px-1 py-0.5 text-[10px] text-white outline-none"
                                 />
                                 <span>px</span>
