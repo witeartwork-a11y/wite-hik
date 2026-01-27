@@ -43,6 +43,15 @@ function App() {
     // Состояние для коллекции принтов
     const [printCollection, setPrintCollection] = useState([]);
     const [selectedPrintIds, setSelectedPrintIds] = useState([]);
+    const [activeProductId, setActiveProductId] = useState(null);
+
+    // Установка активного мокапа по умолчанию при загрузке или смене visibility
+    useEffect(() => {
+        if (activeProductId === null && products.length > 0) {
+            const firstEnabled = products.find(p => p.enabled);
+            if (firstEnabled) setActiveProductId(firstEnabled.id);
+        }
+    }, [products, activeProductId]);
 
     const handleLoginSuccess = useCallback((pwd) => {
         window.AuthService.savePassword(pwd);
@@ -414,16 +423,7 @@ function App() {
                     (() => {
                         const isProductsTab = activeTab === 'products';
                         const currentTransforms = isProductsTab ? productTransforms : transforms;
-                        const [activeProductId, setActiveProductId] = useState(null);
-
-                        // Установка активного мокапа по умолчанию при смене вкладки или загрузке
-                        useEffect(() => {
-                           if (activeProductId === null) {
-                               const firstEnabled = products.find(p => p.enabled);
-                               if (firstEnabled) setActiveProductId(firstEnabled.id);
-                           }
-                        }, [products, activeProductId]);
-
+                        
                         const updateTransform = (id, newT) => {
                             if (isProductsTab) {
                                 setProductTransforms(prev => ({ ...prev, [id]: newT }));
