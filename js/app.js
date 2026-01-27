@@ -50,14 +50,21 @@ function App() {
     });
 
     const handleSavePreset = useCallback((name, printTransforms) => {
-         // If printTransforms is passed (from PrintCollection), use it.
-         // Otherwise use current 'transforms' state.
-         const dataToSave = printTransforms || transforms;
+         let dataToSave;
+         
+         // If we have an active product, save ONLY its transform (Universal Preset)
+         if (activeProductId) {
+             const mapToUse = activeTab === 'products' ? productTransforms : transforms;
+             dataToSave = mapToUse[activeProductId] || { x: 0, y: 0, scale: 0.5, rotation: 0 };
+         } else {
+             // Fallback: save legacy full map (if needed) or use passed printTransforms
+             dataToSave = printTransforms || (activeTab === 'products' ? productTransforms : transforms);
+         }
          
          const newPresets = { ...presets, [name]: dataToSave };
          setPresets(newPresets);
          localStorage.setItem('user_transform_presets', JSON.stringify(newPresets));
-    }, [presets, transforms]);
+    }, [presets, transforms, productTransforms, activeProductId, activeTab]);
 
     const handleDeletePreset = useCallback((name) => {
         const newPresets = { ...presets };
@@ -71,20 +78,50 @@ function App() {
         if (!preset) return;
         
         // If it's a full map of product_id -> transform
-        if (activeTab === 'products') {
-             setProductTransforms(prev => ({ ...prev, ...preset }));
+        // OR if it's a single transform object (new behavior)
+        const isSingleTransform = preset.x !== undefined || preset.scale !== undefined;
+
+        if (isSingleTransform) {
+            // Если выбран товар, применяем пресет к нему
+            if (activeProductId) {
+                if (activeTab === 'products') {
+                     setProductTransforms(prev => ({ ...prev, [activeProductId]: { ...preset } }));
+                } else {
+                     setTransforms(prev => ({ ...prev, [activeProductId]: { ...preset } }));
+                }
+                
+                // Update collection if needed
+                if (selectedPrint && selectedPrint.id) {
+                     setPrintCollection(prev => prev.map(p => {
+                        if (p.id !== selectedPrint.id) return p;
+                        return { 
+                            ...p, 
+                            positions: { 
+                                ...(p.positions || {}), 
+                                [activeProductId]: { ...preset } 
+                            } 
+                        };
+                    }));
+                }
+            } else {
+                alert('Выберите товар для применения пресета');
+            }
         } else {
-             setTransforms(prev => ({ ...prev, ...preset }));
+            // Old behavior (Map)
+            if (activeTab === 'products') {
+                 setProductTransforms(prev => ({ ...prev, ...preset }));
+            } else {
+                 setTransforms(prev => ({ ...prev, ...preset }));
+            }
+            
+            if (selectedPrint) {
+                 setPrintCollection(prev => prev.map(p => {
+                    if (p.id !== selectedPrint.id) return p;
+                    return { ...p, positions: { ...(p.positions || {}), ...preset } };
+                }));
+            }
         }
-        
-        // Update active print positions too if selected
-        if (selectedPrint) {
-             setPrintCollection(prev => prev.map(p => {
-                if (p.id !== selectedPrint.id) return p;
-                return { ...p, positions: { ...(p.positions || {}), ...preset } };
-            }));
-        }
-    }, [presets, activeTab, selectedPrint]);
+    }, [presets, activeTab, selectedPrint, activeProductId]);
 
 
     // Состояние для коллекции принтов

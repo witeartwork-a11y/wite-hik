@@ -23,9 +23,6 @@ window.PrintCollection = ({
         const val = editingValue.trim();
         if (val) {
             onUpdateArticle(print.id, val);
-            if (onSavePreset && print.positions) {
-                onSavePreset(val, print.positions);
-            }
         }
         setEditingId(null);
     };
