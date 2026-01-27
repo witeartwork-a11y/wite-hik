@@ -204,7 +204,7 @@ function App() {
                 isExporting={isExporting}
             />
 
-            <div className="container mx-auto p-4 max-w-7xl">
+            <div className="container mx-auto p-4 max-w-[95vw]">
                 {activeTab === 'base' ? (
                     <div className="space-y-4">
                         <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 w-fit">

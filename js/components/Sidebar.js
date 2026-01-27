@@ -51,6 +51,8 @@ const ProductCard = ({
         const formData = new FormData();
         formData.append('files', file);
         formData.append('password', password);
+        formData.append('type', 'asset'); // Указываем, что это asset (маска/оверлей)
+        formData.append('assetType', type); // mask или overlay
         
         try {
             const res = await fetch('/api.php?action=upload', { method:'POST', body: formData });
@@ -65,6 +67,28 @@ const ProductCard = ({
         } finally {
             // Сбрасываем значение input, чтобы можно было загрузить файл повторно
             e.target.value = '';
+        }
+    };
+
+    // Удаление маски/оверлея
+    const handleFileDelete = async (type, fileUrl) => {
+        if (!fileUrl) return;
+        
+        // Удаляем из конфига
+        onUpdate(product.id, { [type]: '' });
+        
+        // Удаляем файл с сервера
+        try {
+            await fetch('/api.php?action=delete', {
+                method: 'POST',
+                body: JSON.stringify({
+                    password: password,
+                    filename: fileUrl,
+                    isAsset: true
+                })
+            });
+        } catch(err) {
+            console.error('Ошибка удаления файла:', err);
         }
     };
 
@@ -221,7 +245,7 @@ const ProductCard = ({
                                 <input type="file" className="hidden" accept="image/png" onChange={e => handleFileUpload(e, 'mask')} />
                             </label>
                             {product.mask && (
-                                <button onClick={() => onUpdate(product.id, { mask: '' })} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
+                                <button onClick={() => handleFileDelete('mask', product.mask)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
                                     <i data-lucide="x" className="w-3 h-3"></i>
                                 </button>
                             )}
@@ -242,7 +266,7 @@ const ProductCard = ({
                                 <input type="file" className="hidden" accept="image/png" onChange={e => handleFileUpload(e, 'overlay')} />
                             </label>
                             {product.overlay && (
-                                <button onClick={() => onUpdate(product.id, { overlay: '' })} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
+                                <button onClick={() => handleFileDelete('overlay', product.overlay)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
                                     <i data-lucide="x" className="w-3 h-3"></i>
                                 </button>
                             )}
@@ -292,6 +316,18 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
         if(!confirm('Удалить этот мокап?')) return;
         const newProducts = products.filter(p => p.id !== id);
         onSaveConfig(newProducts);
+    };
+
+    // Выделить все товары
+    const handleSelectAll = () => {
+        const updatedProducts = products.map(p => ({ ...p, enabled: true }));
+        onSaveConfig(updatedProducts);
+    };
+
+    // Снять выделение со всех товаров
+    const handleDeselectAll = () => {
+        const updatedProducts = products.map(p => ({ ...p, enabled: false }));
+        onSaveConfig(updatedProducts);
     };
 
     const handleMove = (index, direction) => {
@@ -360,6 +396,24 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig }) => {
                             {cat}
                         </button>
                     ))}
+                </div>
+
+                {/* Кнопки выделения */}
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleSelectAll}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-[10px] font-medium text-slate-300 hover:bg-slate-700 hover:border-indigo-500/50 hover:text-white transition-all"
+                    >
+                        <i data-lucide="check-square" className="w-3 h-3"></i>
+                        <span>Выделить все</span>
+                    </button>
+                    <button
+                        onClick={handleDeselectAll}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-[10px] font-medium text-slate-300 hover:bg-slate-700 hover:border-red-500/50 hover:text-white transition-all"
+                    >
+                        <i data-lucide="square" className="w-3 h-3"></i>
+                        <span>Снять все</span>
+                    </button>
                 </div>
             </div>
 
