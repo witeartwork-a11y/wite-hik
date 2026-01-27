@@ -618,51 +618,20 @@ function App() {
                                                 <div className="responsive-canvas-grid grid gap-6" style={{ gridTemplateColumns: `repeat(${mockupsPerRow}, 1fr)` }}>
                                                     {products.filter(p => p.enabled).map(product => {
                                                         const isProductsTab = activeTab === 'products';
-                                                        
-                                                        let displayProduct;
-                                                        if (isProductsTab) {
-                                                            displayProduct = { ...product, width: 900, height: 1200 };
-                                                        } else {
-                                                            displayProduct = {
-                                                                ...product,
-                                                                width: product.mockupWidth || product.width,
-                                                                height: product.mockupHeight || product.height,
-                                                                mask: product.mockupMask !== undefined ? product.mockupMask : product.mask,
-                                                                overlay: product.mockupOverlay !== undefined ? product.mockupOverlay : product.overlay
-                                                            };
-                                                        }
-
-                                                        const fallbackScale = isProductsTab ? 0.6 : 0.5;
-                                                        const productDPI = product.dpi || 300;
-                                                        const labelWidth = isProductsTab ? product.width : (product.mockupWidth || product.width);
-                                                        const labelHeight = isProductsTab ? product.height : (product.mockupHeight || product.height);
                                                         const isActive = activeProductId === product.id;
 
                                                         return (
-                                                            <div key={product.id} className="w-full">
-                                                                <div className="mb-2 px-2 flex justify-between items-end">
-                                                                    <span className={`text-sm font-medium transition-colors cursor-pointer hover:text-indigo-400 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} onClick={() => setActiveProductId(product.id)}>{product.name}</span>
-                                                                    <span className="text-slate-600 text-xs font-mono">{labelWidth}x{labelHeight}</span>
-                                                                </div>
-                                                                <div 
-                                                                    className={`w-full bg-slate-900 rounded-lg border transition-colors ${isActive ? 'border-indigo-500/50' : 'border-slate-800/50'}`}
-                                                                    style={{ aspectRatio: `${labelWidth} / ${labelHeight}` }}
-                                                                >
-                                                                    <window.MockupCanvas
-                                                                        product={displayProduct}
-                                                                        imageUrl={selectedPrint.url}
-                                                                        maskUrl={displayProduct.mask}
-                                                                        overlayUrl={displayProduct.overlay}
-                                                                        transform={currentTransforms[product.id] || { x: 0, y: 0, scale: fallbackScale, rotation: 0 }}
-                                                                        onUpdateTransform={(newT) => updateTransform(product.id, newT)}
-                                                                        productId={product.id}
-                                                                        dpi={productDPI}
-                                                                        onDPIChange={(newDPI) => updateProductDPI(product.id, newDPI)}
-                                                                        isActive={isActive}
-                                                                        onActivate={() => setActiveProductId(product.id)}
-                                                                    />
-                                                                </div>
-                                                            </div>
+                                                            <window.MockupGridItem
+                                                                key={product.id}
+                                                                product={product}
+                                                                selectedPrint={selectedPrint}
+                                                                transform={currentTransforms[product.id]}
+                                                                onUpdateTransform={updateTransform}
+                                                                updateProductDPI={updateProductDPI}
+                                                                isActive={isActive}
+                                                                setActiveProductId={setActiveProductId}
+                                                                isProductsTab={isProductsTab}
+                                                            />
                                                         );
                                                     })}
                                                 </div>

@@ -16,85 +16,115 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
         rotation: Number.isFinite(transform?.rotation) ? transform.rotation : 0,
     };
 
-    // Отрисовка
+    const [images, setImages] = useState({ base: null, mask: null, overlay: null, print: null });
+
+    // 1. Загрузка изображений (только при смене URL)
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas || !product || !window.Utils) return;
-        const ctx = canvas.getContext('2d');
-        const utils = window.Utils;
-
-        let isMounted = true; // Флаг для отмены операций при размонтировании
-
-        const render = async () => {
+        let isMounted = true;
+        
+        const loadImages = async () => {
+            if (!window.Utils) return;
+            const utils = window.Utils;
+            
             try {
-                const baseImg = await utils.loadImage(product.image);
-                const maskImg = await utils.loadImage(maskUrl !== undefined ? maskUrl : product.mask);
-                const overlayImg = await utils.loadImage(overlayUrl !== undefined ? overlayUrl : product.overlay);
-                const printImg = await utils.loadImage(imageUrl);
+                // Если URL не менялся, не загружаем заново.
+                // В данном случае мы просто загружаем все при смене любого пропса.
+                // Можно оптимизировать, сравнивая с предыдущим, но utils.loadImage
+                // должен быстро возвращать (если кэш). Проблема была в том, что
+                // это вызывалось при каждом смещении (drag).
+                // Теперь мы отделили загрузку от отрисовки.
+                
+                const [baseImg, maskImg, overlayImg, printImg] = await Promise.all([
+                    utils.loadImage(product.image),
+                    utils.loadImage(maskUrl !== undefined ? maskUrl : product.mask),
+                    utils.loadImage(overlayUrl !== undefined ? overlayUrl : product.overlay),
+                    utils.loadImage(imageUrl)
+                ]);
 
-                // Если компонент размонтирован, не рисуем
-                if (!isMounted) return;
-
-                if (!baseImg && !printImg) return;
-
-                canvas.width = baseImg ? baseImg.width : (product.width || 1000);
-                canvas.height = baseImg ? baseImg.height : (product.height || 1000);
-
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.globalCompositeOperation = 'source-over'; // Гарантируем начальное состояние
-
-                // Рисуем шахматный паттерн для прозрачных областей
-                const checkSize = 20;
-                for (let y = 0; y < canvas.height; y += checkSize) {
-                    for (let x = 0; x < canvas.width; x += checkSize) {
-                        ctx.fillStyle = ((x / checkSize + y / checkSize) % 2 === 0) ? '#e5e7eb' : '#ffffff';
-                        ctx.fillRect(x, y, checkSize, checkSize);
-                    }
-                }
-
-                if (baseImg) ctx.drawImage(baseImg, 0, 0);
-
-                if (printImg) {
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = canvas.width;
-                    tempCanvas.height = canvas.height;
-                    const tCtx = tempCanvas.getContext('2d');
-                    const cx = canvas.width / 2;
-                    const cy = canvas.height / 2;
-
-                    tCtx.save();
-                    tCtx.translate(cx + t.x, cy + t.y);
-                    tCtx.rotate((t.rotation || 0) * Math.PI / 180);
-                    tCtx.scale(t.scale, t.scale);
-                    tCtx.drawImage(printImg, -printImg.width / 2, -printImg.height / 2);
-                    tCtx.restore();
-
-                    if (maskImg) {
-                        tCtx.globalCompositeOperation = 'destination-in';
-                        tCtx.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
-                        tCtx.globalCompositeOperation = 'source-over'; // СБРАСЫВАЕМ!
-                    }
-
-                    ctx.drawImage(tempCanvas, 0, 0);
-                }
-
-                if (overlayImg) {
-                    ctx.globalCompositeOperation = 'multiply';
-                    ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
-                    ctx.globalCompositeOperation = 'source-over';
+                if (isMounted) {
+                    setImages({ base: baseImg, mask: maskImg, overlay: overlayImg, print: printImg });
                 }
             } catch (err) {
-                console.error("Ошибка отрисовки Canvas:", err);
+                console.error("Ошибка загрузки изображений:", err);
             }
         };
 
-        render();
+        loadImages();
 
-        // Очистка при размонтировании
-        return () => {
-            isMounted = false;
+        return () => { isMounted = false; };
+    }, [product.image, maskUrl, product.mask, overlayUrl, product.overlay, imageUrl]);
+
+
+    // 2. Отрисовка (синхронно или через rAF, зависит от images и transform)
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const { base: baseImg, mask: maskImg, overlay: overlayImg, print: printImg } = images;
+
+        if (!baseImg && !printImg) return;
+
+        // requestAnimationFrame для плавности при частом обновлении
+        let animationFrameId;
+
+        const draw = () => {
+            canvas.width = baseImg ? baseImg.width : (product.width || 1000);
+            canvas.height = baseImg ? baseImg.height : (product.height || 1000);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over'; 
+
+            // Рисуем шахматный паттерн
+            const checkSize = 20;
+            // Простая оптимизация: не рисовать паттерн если есть baseImg без прозрачности, но мы не знаем есть ли она.
+            // Можно рисовать реже или один раз на back canvas.
+            // Но паттерн рисуется быстро.
+            for (let y = 0; y < canvas.height; y += checkSize) {
+                for (let x = 0; x < canvas.width; x += checkSize) {
+                    ctx.fillStyle = ((x / checkSize + y / checkSize) % 2 === 0) ? '#e5e7eb' : '#ffffff';
+                    ctx.fillRect(x, y, checkSize, checkSize);
+                }
+            }
+
+            if (baseImg) ctx.drawImage(baseImg, 0, 0);
+
+            if (printImg) {
+                const tempCanvas = document.createElement('canvas'); // TODO: Оптимизировать создание канваса
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tCtx = tempCanvas.getContext('2d');
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+
+                tCtx.save();
+                tCtx.translate(cx + t.x, cy + t.y);
+                tCtx.rotate((t.rotation || 0) * Math.PI / 180);
+                tCtx.scale(t.scale, t.scale);
+                tCtx.drawImage(printImg, -printImg.width / 2, -printImg.height / 2);
+                tCtx.restore();
+
+                if (maskImg) {
+                    tCtx.globalCompositeOperation = 'destination-in';
+                    tCtx.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
+                    tCtx.globalCompositeOperation = 'source-over';
+                }
+
+                ctx.drawImage(tempCanvas, 0, 0);
+            }
+
+            if (overlayImg) {
+                ctx.globalCompositeOperation = 'multiply';
+                ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
+                ctx.globalCompositeOperation = 'source-over';
+            }
         };
-    }, [product, imageUrl, maskUrl, overlayUrl, t.x, t.y, t.scale, t.rotation]);
+
+        animationFrameId = requestAnimationFrame(draw);
+
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, [images, t.x, t.y, t.scale, t.rotation, product.width, product.height]);
 
     const stateRef = useRef({ t, onUpdateTransform, imageUrl, isDragging: isDragging });
     useEffect(() => {
