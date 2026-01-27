@@ -472,7 +472,7 @@ function App() {
     if (!auth.isAuth) return <window.LoginScreen onLogin={handleLoginSuccess} />;
 
     return (
-        <div className="min-h-screen pb-20">
+        <div className="min-h-screen pb-40">
             <window.CloudProgress progress={cloudProgress} isVisible={isCloudSaving} />
             <window.Navbar
                 activeTab={activeTab}
