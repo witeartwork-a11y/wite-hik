@@ -428,19 +428,39 @@ function App() {
         const print = printCollection.find(p => p.id === printId);
         if (!print) return;
 
+        // Сброс флага автосейва
+        isPrintLoadedRef.current = false;
+        if (autoLoadTimerRef.current) clearTimeout(autoLoadTimerRef.current);
+
         const normalizedPrint = { ...print, type: print.type || 'upload' };
         setSelectedPrint(normalizedPrint);
 
         try {
-            if (print.positions && Object.keys(print.positions).length > 0) {
-                setTransforms(print.positions);
-                setProductTransforms(print.positions);
-            } else if (window.RenderService) {
+            // Сначала загружаем дефолтные значения
+            if (window.RenderService) {
                 const newTransforms = await window.RenderService.initializeTransforms(normalizedPrint, products, 'mockups');
                 const newProductTransforms = await window.RenderService.initializeTransforms(normalizedPrint, products, 'products');
                 setTransforms(newTransforms);
                 setProductTransforms(newProductTransforms);
             }
+
+            // Затем автоматически загружаем сохраненный конфиг через 500мс
+            autoLoadTimerRef.current = setTimeout(async () => {
+                console.log('🔄 Авто-загрузка конфига для:', print.name);
+                const saved = await window.DataService.loadPrintsConfig(print.name);
+                
+                if (saved && saved.transforms) {
+                    console.log('✅ Конфиг найден, применяю...');
+                    setTransforms(prev => ({ ...prev, ...saved.transforms }));
+                    setProductTransforms(prev => ({ ...prev, ...saved.productTransforms }));
+                } else {
+                    console.log('ℹ️ Конфига нет, оставляем дефолт');
+                }
+                
+                // Включаем автосохранение
+                isPrintLoadedRef.current = true;
+            }, 500);
+
         } catch (err) {
             console.error('Ошибка выбора принта из коллекции:', err);
         }
