@@ -25,7 +25,7 @@ window.Utils = {
             img.src = src;
             img.onload = () => resolve(img);
             img.onerror = () => {
-                console.warn("Failed to load image:", src);
+                console.error("❌ Failed to load image:", src, "- Check if file exists or path is correct");
                 resolve(null);
             };
         });

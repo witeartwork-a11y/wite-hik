@@ -59,10 +59,21 @@ window.RenderService = {
         if (!window.Utils) throw new Error("Библиотеки не загружены");
         const utils = window.Utils;
 
+        const maskUrl = (options && options.maskUrl !== undefined) ? options.maskUrl : product.mask;
+        const overlayUrl = (options && options.overlayUrl !== undefined) ? options.overlayUrl : product.overlay;
+        
+        console.log('🎨 renderMockupBlob:', { 
+            productName: product.name,
+            maskUrl: maskUrl || '(none)', 
+            overlayUrl: overlayUrl || '(none)',
+            mockupWidth,
+            mockupHeight
+        });
+
         const [base, mask, overlay] = await Promise.all([
             utils.loadImage(product.image),
-            utils.loadImage((options && options.maskUrl !== undefined) ? options.maskUrl : product.mask),
-            utils.loadImage((options && options.overlayUrl !== undefined) ? options.overlayUrl : product.overlay)
+            utils.loadImage(maskUrl),
+            utils.loadImage(overlayUrl)
         ]);
 
         const canvas = document.createElement('canvas');
@@ -110,9 +121,15 @@ window.RenderService = {
 
         if (overlay) {
             ctx.globalCompositeOperation = 'source-over';
-            const ox = (width - overlay.width) / 2;
-            const oy = (height - overlay.height) / 2;
-            ctx.drawImage(overlay, ox, oy);
+            // Масштабируем оверлей чтобы заполнить весь канвас
+            if (overlay.width > 0 && overlay.height > 0) {
+                const scale = Math.max(width / overlay.width, height / overlay.height);
+                const scaledWidth = overlay.width * scale;
+                const scaledHeight = overlay.height * scale;
+                const ox = (width - scaledWidth) / 2;
+                const oy = (height - scaledHeight) / 2;
+                ctx.drawImage(overlay, ox, oy, scaledWidth, scaledHeight);
+            }
         }
 
         const mimeType = options.mimeType || 'image/png';

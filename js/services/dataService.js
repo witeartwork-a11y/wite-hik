@@ -27,12 +27,29 @@ window.DataService = {
     // Сохранить конфигурацию товаров на сервер
     saveConfig: async (password, products) => {
         try {
-            await fetch('/api.php?action=save_config', {
+            // Log what we're saving (include only first 2 items to avoid spam)
+            const previewProducts = products.slice(0, 2).map(p => ({
+                id: p.id,
+                name: p.name,
+                mask: p.mask ? '✓' : '-',
+                overlay: p.overlay ? '✓' : '-',
+                mockupMask: p.mockupMask ? '✓' : '-',
+                mockupOverlay: p.mockupOverlay ? '✓' : '-'
+            }));
+            console.log('💾 Saving product config:', { count: products.length, preview: previewProducts });
+            
+            const res = await fetch('/api.php?action=save_config', {
                 method: 'POST',
                 body: JSON.stringify({ password, products })
             });
+            
+            if (res.ok) {
+                console.log('✅ Config saved successfully');
+            } else {
+                console.error('❌ Config save failed:', res.status, res.statusText);
+            }
         } catch (e) {
-            console.error("Ошибка сохранения конфига:", e);
+            console.error("❌ Ошибка сохранения конфига:", e);
         }
     },
 

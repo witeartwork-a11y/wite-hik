@@ -86,7 +86,9 @@ window.ProductCard = ({
                     ? (type === 'mask' ? 'mockupMask' : 'mockupOverlay')
                     : (type === 'mask' ? 'mask' : 'overlay');
                 
-                onUpdate(product.id, { [fieldName]: data.files[0].url });
+                const fileUrl = data.files[0].url;
+                console.log(`✅ ${type} uploaded for ${configTab}:`, { fieldName, fileUrl, fileName: file.name });
+                onUpdate(product.id, { [fieldName]: fileUrl });
             } else {
                 alert('Ошибка загрузки: ' + (data.message || 'Unknown'));
             }

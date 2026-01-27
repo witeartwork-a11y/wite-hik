@@ -176,12 +176,17 @@ if ($action === 'save_config') {
     $input = json_decode(file_get_contents('php://input'), true);
     if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
     
-    $result = file_put_contents($CONFIG_FILE, json_encode($input['products'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    $products = $input['products'] ?? [];
+    
+    // Логирование (только количество)
+    error_log('📝 save_config: ' . count($products) . ' products');
+    
+    $result = file_put_contents($CONFIG_FILE, json_encode($products, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     
     if ($result === false) {
         jsonResponse(false, [], 'Failed to write config file. Permissions? ' . $CONFIG_FILE);
     }
-    jsonResponse(true);
+    jsonResponse(true, ['saved' => count($products)]);
 }
 
 if ($action === 'load_prints_config') {
