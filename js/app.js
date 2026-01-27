@@ -588,6 +588,7 @@ function App() {
                                         onExport={handleExportZip}
                                         onSaveCloud={handleSaveToCloud}
                                         isExporting={isExporting}
+                                        activeTab={activeTab}
                                     />
                                 </div>
 

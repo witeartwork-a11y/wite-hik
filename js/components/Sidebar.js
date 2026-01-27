@@ -10,15 +10,16 @@ const ProductCard = ({
     onUpdate, 
     onMove, 
     onDuplicate, 
-    password 
+    password,
+    activeTab
 }) => {
     const { useState, useEffect, useRef } = React;
     const [isEditing, setIsEditing] = useState(false);
     const [localName, setLocalName] = useState(product.name);
     const [isEditingResolution, setIsEditingResolution] = useState(false);
     
-    // State for tabs
-    const [configTab, setConfigTab] = useState('mockup'); // 'mockup' | 'product'
+    // Config mode based on global active tab
+    const configTab = activeTab === 'products' ? 'product' : 'mockup';
 
     // Compute current values based on tab
     // Fallback for mockup dimensions to product dimensions if not set, to avoid 0x0
@@ -207,32 +208,6 @@ const ProductCard = ({
             {/* --- BODY --- */}
             {product.enabled && (
                 <div className="p-3 space-y-3 bg-slate-900/20">
-                    
-                    {/* Mode Tabs */}
-                    <div className="flex bg-slate-900/50 p-1 rounded-lg border border-slate-700/50">
-                        <button
-                            onClick={() => setConfigTab('mockup')}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] uppercase font-bold tracking-wide rounded-md transition-all ${
-                                configTab === 'mockup' 
-                                    ? 'bg-indigo-600 text-white shadow-sm' 
-                                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
-                            }`}
-                        >
-                            <window.Icon name="image" className="w-3 h-3" />
-                            Заготовка
-                        </button>
-                        <button
-                            onClick={() => setConfigTab('product')}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] uppercase font-bold tracking-wide rounded-md transition-all ${
-                                configTab === 'product' 
-                                    ? 'bg-indigo-600 text-white shadow-sm' 
-                                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
-                            }`}
-                        >
-                            <window.Icon name="archive" className="w-3 h-3" />
-                            Мокап
-                        </button>
-                    </div>
 
                     <div className="flex items-center gap-2">
                         <div className="flex bg-slate-800 rounded-md border border-slate-700 p-0.5">
@@ -326,7 +301,7 @@ const ProductCard = ({
 };
 
 // --- ОСНОВНОЙ САЙДБАР ---
-window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, onSaveCloud, isExporting }) => {
+window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, onSaveCloud, isExporting, activeTab }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     // Фильтрация
@@ -442,6 +417,7 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
                         onDelete={handleDelete}
                         onMove={handleMove}
                         onDuplicate={handleDuplicate}
+                        activeTab={activeTab}
                     />
                 ))}
                 
