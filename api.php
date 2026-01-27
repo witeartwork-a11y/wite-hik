@@ -229,9 +229,23 @@ if ($action === 'upload') {
                 $relUrl = '/uploads/' . $newName;
             }
             
+            // Создаем превью сразу при загрузке
+            $thumbName = getThumbnailName($newName);
+            $thumbPath = $THUMBS_DIR . '/' . $thumbName;
+            $thumbUrl = null;
+            
+            if (createThumbnail($finalPath, $thumbPath)) {
+                $thumbUrl = '/data/thumbnails/' . $thumbName;
+            } else {
+                $thumbUrl = $relUrl; // Если не получилось создать, используем оригинал
+            }
+            
             $uploaded[] = [
                 'name' => $newName,
                 'url' => $relUrl,
+                'thumb' => $thumbUrl,
+                'mtime' => filemtime($finalPath),
+                'size' => filesize($finalPath),
                 'type' => $uploadType
             ];
         }

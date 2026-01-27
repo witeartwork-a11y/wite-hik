@@ -19,7 +19,14 @@ window.Gallery = ({ files, auth, init }) => {
             const formData = new FormData();
             formData.append('password', auth.password);
             for (let i = 0; i < fileList.length; i++) formData.append('files[]', fileList[i]);
-            await fetch('/api.php?action=upload', { method: 'POST', body: formData });
+            const response = await fetch('/api.php?action=upload', { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            // Показываем успешное уведомление
+            if (data.success && data.files && data.files.length > 0) {
+                alert(`Успешно загружено ${data.files.length} файлов`);
+            }
+            
             await init(); 
         } catch (error) {
             console.error("Upload failed", error);
