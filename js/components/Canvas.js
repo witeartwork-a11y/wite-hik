@@ -143,9 +143,7 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
             }
 
             if (overlayImg) {
-                ctx.globalCompositeOperation = 'multiply';
                 ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
-                ctx.globalCompositeOperation = 'source-over';
             }
         };
 
