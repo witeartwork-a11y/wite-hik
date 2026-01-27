@@ -3,6 +3,27 @@
 
 function App() {
     const { useState, useEffect, useCallback } = React;
+    
+    // Глобальный обработчик ошибок React
+    const [hasError, setHasError] = useState(false);
+    const [errorInfo, setErrorInfo] = useState(null);
+    
+    useEffect(() => {
+        const handleError = (error, errorInfo) => {
+            console.error('React Error:', error, errorInfo);
+            setHasError(true);
+            setErrorInfo({ error, errorInfo });
+        };
+        
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e.error);
+        });
+        
+        return () => {
+            window.removeEventListener('error', handleError);
+        };
+    }, []);
+    
     const [auth, setAuth] = useState({ isAuth: false, password: '' });
     const [activeTab, setActiveTab] = useState('mockups');
     const [files, setFiles] = useState([]);
@@ -331,6 +352,25 @@ function App() {
         }
     }, [auth.password, cloudMode, activeTab, products, selectedPrint, transforms, productTransforms, init]);
 
+    if (hasError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-8">
+                <div className="max-w-2xl">
+                    <h1 className="text-2xl font-bold text-red-400 mb-4">Произошла ошибка</h1>
+                    <pre className="bg-slate-900 p-4 rounded overflow-auto text-sm">
+                        {errorInfo ? JSON.stringify(errorInfo, null, 2) : 'Неизвестная ошибка'}
+                    </pre>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="mt-4 px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-700"
+                    >
+                        Перезагрузить страницу
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     if (!auth.isAuth) return <window.LoginScreen onLogin={handleLoginSuccess} />;
 
     return (
@@ -430,7 +470,17 @@ function App() {
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                handleAddPrintToCollection(f);
+                                                                e.preventDefault();
+                                                                console.log('Клик по кнопке плюс в ВЫБЕРИТЕ ПРИНТ');
+                                                                console.log('Файл:', f);
+                                                                console.log('Функция handleAddPrintToCollection существует?', typeof handleAddPrintToCollection);
+                                                                try {
+                                                                    handleAddPrintToCollection(f);
+                                                                    console.log('handleAddPrintToCollection выполнена успешно');
+                                                                } catch (err) {
+                                                                    console.error('Ошибка в handleAddPrintToCollection:', err);
+                                                                    alert('Ошибка при добавлении: ' + err.message);
+                                                                }
                                                             }}
                                                             className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-400/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-indigo-500/40 hover:border-indigo-400"
                                                             title="Добавить в коллекцию"
