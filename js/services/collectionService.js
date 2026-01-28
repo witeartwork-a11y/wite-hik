@@ -22,25 +22,30 @@ window.CollectionService = {
             if (!printImg) continue;
 
             for (const prod of enabledProducts) {
+                // Определяем реальный режим для текущего товара
+                const productMode = prod.tab || mode; // 'products' или 'mockups'
+
                 const tr = (printItem.positions && printItem.positions[prod.id])
                     ? printItem.positions[prod.id]
                     : window.RenderService.getTransformByMode(
                         transforms,
                         productTransforms,
-                        mode,
+                        productMode,
                         prod.id,
-                        mode === 'products' ? 0.6 : 0.5
+                        productMode === 'products' ? 0.6 : 0.5
                     );
 
                 const productDPI = prod.dpi || 300;
                 let targetWidth, targetHeight, targetMask, targetOverlay;
 
-                if (mode === 'products') {
+                if (productMode === 'products') {
+                    // Режим "Товары" (Products)
                     targetWidth = prod.width;
                     targetHeight = prod.height;
                     targetMask = prod.mask;
                     targetOverlay = prod.overlay;
                 } else {
+                    // Режим "Мокапы" (Mockups)
                     targetWidth = prod.mockupWidth;
                     targetHeight = prod.mockupHeight;
                     targetMask = prod.mockupMask;
@@ -62,7 +67,7 @@ window.CollectionService = {
                 );
 
                 if (blob) {
-                    const categoryFolder = mode === 'products' ? 'products' : 'mockups';
+                    const categoryFolder = productMode === 'products' ? 'products' : 'mockups';
                     const fileName = `${prod.defaultPrefix}-${printItem.article}.png`;
                     await window.DataService.uploadToCloud(
                         password,
