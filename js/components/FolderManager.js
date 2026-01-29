@@ -1,7 +1,7 @@
 // js/components/FolderManager.js
 const { Folder, FolderOpen, Trash2, Plus, ChevronRight, ChevronDown } = lucide;
 
-window.FolderManager = ({ files = [], onFolderChange, title = "Папки" }) => {
+window.FolderManager = ({ files = [], onFolderChange, title = "Папки", galleryType = 'upload' }) => {
     const { useState, useEffect } = React;
     const [folders, setFolders] = useState({});
     const [expandedFolders, setExpandedFolders] = useState(new Set());
@@ -11,7 +11,7 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки" }) =>
 
     // Загружаем папки из localStorage
     useEffect(() => {
-        const storageKey = `folders_${title}`;
+        const storageKey = `folders_${galleryType}_${title}`;
         const stored = localStorage.getItem(storageKey);
         if (stored) {
             try {
@@ -20,16 +20,16 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки" }) =>
                 console.error('Ошибка загрузки папок:', e);
             }
         }
-    }, [title]);
+    }, [galleryType, title]);
 
     // Сохраняем папки в localStorage
     useEffect(() => {
-        const storageKey = `folders_${title}`;
+        const storageKey = `folders_${galleryType}_${title}`;
         localStorage.setItem(storageKey, JSON.stringify(folders));
         if (onFolderChange) {
             onFolderChange(folders);
         }
-    }, [folders, title, onFolderChange]);
+    }, [folders, galleryType, title, onFolderChange]);
 
     const handleCreateFolder = () => {
         if (!newFolderName.trim()) return;

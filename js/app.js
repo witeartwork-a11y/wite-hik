@@ -510,7 +510,7 @@ function App() {
             />
 
             <div className="container mx-auto p-4 max-w-[95vw]">
-                {activeTab === 'base' || activeTab === 'publication' ? (
+                {activeTab === 'base' ? (
                     <div className="space-y-4">
                         {galleryTab === 'files' ? (
                             <window.Gallery 
@@ -521,6 +521,18 @@ function App() {
                                 onDeleteFile={handleDeleteFileFromGallery}
                                 activeSubTab={galleryTab}
                                 onSubTabChange={setGalleryTab}
+                                galleryType="upload"
+                            />
+                        ) : galleryTab === 'publication' ? (
+                            <window.Gallery 
+                                files={files} 
+                                auth={auth} 
+                                init={init} 
+                                onAddToCollection={handleAddPrintToCollection} 
+                                onDeleteFile={handleDeleteFileFromGallery}
+                                activeSubTab={galleryTab}
+                                onSubTabChange={setGalleryTab}
+                                galleryType="publication"
                             />
                         ) : (
                             <window.CloudSaver 

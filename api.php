@@ -397,7 +397,7 @@ if ($action === 'list') {
     $list = [];
     
     // Сканируем ОБЫЧНЫЕ файлы (загруженные пользователем), исключая cloud и assets
-    $files = array_diff(scandir($UPLOADS_DIR), ['.', '..', 'cloud', 'assets']);
+    $files = array_diff(scandir($UPLOADS_DIR), ['.', '..', 'cloud', 'assets', 'publication']);
     foreach ($files as $f) {
         $path = $UPLOADS_DIR . '/' . $f;
         if (!is_file($path)) continue;
@@ -423,6 +423,37 @@ if ($action === 'list') {
             'size' => filesize($path),
             'type' => 'upload'
         ];
+    }
+    
+    // Сканируем ФАЙЛЫ НА ПУБЛИКАЦИЮ
+    $publicationDir = $BASE_DIR . '/uploads/publication';
+    if (is_dir($publicationDir)) {
+        $pubFiles = array_diff(scandir($publicationDir), ['.', '..']);
+        foreach ($pubFiles as $f) {
+            $path = $publicationDir . '/' . $f;
+            if (!is_file($path)) continue;
+            
+            $thumbName = getThumbnailName($f);
+            $thumbPath = $THUMBS_DIR . '/' . $thumbName;
+            $thumbUrl = null;
+
+            if (!file_exists($thumbPath) || filemtime($path) > filemtime($thumbPath)) {
+                if (createThumbnail($path, $thumbPath)) {
+                    $thumbUrl = '/data/thumbnails/' . $thumbName;
+                }
+            } else {
+                $thumbUrl = '/data/thumbnails/' . $thumbName;
+            }
+
+            $list[] = [
+                'name' => $f,
+                'url' => '/uploads/publication/' . $f,
+                'thumb' => $thumbUrl ? $thumbUrl : '/uploads/publication/' . $f,
+                'mtime' => filemtime($path),
+                'size' => filesize($path),
+                'type' => 'publication'
+            ];
+        }
     }
     
     // Сканируем ОБЛАЧНЫЕ ПАПКИ
@@ -511,7 +542,7 @@ if ($action === 'upload') {
     $files = $_FILES['files'];
     $count = is_array($files['name']) ? count($files['name']) : 1;
 
-    $uploadType = $_POST['type'] ?? 'upload'; // 'upload', 'cloud' или 'asset'
+    $uploadType = $_POST['type'] ?? 'upload'; // 'upload', 'publication', 'cloud' или 'asset'
     $article = $_POST['article'] ?? null; // Артикул (имя папки)
     $category = $_POST['category'] ?? 'files'; // 'mockups' или 'products'
     $printName = $_POST['print_name'] ?? null; // Оригинальное имя принта
@@ -522,6 +553,10 @@ if ($action === 'upload') {
     if ($uploadType === 'cloud' && $article) {
         // Путь: /uploads/cloud/[артикул]/[категория]/
         $uploadPath = $CLOUD_DIR . '/' . sanitizeArticle($article) . '/' . $category;
+        ensureDir($uploadPath);
+    } elseif ($uploadType === 'publication') {
+        // Путь: /uploads/publication/ для файлов на публикацию
+        $uploadPath = $BASE_DIR . '/uploads/publication';
         ensureDir($uploadPath);
     } elseif ($uploadType === 'asset') {
         // Путь: /uploads/assets/ для масок и оверлеев
@@ -630,11 +665,15 @@ if ($action === 'delete') {
     $article = $input['article'] ?? null;
     $category = $input['category'] ?? null;
     $isAsset = $input['isAsset'] ?? false;
+    $fileType = $input['type'] ?? 'upload'; // 'upload', 'publication', 'cloud' или 'asset'
     
     // Путь в зависимости от типа
-    if ($isAsset) {
+    if ($isAsset || $fileType === 'asset') {
         // Файл из папки assets (маска/оверлей)
         $path = $ASSETS_DIR . '/' . $filename;
+    } elseif ($fileType === 'publication') {
+        // Файл из папки publication
+        $path = $BASE_DIR . '/uploads/publication/' . $filename;
     } elseif ($article && $category) {
         $path = $CLOUD_DIR . '/' . sanitizeArticle($article) . '/' . $category . '/' . $filename;
     } else {

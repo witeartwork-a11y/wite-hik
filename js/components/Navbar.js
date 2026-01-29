@@ -13,7 +13,6 @@ window.Navbar = ({ activeTab, setActiveTab }) => {
                 <button onClick={() => setActiveTab('mockups')} className={`tab-button ${activeTab === 'mockups' ? 'tab-active' : 'tab-inactive'}`}>Заготовки</button>
                 <button onClick={() => setActiveTab('products')} className={`tab-button ${activeTab === 'products' ? 'tab-active' : 'tab-inactive'}`}>Мокапы</button>
                 <button onClick={() => setActiveTab('base')} className={`tab-button ${activeTab === 'base' ? 'tab-active' : 'tab-inactive'}`}>Исходники</button>
-                <button onClick={() => setActiveTab('publication')} className={`tab-button ${activeTab === 'publication' ? 'tab-active' : 'tab-inactive'}`}>На публикацию</button>
             </div>
 
             <div className="w-32"></div>

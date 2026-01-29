@@ -1,7 +1,7 @@
 // js/components/Gallery.js
 const { Upload, Loader2, Link, Trash2, Plus } = lucide;
 
-window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSubTab, onSubTabChange }) => {
+window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSubTab, onSubTabChange, galleryType = 'upload' }) => {
     const { useState, useEffect } = React;
     const [isUploading, setIsUploading] = useState(false);
     const [filter, setFilter] = useState('');
@@ -26,7 +26,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
             for (const filename of selectedFiles) {
                 await fetch('/api.php?action=delete', { 
                     method: 'POST', 
-                    body: JSON.stringify({ filename, password: auth.password }) 
+                    body: JSON.stringify({ filename, password: auth.password, type: galleryType }) 
                 });
             }
             setSelectedFiles(new Set());
@@ -43,6 +43,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
         try {
             const formData = new FormData();
             formData.append('password', auth.password);
+            formData.append('type', galleryType);
             for (let i = 0; i < fileList.length; i++) formData.append('files[]', fileList[i]);
             const response = await fetch('/api.php?action=upload', { method: 'POST', body: formData });
             const data = await response.json();
@@ -61,8 +62,9 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     };
 
     const filteredFiles = files.filter(f => {
-        const isUpload = !f.type || f.type === 'upload';
-        if (!isUpload) return false;
+        // Фильтруем по типу галереи
+        const fileType = f.type || 'upload';
+        if (fileType !== galleryType) return false;
         
         const matchesName = f.name.toLowerCase().includes(filter.toLowerCase());
         if (!matchesName) return false;
@@ -103,6 +105,12 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                 className={`tab-button ${activeSubTab === 'files' ? 'tab-active' : 'tab-inactive'}`}
                             >
                                 Исходники
+                            </button>
+                            <button 
+                                onClick={() => onSubTabChange('publication')} 
+                                className={`tab-button ${activeSubTab === 'publication' ? 'tab-active' : 'tab-inactive'}`}
+                            >
+                                На публикацию
                             </button>
                             <button 
                                 onClick={() => onSubTabChange('cloud')} 
@@ -159,6 +167,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
             <window.FolderManager 
                 files={filteredFiles} 
                 title="Организация файлов"
+                galleryType={galleryType}
             />
 
             {/* Зона загрузки */}
