@@ -38,7 +38,7 @@ window.GalleryHeader = ({ activeSubTab, onSubTabChange, filter, setFilter, dateF
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                             placeholder="Поиск файлов..."
-                            className="input-field pl-9 text-sm"
+                            className="input-field text-sm"
                         />
                     </div>
                 )}
@@ -67,7 +67,7 @@ window.GalleryHeader = ({ activeSubTab, onSubTabChange, filter, setFilter, dateF
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                             placeholder="Поиск по артикулу..."
-                            className="input-field pl-9 text-sm"
+                            className="input-field text-sm"
                         />
                     </div>
                 )}

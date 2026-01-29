@@ -1,13 +1,22 @@
 // js/components/Gallery.js
-const { Upload, Loader2, Link, Trash2, Plus } = lucide;
+const { Upload, Loader2, Link, Trash2, Plus, ChevronLeft, ChevronRight } = lucide;
 
 window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSubTab, onSubTabChange, galleryType = 'upload' }) => {
     const { useState, useEffect } = React;
     const [isUploading, setIsUploading] = useState(false);
     const [filter, setFilter] = useState('');
-    const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
+    const [dateFilter, setDateFilter] = useState('week'); // 'all', 'today', 'week', 'month'
     const [selectedFiles, setSelectedFiles] = useState(new Set());
     const [filedFiles, setFiledFiles] = useState(new Set()); // Files that are in folders
+    
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 100;
+
+    // Сброс страницы при изменении фильтров
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter, dateFilter, activeSubTab]);
 
     const handleFolderChange = (folders) => {
         const filed = new Set();
@@ -153,6 +162,23 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
         return true;
     });
 
+    const totalPages = Math.ceil(filteredFiles.length / ITEMS_PER_PAGE);
+    const displayedFiles = filteredFiles.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    const scrollToTop = () => {
+        // window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Since we are inside a container possibly, we might want to target the specific container or just window.
+        // Assuming body scroll based on css.
+        window.scrollTo(0, 0); 
+    };
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+            scrollToTop();
+        }
+    };
+
     return (
         <div className="space-y-6 pb-10" 
              onDragOver={(e) => {
@@ -213,7 +239,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
 
             {/* Сетка галереи */}
             <div className="gallery-grid">
-                {filteredFiles.map(f => {
+                {displayedFiles.map(f => {
                     const isSelected = selectedFiles.has(f.name);
                     return (
                         <div 
@@ -302,6 +328,32 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                     );
                 })}
             </div>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-8 pt-4 border-t border-slate-800">
+                    <button 
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`p-2 rounded-lg bg-slate-800 border border-slate-700 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700 text-white'}`}
+                    >
+                         <window.Icon name="chevron-left" className="w-5 h-5" />
+                    </button>
+                    
+                    <span className="text-sm text-slate-400">
+                        Страница <span className="text-white font-bold">{currentPage}</span> из <span className="text-white font-bold">{totalPages}</span>
+                    </span>
+
+                    <button 
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={`p-2 rounded-lg bg-slate-800 border border-slate-700 transition-colors ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700 text-white'}`}
+                    >
+                        <window.Icon name="chevron-right" className="w-5 h-5" />
+                    </button>
+                </div>
+            )}
+
             
             {filteredFiles.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 text-slate-500 opacity-50">

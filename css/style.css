@@ -81,14 +81,27 @@ body {
 
 /* Gallery Grid */
 .gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1.5rem;
+    column-count: 6;
+    column-gap: 1.5rem;
     padding-bottom: 2rem;
-    align-items: start;
+}
+
+@media (max-width: 1400px) {
+    .gallery-grid { column-count: 5; }
+}
+@media (max-width: 1200px) {
+    .gallery-grid { column-count: 4; }
+}
+@media (max-width: 900px) {
+    .gallery-grid { column-count: 3; }
+}
+@media (max-width: 600px) {
+    .gallery-grid { column-count: 2; }
 }
 
 .gallery-item {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
     overflow: hidden;
     position: relative;
     border-radius: 1rem;
@@ -541,7 +554,12 @@ body {
 
 .search-box:focus-within .search-icon {
     color: rgb(129, 140, 248);
-}}
+}
+
+.search-box .input-field {
+    padding-left: 2.5rem;
+}
+
 
 /* ===== ПРОГРЕСС БАР ===== */
 .progress-bar-container {
@@ -913,10 +931,15 @@ body {
 }
 
 .folder-file-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1.5rem;
+    column-count: 4;
+    column-gap: 1.5rem;
     padding: 1rem;
     overflow-y: auto;
-    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .folder-file-grid { column-count: 3; }
+}
+@media (max-width: 600px) {
+    .folder-file-grid { column-count: 2; }
 }
