@@ -2,6 +2,7 @@
 # Не затирать при git pull
 data/products_config.json
 data/prints_config.json
+data/folders.json
 data/thumbnails/
 data/files.json
 

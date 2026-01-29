@@ -30,6 +30,7 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
     // Сохраняем папки на сервер
     const saveFoldersToServer = async (foldersData) => {
         try {
+            console.log('💾 Сохраняю папки:', { galleryType, title, folders: foldersData });
             const res = await fetch('/api.php?action=save_folders', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -40,20 +41,24 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
                 })
             });
             const data = await res.json();
+            console.log('✓ Ответ сервера:', data);
             if (data.success && onFolderChange) {
                 onFolderChange(foldersData);
+            } else if (!data.success) {
+                console.error('❌ Ошибка сохранения:', data.message);
             }
         } catch (e) {
-            console.error('Ошибка сохранения папок:', e);
+            console.error('❌ Ошибка сохранения папок:', e);
         }
     };
 
     // Обновляем когда меняются папки
     useEffect(() => {
-        if (!isLoading && Object.keys(folders).length > 0) {
+        if (!isLoading) {
+            console.log('📁 Папки изменились:', folders);
             saveFoldersToServer(folders);
         }
-    }, [folders]);
+    }, [folders, galleryType, title]);
 
     const handleCreateFolder = () => {
         if (!newFolderName.trim()) return;
