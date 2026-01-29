@@ -77,11 +77,6 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
         });
     };
 
-    const handleDragStart = (e, fileName) => {
-        setDraggedFile(fileName);
-        e.dataTransfer.effectAllowed = 'move';
-    };
-
     const handleDragOver = (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
@@ -89,13 +84,16 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
 
     const handleDropOnFolder = (e, folderName) => {
         e.preventDefault();
+        e.stopPropagation();
         
-        if (!draggedFile) return;
+        // Получаем имя файла из dataTransfer
+        const draggedFileName = e.dataTransfer.getData('fileName');
+        if (!draggedFileName) return;
 
         // Найти текущую папку файла и удалить его оттуда
         let currentFolder = null;
         for (const [fName, fileList] of Object.entries(folders)) {
-            if (fileList.includes(draggedFile)) {
+            if (fileList.includes(draggedFileName)) {
                 currentFolder = fName;
                 break;
             }
@@ -106,18 +104,16 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
             
             // Удаляем из старой папки если она была
             if (currentFolder && newFolders[currentFolder]) {
-                newFolders[currentFolder] = newFolders[currentFolder].filter(f => f !== draggedFile);
+                newFolders[currentFolder] = newFolders[currentFolder].filter(f => f !== draggedFileName);
             }
             
             // Добавляем в новую папку
-            if (!newFolders[folderName].includes(draggedFile)) {
-                newFolders[folderName] = [...newFolders[folderName], draggedFile];
+            if (!newFolders[folderName].includes(draggedFileName)) {
+                newFolders[folderName] = [...newFolders[folderName], draggedFileName];
             }
             
             return newFolders;
         });
-
-        setDraggedFile(null);
     };
 
     const handleRemoveFileFromFolder = (folderName, fileName) => {
@@ -231,12 +227,20 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
                                                     key={fileName}
                                                     className="relative group"
                                                     draggable
-                                                    onDragStart={(e) => handleDragStart(e, fileName)}
+                                                    onDragStart={(e) => {
+                                                        e.dataTransfer.effectAllowed = 'move';
+                                                        e.dataTransfer.setData('fileName', fileName);
+                                                    }}
+                                                    onDragOver={(e) => {
+                                                        e.preventDefault();
+                                                        e.dataTransfer.dropEffect = 'move';
+                                                    }}
                                                 >
                                                     <img
                                                         src={file?.thumb || file?.url}
                                                         alt={fileName}
                                                         className="w-full h-full object-cover rounded-md border border-slate-700"
+                                                        draggable={false}
                                                     />
                                                     <button
                                                         onClick={() => handleRemoveFileFromFolder(folderName, fileName)}

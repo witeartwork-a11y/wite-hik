@@ -184,55 +184,14 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     };
 
     const header = (
-        <div className="glass-card rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
-             <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-start md:items-center">
-                 {onSubTabChange && (
-                     <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 shrink-0">
-                         <button 
-                             onClick={() => onSubTabChange('files')} 
-                             className={`tab-button ${activeSubTab === 'files' ? 'tab-active' : 'tab-inactive'}`}
-                         >
-                             Исходники
-                         </button>
-                         <button 
-                             onClick={() => onSubTabChange('cloud')} 
-                             className={`tab-button ${activeSubTab === 'cloud' ? 'tab-active' : 'tab-inactive'}`}
-                         >
-                             Облако
-                         </button>
-                     </div>
-                 )}
-             </div>
-
-             <div className="flex items-center gap-4 w-full md:w-auto justify-end flex-wrap md:flex-nowrap">
-                {/* Фильтр по названию */}
-                <div className="relative group w-full md:w-64 order-2 md:order-1">
-                    <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
-                    <input
-                        type="text"
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        placeholder="Поиск по артикулу..."
-                        className="w-full bg-slate-900 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-indigo-500/50 focus:bg-slate-900/80 transition-all placeholder:text-slate-600"
-                    />
-                </div>
-
-                {/* Фильтр по дате */}
-                <div className="flex items-center gap-2 order-3">
-                    <window.Icon name="calendar" className="w-4 h-4 text-slate-500" />
-                    <select
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        className="bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500/50 cursor-pointer hover:bg-slate-800 transition-colors"
-                    >
-                        <option value="all">За все время</option>
-                        <option value="today">Сегодня</option>
-                        <option value="week">За неделю</option>
-                        <option value="month">За месяц</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+        <window.GalleryHeader 
+            activeSubTab={activeSubTab}
+            onSubTabChange={onSubTabChange}
+            filter={filter}
+            setFilter={setFilter}
+            dateFilter={dateFilter}
+            setDateFilter={setDateFilter}
+        />
     );
 
 

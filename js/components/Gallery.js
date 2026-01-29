@@ -94,81 +94,24 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
 
     return (
         <div className="space-y-6 fade-in pb-10">
-            {/* Панель управления галереей */}
-            <div className="glass-card rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-start md:items-center">
-                    {/* Переключатель вкладок */}
-                    {onSubTabChange && (
-                        <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 shrink-0">
-                            <button 
-                                onClick={() => onSubTabChange('files')} 
-                                className={`tab-button ${activeSubTab === 'files' ? 'tab-active' : 'tab-inactive'}`}
-                            >
-                                Исходники
-                            </button>
-                            <button 
-                                onClick={() => onSubTabChange('publication')} 
-                                className={`tab-button ${activeSubTab === 'publication' ? 'tab-active' : 'tab-inactive'}`}
-                            >
-                                На публикацию
-                            </button>
-                            <button 
-                                onClick={() => onSubTabChange('cloud')} 
-                                className={`tab-button ${activeSubTab === 'cloud' ? 'tab-active' : 'tab-inactive'}`}
-                            >
-                                Облако
-                            </button>
-                        </div>
-                    )}
-                </div>
-                
-                <div className="flex items-center gap-4 w-full md:w-auto justify-end flex-wrap md:flex-nowrap">
-                    {/* Фильтр по названию - перемещен вправо */}
-                    <div className="search-box group w-full md:w-64 order-2 md:order-1">
-                        <window.Icon name="search" className="search-icon" />
-                        <input
-                            type="text"
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                            placeholder="Поиск файлов..."
-                            className="input-field pl-9 text-sm"
-                        />
-                    </div>
-
-                    {/* Кнопка множественного удаления */}
-                    {selectedFiles.size > 0 && (
-                        <button 
-                            onClick={handleBulkDelete}
-                            className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-200 rounded-lg border border-red-500/30 transition-colors animate-pulse-once order-1 md:order-2"
-                        >
-                            <window.Icon name="trash-2" className="w-4 h-4" />
-                            <span className="text-sm">Удалить ({selectedFiles.size})</span>
-                        </button>
-                    )}
-
-                    {/* Фильтр по дате */}
-                    <div className="flex items-center gap-2 order-3">
-                        <window.Icon name="calendar" className="w-4 h-4 text-slate-500" />
-                        <select
-                            value={dateFilter}
-                            onChange={(e) => setDateFilter(e.target.value)}
-                            className="bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500/50 cursor-pointer hover:bg-slate-800 transition-colors"
-                        >
-                            <option value="all">За все время</option>
-                            <option value="today">Сегодня</option>
-                            <option value="week">За неделю</option>
-                            <option value="month">За месяц</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            {/* Папки для организации файлов */}
-            <window.FolderManager 
-                files={filteredFiles} 
-                title="Организация файлов"
-                galleryType={galleryType}
+            {/* Единая панель управления */}
+            <window.GalleryHeader 
+                activeSubTab={activeSubTab}
+                onSubTabChange={onSubTabChange}
+                filter={filter}
+                setFilter={setFilter}
+                dateFilter={dateFilter}
+                setDateFilter={setDateFilter}
             />
+
+            {/* Папки для организации файлов (только для Gallery, не для CloudSaver) */}
+            {activeSubTab !== 'cloud' && (
+                <window.FolderManager 
+                    files={filteredFiles} 
+                    title="Организация файлов"
+                    galleryType={galleryType}
+                />
+            )}
 
             {/* Зона загрузки */}
             <div className={`border-2 border-dashed border-slate-700/50 bg-slate-800/30 rounded-2xl p-8 text-center cursor-pointer hover:border-indigo-500/50 hover:bg-slate-800/50 transition-all relative group ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -196,12 +139,21 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                         <div 
                             key={f.name} 
                             className={`gallery-item group border transition-all ${isSelected ? 'border-indigo-500 ring-1 ring-indigo-500/50' : 'border-white/5'}`}
+                            draggable
+                            onDragStart={(e) => {
+                                e.dataTransfer.effectAllowed = 'move';
+                                e.dataTransfer.setData('fileName', f.name);
+                            }}
+                            onDragEnd={(e) => {
+                                e.currentTarget.classList.remove('opacity-50');
+                            }}
                         >
                             <img 
                                 src={f.thumb || f.url} 
                                 loading="lazy" 
                                 className="gallery-image bg-slate-900"
                                 alt={f.name}
+                                draggable={false}
                             />
                             
                             {/* Checkbox */}
