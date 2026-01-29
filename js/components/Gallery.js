@@ -200,7 +200,10 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                             </div>
 
                             <div className="gallery-overlay">
-                                <p className="text-xs font-medium text-white truncate mb-3 drop-shadow-md">{f.name}</p>
+                                <div className="mb-3">
+                                    <p className="text-xs font-medium text-white truncate drop-shadow-md">{f.name.replace(/\.[^/.]+$/, "")}</p>
+                                    {f.product_name && <p className="text-[10px] text-indigo-200 truncate drop-shadow-md">{f.product_name}</p>}
+                                </div>
                                 
                                 <div className="flex gap-2">
                                     <button 

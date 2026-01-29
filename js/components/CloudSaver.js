@@ -352,10 +352,15 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                                                     </button>
                                                                 </div>
                                                             </div>
-                                                            <div className="p-1.5 bg-slate-800/80 rounded-b-lg border-t border-slate-700">
-                                                                <p className="text-[10px] bg-slate-900/50 rounded px-1 text-slate-400 truncate text-center" title={f.name}>
-                                                                    {f.print_name || f.name}
+                                                            <div className="p-1.5 bg-slate-800/80 rounded-b-lg border-t border-slate-700 flex flex-col gap-0.5">
+                                                                <p className="text-[10px] font-medium text-white truncate text-center" title={f.name}>
+                                                                    {f.name.replace(/\.[^/.]+$/, "")}
                                                                 </p>
+                                                                {f.product_name && (
+                                                                    <p className="text-[9px] text-indigo-300 truncate text-center" title={f.product_name}>
+                                                                        {f.product_name}
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}

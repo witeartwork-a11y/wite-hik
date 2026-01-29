@@ -339,6 +339,9 @@ if ($action === 'list') {
                         if (isset($meta['print_name'])) {
                             $cloudItem['print_name'] = $meta['print_name'];
                         }
+                        if (isset($meta['product_name'])) {
+                            $cloudItem['product_name'] = $meta['product_name'];
+                        }
                     }
                     
                     $list[] = $cloudItem;
@@ -362,6 +365,7 @@ if ($action === 'upload') {
     $article = $_POST['article'] ?? null; // Артикул (имя папки)
     $category = $_POST['category'] ?? 'files'; // 'mockups' или 'products'
     $printName = $_POST['print_name'] ?? null; // Оригинальное имя принта
+    $productName = $_POST['product_name'] ?? null; // Имя продукта
     $assetType = $_POST['assetType'] ?? null; // 'mask' или 'overlay'
 
     // Определяем папку для загрузки
@@ -422,11 +426,21 @@ if ($action === 'upload') {
             if ($uploadType === 'cloud' && $article) {
                 $uploadedItem['article'] = $article;
                 $uploadedItem['category'] = $category;
+                
+                $metaData = [];
                 if ($printName) {
                     $uploadedItem['print_name'] = $printName;
-                    // Сохраняем оригинальное имя в метаданные
+                    $metaData['print_name'] = $printName;
+                }
+                if ($productName) {
+                    $uploadedItem['product_name'] = $productName;
+                    $metaData['product_name'] = $productName;
+                }
+                
+                if (!empty($metaData)) {
+                    // Сохраняем метаданные
                     $metaFile = $finalPath . '.meta.json';
-                    file_put_contents($metaFile, json_encode(['print_name' => $printName], JSON_UNESCAPED_UNICODE));
+                    file_put_contents($metaFile, json_encode($metaData, JSON_UNESCAPED_UNICODE));
                 }
             }
             

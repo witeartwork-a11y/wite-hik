@@ -182,7 +182,7 @@ window.ExportService = {
             const fileName = `${prefix}-${article}.png`;
 
             console.log(`⬆️ Загрузка ${fileName} в облако...`);
-            await window.DataService.uploadToCloud(password, blob, fileName, article, categoryFolder, selectedPrint.name);
+            await window.DataService.uploadToCloud(password, blob, fileName, article, categoryFolder, selectedPrint.name, prod.name);
 
             if (onProgress) {
                 onProgress(prev => ({ ...prev, done: prev.done + 1 }));
