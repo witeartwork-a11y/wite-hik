@@ -20,7 +20,8 @@ window.ExportService = {
 
         const enabledProducts = products.filter(p => p.enabled);
 
-        for (const prod of enabledProducts) {
+        // 🚀 ПАРАЛЛЕЛЬНАЯ генерация всех мокапов
+        const renderTasks = enabledProducts.map(async (prod) => {
             // Получаем трансформацию правильно
             const tr = window.RenderService.getTransformByMode(
                 transforms,
@@ -66,15 +67,25 @@ window.ExportService = {
             
             if (!blob) {
                 console.warn(`⚠️ Не удалось отрендерить для ZIP: ${prod.name}`);
-                continue;
+                return null;
             }
 
             const safeName = selectedPrint.name.split('.')[0];
             const prefix = prod.defaultPrefix || prod.name;
             const fileName = `${prefix}_${safeName}.png`;
 
-            zip.file(fileName, blob);
-        }
+            return { fileName, blob };
+        });
+
+        // Ждём завершения всех рендеров одновременно
+        const results = await Promise.all(renderTasks);
+        
+        // Добавляем в ZIP только успешные результаты
+        results.forEach(result => {
+            if (result) {
+                zip.file(result.fileName, result.blob);
+            }
+        });
 
         const content = await zip.generateAsync({ type: "blob" });
         console.log('✅ exportToZip завершено');
@@ -120,7 +131,8 @@ window.ExportService = {
             onProgress({ total: enabledProducts.length, done: 0, current: '' });
         }
 
-        for (const prod of enabledProducts) {
+        // 🚀 ЭТАП 1: Параллельный рендеринг всех изображений
+        const renderTasks = enabledProducts.map(async (prod) => {
             // ВАЖНО: Получаем трансформацию в зависимости от режима
             const tr = window.RenderService.getTransformByMode(
                 transforms,
@@ -137,10 +149,6 @@ window.ExportService = {
                 hasTransforms: !!transforms[prod.id],
                 hasProductTransforms: !!productTransforms[prod.id]
             });
-
-            if (onProgress) {
-                onProgress(prev => ({ ...prev, current: prod.name }));
-            }
 
             // Использовать DPI продукта
             const productDPI = prod.dpi || 300;
@@ -177,18 +185,44 @@ window.ExportService = {
 
             if (!blob) {
                 console.warn(`⚠️ Не удалось отрендерить ${prod.name}`);
-                continue;
+                return null;
             }
 
             const prefix = prod.defaultPrefix || prod.name;
             const fileName = `${prefix}-${article}.png`;
 
-            console.log(`⬆️ Загрузка ${fileName} в облако...`);
-            await window.DataService.uploadToCloud(password, blob, fileName, article, categoryFolder, selectedPrint.name, prod.name);
+            return { prod, blob, fileName };
+        });
+
+        // Ждём завершения всех рендеров одновременно
+        const results = await Promise.all(renderTasks);
+        console.log(`✅ Отрендерено ${results.filter(r => r).length}/${enabledProducts.length} изображений`);
+
+        // 🚀 ЭТАП 2: Загрузка в облако (последовательно, чтобы не перегрузить сервер)
+        let uploaded = 0;
+        for (const result of results) {
+            if (!result) continue;
 
             if (onProgress) {
-                onProgress(prev => ({ ...prev, done: prev.done + 1 }));
+                onProgress(prev => ({ ...prev, current: result.prod.name, done: uploaded }));
             }
+
+            console.log(`⬆️ Загрузка ${result.fileName} в облако...`);
+            await window.DataService.uploadToCloud(
+                password, 
+                result.blob, 
+                result.fileName, 
+                article, 
+                categoryFolder, 
+                selectedPrint.name, 
+                result.prod.name
+            );
+
+            uploaded++;
+        }
+
+        if (onProgress) {
+            onProgress(prev => ({ ...prev, done: uploaded }));
         }
 
         console.log('✅ saveToCloud завершено');
