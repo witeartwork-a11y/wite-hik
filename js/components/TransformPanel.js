@@ -170,14 +170,28 @@ window.TransformPanel = ({
                     <div className="space-y-2">
                         <div className="flex justify-between items-center text-xs text-slate-400">
                             <label>Вращение</label>
-                            <div className="flex items-center bg-slate-800 rounded px-1">
-                                <input
-                                    type="number"
-                                    value={Math.round(t.rotation)}
-                                    onChange={(e) => onUpdateTransform({ ...t, rotation: parseFloat(e.target.value) })}
-                                    className="w-12 bg-transparent text-right text-xs text-slate-200 border-none focus:ring-0 p-0.5"
-                                />
-                                <span className="text-xs text-slate-500 ml-0.5">°</span>
+                            <div className="flex items-center bg-slate-800 rounded border border-slate-700 overflow-hidden">
+                                <button 
+                                    onClick={() => rotateBy(-1)} 
+                                    className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors border-r border-slate-700"
+                                >
+                                    <window.Icon name="minus" className="w-3 h-3" />
+                                </button>
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="number"
+                                        value={Math.round(t.rotation)}
+                                        onChange={(e) => onUpdateTransform({ ...t, rotation: parseFloat(e.target.value) })}
+                                        className="w-12 bg-transparent text-center text-xs text-slate-200 border-none focus:ring-0 p-0 no-spinner"
+                                    />
+                                    <span className="absolute right-1 text-[10px] text-slate-500 pointer-events-none">°</span>
+                                </div>
+                                <button 
+                                    onClick={() => rotateBy(1)} 
+                                    className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors border-l border-slate-700"
+                                >
+                                    <window.Icon name="plus" className="w-3 h-3" />
+                                </button>
                             </div>
                         </div>
                         <div className="flex items-center gap-1 bg-slate-800/80 border border-slate-700 rounded-lg p-1 shadow-lg justify-center">
@@ -237,15 +251,29 @@ window.TransformPanel = ({
                     <div className="space-y-2">
                         <div className="flex justify-between items-center text-xs text-slate-400">
                             <span>Масштаб</span>
-                            <div className="flex items-center bg-slate-800 rounded px-1">
-                                <input
-                                    type="number"
-                                    min="5" max="1000"
-                                    value={Math.round(t.scale * 100)}
-                                    onChange={(e) => onUpdateTransform({ ...t, scale: parseFloat(e.target.value) / 100 })}
-                                    className="w-12 bg-transparent text-right text-xs text-slate-200 border-none focus:ring-0 p-0.5"
-                                />
-                                <span className="text-xs text-slate-500 ml-0.5">%</span>
+                            <div className="flex items-center bg-slate-800 rounded border border-slate-700 overflow-hidden">
+                                <button 
+                                    onClick={() => onUpdateTransform({ ...t, scale: Math.max(0.05, t.scale - 0.01) })}
+                                    className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors border-r border-slate-700"
+                                >
+                                    <window.Icon name="minus" className="w-3 h-3" />
+                                </button>
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="number"
+                                        min="5" max="1000"
+                                        value={Math.round(t.scale * 100)}
+                                        onChange={(e) => onUpdateTransform({ ...t, scale: parseFloat(e.target.value) / 100 })}
+                                        className="w-12 bg-transparent text-center text-xs text-slate-200 border-none focus:ring-0 p-0 no-spinner"
+                                    />
+                                    <span className="absolute right-1 text-[10px] text-slate-500 pointer-events-none">%</span>
+                                </div>
+                                <button 
+                                    onClick={() => onUpdateTransform({ ...t, scale: Math.min(10, t.scale + 0.01) })}
+                                    className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors border-l border-slate-700"
+                                >
+                                    <window.Icon name="plus" className="w-3 h-3" />
+                                </button>
                             </div>
                         </div>
                         <input
