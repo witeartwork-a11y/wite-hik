@@ -190,7 +190,7 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
         return () => {
             cancelAnimationFrame(animationFrameId);
         };
-    }, [images, t.x, t.y, t.scale, t.rotation, product.width, product.height]);
+    }, [images, t.x, t.y, t.scale, t.rotation, product.width, product.height, maskColor]);
 
     const stateRef = useRef({ t, onUpdateTransform, imageUrl, isDragging: isDragging });
     useEffect(() => {
