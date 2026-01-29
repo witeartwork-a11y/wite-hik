@@ -17,6 +17,8 @@ window.TransformPanel = ({
     onForceLoadConfig
 }) => {
     const [presetName, setPresetName] = React.useState('');
+    const [copyStatus, setCopyStatus] = React.useState('idle'); // 'idle' | 'success'
+    const [pasteStatus, setPasteStatus] = React.useState('idle'); // 'idle' | 'success'
 
     const t = {
         x: Number.isFinite(transform?.x) ? transform.x : 0,
@@ -36,21 +38,44 @@ window.TransformPanel = ({
         setPresetName('');
     };
 
+    const copyTransform = () => {
+        const data = JSON.stringify({ x: t.x, y: t.y, scale: t.scale, rotation: t.rotation });
+        navigator.clipboard.writeText(data).then(() => {
+            setCopyStatus('success');
+            setTimeout(() => setCopyStatus('idle'), 1000);
+        });
+    };
+
+    const pasteTransform = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            const data = JSON.parse(text);
+            if (typeof data.x === 'number' && typeof data.y === 'number' && typeof data.scale === 'number') {
+                onUpdateTransform({ ...t, ...data });
+                setPasteStatus('success');
+                setTimeout(() => setPasteStatus('idle'), 1000);
+            }
+        } catch (e) {
+            console.error('Failed to paste transform', e);
+            alert('Неверный формат данных в буфере обмена');
+        }
+    };
+
     return (
         <div className="flex flex-col gap-3 p-3 text-slate-200">
-            {/* Статус сохранения */}
-            {saveStatus === 'saving' && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs rounded border border-blue-500/20">
-                    <window.Icon name="loader-2" className="w-3 h-3 animate-spin"/>
-                    <span>Сохранение...</span>
-                </div>
+            {/* Статус сохранения (перенесен в левый нижний угол сайта) */}
+            {(saveStatus === 'saving' || saveStatus === 'error') && ReactDOM.createPortal(
+                <div className={`fixed bottom-4 left-4 z-[9999] flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-xl border transition-all duration-300 ${
+                    saveStatus === 'saving' 
+                        ? 'bg-slate-900/90 text-blue-400 border-blue-500/30' 
+                        : 'bg-slate-900/90 text-red-400 border-red-500/30'
+                }`}>
+                    <window.Icon name={saveStatus === 'saving' ? "loader-2" : "alert-circle"} className={`w-4 h-4 ${saveStatus === 'saving' ? "animate-spin" : ""}`}/>
+                    <span>{saveStatus === 'saving' ? "Сохранение..." : "Ошибка сохранения"}</span>
+                </div>,
+                document.body
             )}
-            {saveStatus === 'error' && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-400 text-xs rounded border border-red-500/20">
-                    <window.Icon name="alert-circle" className="w-3 h-3"/>
-                    <span>Ошибка сохранения</span>
-                </div>
-            )}
+
             {/* Кнопка для принудительной загрузки конфига */}
             {selectedPrint && onForceLoadConfig && (
                 <button
@@ -97,7 +122,29 @@ window.TransformPanel = ({
                     <h3 className="text-xs font-bold text-slate-400 uppercase">Трансформация</h3>
                     
                     {/* Навигация (Стрелки) */}
-                    <div className="flex justify-center">
+                    <div className="flex items-center justify-center gap-2">
+                         {/* Кнопки копирования/вставки */}
+                        <div className="flex flex-col gap-1">
+                            <button 
+                                onClick={copyTransform}
+                                className={`p-2 bg-slate-800 border border-slate-700 rounded transition-colors ${
+                                    copyStatus === 'success' ? 'text-green-400 border-green-500/50' : 'text-slate-400 hover:text-white'
+                                }`}
+                                title="Копировать трансформацию"
+                            >
+                                <window.Icon name={copyStatus === 'success' ? "check" : "copy"} className="w-4 h-4" />
+                            </button>
+                            <button 
+                                onClick={pasteTransform}
+                                className={`p-2 bg-slate-800 border border-slate-700 rounded transition-colors ${
+                                    pasteStatus === 'success' ? 'text-green-400 border-green-500/50' : 'text-slate-400 hover:text-white'
+                                }`}
+                                title="Вставить трансформацию"
+                            >
+                                <window.Icon name={pasteStatus === 'success' ? "check" : "clipboard"} className="w-4 h-4" />
+                            </button>
+                        </div>
+                        
                         <div className="grid grid-cols-3 grid-rows-3 gap-0.5 bg-slate-800/80 border border-slate-700 rounded-lg p-1 shadow-lg">
                             <button onClick={() => onUpdateTransform({ ...t, y: t.y - 10 })} className="p-2 col-start-2 row-start-1 text-slate-200 hover:text-white bg-slate-700/50 rounded" title="Сместить вверх">
                                 <window.Icon name="arrow-up" className="w-4 h-4" />
@@ -119,7 +166,18 @@ window.TransformPanel = ({
 
                     {/* Вращение */}
                     <div className="space-y-2">
-                        <label className="text-xs text-slate-400">Вращение</label>
+                        <div className="flex justify-between items-center text-xs text-slate-400">
+                            <label>Вращение</label>
+                            <div className="flex items-center bg-slate-800 rounded px-1">
+                                <input
+                                    type="number"
+                                    value={Math.round(t.rotation)}
+                                    onChange={(e) => onUpdateTransform({ ...t, rotation: parseFloat(e.target.value) })}
+                                    className="w-12 bg-transparent text-right text-xs text-slate-200 border-none focus:ring-0 p-0.5"
+                                />
+                                <span className="text-xs text-slate-500 ml-0.5">°</span>
+                            </div>
+                        </div>
                         <div className="flex items-center gap-1 bg-slate-800/80 border border-slate-700 rounded-lg p-1 shadow-lg justify-center">
                             <button onClick={() => rotateBy(-90)} className="p-2 text-slate-200 hover:text-white flex-1 flex justify-center" title="Повернуть -90°">
                                 <window.Icon name="rotate-ccw" className="w-4 h-4" />
@@ -145,7 +203,16 @@ window.TransformPanel = ({
                     <div className="space-y-2">
                         <div className="flex justify-between items-center text-xs text-slate-400">
                             <span>Масштаб</span>
-                            <span className="tabular-nums">{Math.round(t.scale * 100)}%</span>
+                            <div className="flex items-center bg-slate-800 rounded px-1">
+                                <input
+                                    type="number"
+                                    min="5" max="1000"
+                                    value={Math.round(t.scale * 100)}
+                                    onChange={(e) => onUpdateTransform({ ...t, scale: parseFloat(e.target.value) / 100 })}
+                                    className="w-12 bg-transparent text-right text-xs text-slate-200 border-none focus:ring-0 p-0.5"
+                                />
+                                <span className="text-xs text-slate-500 ml-0.5">%</span>
+                            </div>
                         </div>
                         <input
                             type="range"
@@ -158,18 +225,17 @@ window.TransformPanel = ({
 
                     {/* DPI (если доступно) */}
                     {onDPIChange && (
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center text-xs text-slate-400">
+                        <div className="space-y-1 pt-2 border-t border-slate-800">
+                            <div className="flex justify-between items-center text-[10px] text-slate-500">
                                 <span>DPI</span>
-                                <span className="tabular-nums">{dpi || 300}</span>
+                                <input
+                                    type="number"
+                                    min="72" max="600" step="1"
+                                    value={dpi || 300}
+                                    onChange={(e) => onDPIChange(parseInt(e.target.value))}
+                                    className="w-12 bg-slate-800 text-right text-[10px] text-slate-500 border border-slate-700 rounded px-1 py-0.5 focus:border-slate-500 outline-none"
+                                />
                             </div>
-                            <input
-                                type="range"
-                                min="72" max="600" step="1"
-                                value={dpi || 300}
-                                onChange={(e) => onDPIChange(parseInt(e.target.value))}
-                                className="w-full accent-indigo-400 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                            />
                         </div>
                     )}
                     
