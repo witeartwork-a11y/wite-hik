@@ -23,7 +23,8 @@ window.CollectionService = {
 
             for (const prod of enabledProducts) {
                 // Определяем реальный режим для текущего товара
-                const productMode = prod.tab || mode; // 'products' или 'mockups'
+                let productMode = prod.tab || mode; // 'products' или 'mockups'
+                if (productMode === 'base') productMode = 'mockups';
 
                 let tr;
                 if (printItem.positions && printItem.positions[prod.id]) {
@@ -56,10 +57,10 @@ window.CollectionService = {
                     targetOverlay = prod.overlay;
                 } else {
                     // Режим "Мокапы" (Mockups)
-                    targetWidth = prod.mockupWidth;
-                    targetHeight = prod.mockupHeight;
-                    targetMask = prod.mockupMask;
-                    targetOverlay = prod.mockupOverlay;
+                    targetWidth = prod.mockupWidth || prod.width;
+                    targetHeight = prod.mockupHeight || prod.height;
+                    targetMask = prod.mockupMask || prod.mask;
+                    targetOverlay = prod.mockupOverlay || prod.overlay;
                 }
 
                 const blob = await window.RenderService.renderMockupBlob(
