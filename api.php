@@ -16,6 +16,7 @@ $CLOUD_DIR = $BASE_DIR . '/uploads/cloud'; // Папка для облачных
 $ASSETS_DIR = $BASE_DIR . '/uploads/assets'; // Папка для масок и оверлеев
 $DATA_DIR = $BASE_DIR . '/data';
 $THUMBS_DIR = $BASE_DIR . '/data/thumbnails';
+$SHORT_URLS_FILE = $DATA_DIR . '/short_urls.json'; // База коротких ссылок
 $PROTECTED_FILES = ['thumbnails'];
 
 $CONFIG_FILE = $DATA_DIR . '/products_config.json';
@@ -101,6 +102,57 @@ function sanitizeArticle($article) {
     return $clean;
 }
 
+// === Система коротких ссылок для товаров ===
+function generateShortId() {
+    // Генерируем уникальный ID из букв и цифр (8 символов)
+    $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    $id = '';
+    for ($i = 0; $i < 8; $i++) {
+        $id .= $chars[rand(0, strlen($chars) - 1)];
+    }
+    return $id;
+}
+
+function loadShortUrls($file) {
+    if (!file_exists($file)) return [];
+    $data = json_decode(file_get_contents($file), true);
+    return is_array($data) ? $data : [];
+}
+
+function saveShortUrls($file, $data) {
+    $dir = dirname($file);
+    if (!is_dir($dir)) mkdir($dir, 0775, true);
+    file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
+
+function createShortUrl($fullUrl, $isPublic = true, $shortUrlsFile = null) {
+    global $SHORT_URLS_FILE;
+    if ($shortUrlsFile === null) $shortUrlsFile = $SHORT_URLS_FILE;
+    
+    $urls = loadShortUrls($shortUrlsFile);
+    
+    // Проверяем есть ли уже такая ссылка
+    foreach ($urls as $shortId => $entry) {
+        if ($entry['url'] === $fullUrl) return $shortId;
+    }
+    
+    // Генерируем новую
+    do {
+        $shortId = generateShortId();
+    } while (isset($urls[$shortId]));
+    
+    $urls[$shortId] = [
+        'url' => $fullUrl,
+        'public' => $isPublic,
+        'created' => time(),
+        'accessed' => 0,
+        'access_count' => 0
+    ];
+    
+    saveShortUrls($shortUrlsFile, $urls);
+    return $shortId;
+}
+
 // Функция для правильного имени превью (без дублирования расширения)
 function getThumbnailName($filename) {
     $info = pathinfo($filename);
@@ -163,6 +215,30 @@ ensureDir($UPLOADS_DIR);
 ensureDir($CLOUD_DIR);
 ensureDir($ASSETS_DIR);
 ensureDir($PRINTS_CONFIGS_DIR);
+
+// === Обработчик коротких ссылок ===
+// Если URL вида /img/ABC123, редиректим на полный путь
+if (preg_match('~/img/([A-Za-z0-9]{8})~', $_SERVER['REQUEST_URI'], $matches)) {
+    $shortId = $matches[1];
+    $urls = loadShortUrls($SHORT_URLS_FILE);
+    
+    if (isset($urls[$shortId]) && $urls[$shortId]['public']) {
+        // Обновляем статистику
+        $urls[$shortId]['accessed'] = time();
+        $urls[$shortId]['access_count'] = ($urls[$shortId]['access_count'] ?? 0) + 1;
+        saveShortUrls($SHORT_URLS_FILE, $urls);
+        
+        // Редиректим на полный путь
+        $targetUrl = $urls[$shortId]['url'];
+        header('Location: ' . $targetUrl);
+        exit;
+    }
+    
+    // Если ссылка не найдена
+    http_response_code(404);
+    echo json_encode(['success' => false, 'message' => 'Short URL not found']);
+    exit;
+}
 
 $action = $_GET['action'] ?? '';
 
@@ -332,6 +408,12 @@ if ($action === 'list') {
                         'article_thumb' => $articleThumbnail
                     ];
                     
+                    // Для товаров генерируем/получаем короткую ссылку
+                    if ($category === 'products') {
+                        $shortId = createShortUrl($cloudItem['url'], true, $SHORT_URLS_FILE);
+                        $cloudItem['short_url'] = '/img/' . $shortId;
+                    }
+                    
                     // Пытаемся прочитать оригинальное имя файла из метаданных
                     $metaFile = $path . '.meta.json';
                     if (file_exists($metaFile)) {
@@ -426,6 +508,12 @@ if ($action === 'upload') {
             if ($uploadType === 'cloud' && $article) {
                 $uploadedItem['article'] = $article;
                 $uploadedItem['category'] = $category;
+                
+                // Для товаров создаём короткую ссылку
+                if ($category === 'products') {
+                    $shortId = createShortUrl($relUrl, true, $SHORT_URLS_FILE);
+                    $uploadedItem['short_url'] = '/img/' . $shortId;
+                }
                 
                 $metaData = [];
                 if ($printName) {

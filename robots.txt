@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /uploads/cloud/*/mockups/
+Disallow: /uploads/assets/
+Disallow: /data/
+Disallow: /js/
+Disallow: /api.php
+Disallow: /img/
+
+Allow: /uploads/cloud/*/products/
+
+Sitemap: https://wite-hik.ru/sitemap.xml

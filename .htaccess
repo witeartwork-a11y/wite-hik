@@ -1,0 +1,24 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Запрещаем доступ к определённым каталогам
+RewriteRule ^data/ - [F]
+RewriteRule ^js/services/authService\.js$ - [F]
+
+# Запрещаем индексирование мокапов
+<FilesMatch "mockups">
+    Header set X-Robots-Tag "noindex, nofollow, nosnippet, noarchive"
+</FilesMatch>
+
+# Редирект для коротких ссылок /img/{ID}
+RewriteRule ^img/([A-Za-z0-9]{8})$ /api.php?action=redirect&id=$1 [L,QSA]
+
+# Защита от доступа к облачным файлам мокапов без токена
+# (для мокапов нужно будет добавить проверку токена позже)
+
+</IfModule>
+
+# Запрещаем индексирование мокапов и приватных файлов
+<FilesMatch "\.(meta\.json)$">
+    Deny from all
+</FilesMatch>
