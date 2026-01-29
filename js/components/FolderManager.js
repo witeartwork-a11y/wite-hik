@@ -29,9 +29,14 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
                     
                     // Сразу сообщаем родителю о папках, чтобы он мог скрыть файлы
                     if (onFolderChange) onFolderChange(loadedFolders);
+                } else {
+                    // Even if failed, notify parent with empty folders to unblock UI
+                    if (onFolderChange) onFolderChange({});
                 }
             } catch (e) {
                 console.error('Ошибка загрузки папок:', e);
+                // Even if error, notify parent with empty folders to unblock UI
+                if (onFolderChange) onFolderChange({});
             } finally {
                 setIsLoading(false);
                 if (onLoading) onLoading(false);

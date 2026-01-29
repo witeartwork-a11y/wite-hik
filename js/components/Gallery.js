@@ -8,6 +8,12 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     const [dateFilter, setDateFilter] = useState('week'); // 'all', 'today', 'week', 'month'
     const [selectedFiles, setSelectedFiles] = useState(new Set());
     const [filedFiles, setFiledFiles] = useState(new Set()); // Files that are in folders
+    const [areFoldersLoading, setAreFoldersLoading] = useState(true); // Always start with true to prevent flashing
+
+    useEffect(() => {
+        setFiledFiles(new Set());
+        setAreFoldersLoading(activeSubTab !== 'cloud'); // Only load if not cloud tab
+    }, [activeSubTab, galleryType]);
     
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -236,10 +242,17 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                     selectedFiles={selectedFiles}
                     onRenameFile={handleRename}
                     onFolderChange={handleFolderChange}
+                    onLoading={setAreFoldersLoading}
                 />
             )}
 
             {/* Сетка галереи */}
+            {areFoldersLoading && activeSubTab !== 'cloud' ? (
+                <div className="flex justify-center items-center py-20">
+                    <window.Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                </div>
+            ) : (
+            <>
             <div className="gallery-grid">
                 {displayedFiles.map(f => {
                     const isSelected = selectedFiles.has(f.name);
@@ -371,6 +384,8 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                     <window.Icon name="image" className="w-12 h-12 mb-4" />
                     <p>Галерея пуста</p>
                 </div>
+            )}
+            </>
             )}
         </div>
     );
