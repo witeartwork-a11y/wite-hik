@@ -259,6 +259,11 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
         if (!container) return;
         
         const onWheel = (e) => {
+            // Требуем нажатия Ctrl или Command для зума, чтобы не мешать скроллу
+            if (!e.ctrlKey && !e.metaKey) {
+                return;
+            }
+
             // Если канвас активен, то зумим его. Если нет - может скроллить страницу.
             // Но пользователь может хотеть зумить и неактивный канвас.
             // Оставим базовое поведение, но добавим активацию при зуме.
@@ -272,6 +277,7 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
             const newScale = Math.min(10, Math.max(0.05, t.scale + delta));
             onUpdateTransform({ ...t, scale: newScale });
         };
+
 
         
         // passive: false критически важен, чтобы preventDefault работал
@@ -292,6 +298,7 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
                 ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500/50' : 'border-slate-700 hover:border-slate-600'}
             `}
             onClick={() => onActivate && onActivate()}
+            title="Перетаскивайте для перемещения. Ctrl + Скролл для масштабирования."
         >
             <div className="relative flex-1 flex items-center justify-center">
                 <canvas
