@@ -196,6 +196,10 @@ body {
 
 /* Десктоп (>=1025px) */
 @media (min-width: 1025px) {
+    body.app-mode-editor {
+        overflow: hidden;
+    }
+
     .responsive-layout {
         height: calc(100vh - 80px) !important;
     }

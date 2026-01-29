@@ -45,6 +45,18 @@ function App() {
     const [isCloudSaving, setIsCloudSaving] = useState(false);
     const [cloudProgress, setCloudProgress] = useState({ total: 0, done: 0, current: '' });
 
+    // Управление классом на body для отключения скролла в режиме редактора
+    useEffect(() => {
+        if (auth.isAuth && activeTab !== 'gallery') {
+            document.body.classList.add('app-mode-editor');
+        } else {
+            document.body.classList.remove('app-mode-editor');
+        }
+        return () => {
+             document.body.classList.remove('app-mode-editor');
+        };
+    }, [activeTab, auth.isAuth]);
+
     const handleSavePreset = useCallback((name, scope = 'single') => {
          let dataToSave;
          const mapToUse = activeTab === 'products' ? productTransforms : transforms;
