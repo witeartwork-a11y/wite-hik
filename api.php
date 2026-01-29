@@ -23,7 +23,8 @@ $actions = [
     'delete_category' => 'file_ops.php',
     'delete_article' => 'file_ops.php',
     'list' => 'list.php',
-    'upload' => 'upload.php'
+    'upload' => 'upload.php',
+    'cloud_products' => 'api_cloud.php'
 ];
 
 if (isset($actions[$action])) {
