@@ -13,6 +13,7 @@ uploads/cloud/
 !uploads/cloud/.gitkeep
 
 # === СИСТЕМНЫЕ ФАЙЛЫ ===
+secrets.php
 .DS_Store
 .env
 .env.local

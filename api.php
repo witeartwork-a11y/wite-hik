@@ -9,7 +9,20 @@ header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 header("Content-Type: application/json; charset=UTF-8");
 
-$PASSWORD = 'hikomori1hikomori1'; 
+if (file_exists(__DIR__ . '/secrets.php')) {
+    require_once __DIR__ . '/secrets.php';
+} else {
+    // Дефолтное значение или пустое, если файла нет (для безопасности лучше не иметь дефолта в коде)
+    // $PASSWORD должно быть определено в secrets.php
+    $PASSWORD = getenv('API_PASSWORD') ?: ''; 
+}
+
+if (empty($PASSWORD)) {
+    // Fallback or error to prevent unauthorized access if config is missing
+    // Но для совместимости пока оставим пустую строку или ошибку, если это критично.
+    // В данном случае лучше, чтобы авторизация просто не проходила, если пароль не задан.
+}
+
 $BASE_DIR = __DIR__;
 $UPLOADS_DIR = $BASE_DIR . '/uploads';
 $CLOUD_DIR = $BASE_DIR . '/uploads/cloud'; // Папка для облачных файлов

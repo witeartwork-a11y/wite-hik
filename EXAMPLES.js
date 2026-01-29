@@ -12,7 +12,7 @@
 
 async function uploadProductImage(file, articleId) {
   const formData = new FormData();
-  formData.append('password', 'hikomori1hikomori1');
+  formData.append('password', 'YOUR_PASSWORD');
   formData.append('type', 'cloud');
   formData.append('article', articleId);
   formData.append('category', 'products');  // ← КЛЮЧЕВОЙ параметр!
@@ -54,7 +54,7 @@ async function uploadProductImage(file, articleId) {
 
 async function uploadMockupImage(file, articleId) {
   const formData = new FormData();
-  formData.append('password', 'hikomori1hikomori1');
+  formData.append('password', 'YOUR_PASSWORD');
   formData.append('type', 'cloud');
   formData.append('article', articleId);
   formData.append('category', 'mockups');  // ← Мокап, NOT продукт!
@@ -148,7 +148,7 @@ async function loadAllFiles() {
 
 class ProductImageManager {
   constructor() {
-    this.password = 'hikomori1hikomori1';
+    this.password = 'YOUR_PASSWORD';
   }
 
   async uploadProduct(file, articleId) {
