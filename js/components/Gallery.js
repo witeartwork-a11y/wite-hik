@@ -249,7 +249,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
             {/* Сетка галереи */}
             {areFoldersLoading && activeSubTab !== 'cloud' ? (
                 <div className="flex justify-center items-center py-20">
-                    <window.Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                    <window.Icon name="loader-2" className="w-8 h-8 text-indigo-500 animate-spin" />
                 </div>
             ) : (
             <>
