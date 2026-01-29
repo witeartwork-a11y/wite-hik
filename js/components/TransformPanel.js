@@ -77,18 +77,9 @@ window.TransformPanel = ({
                 </div>,
                 document.body
             )}
+            
+            {/* Кнопка сброса удалена */}
 
-            {/* Кнопка для принудительной загрузки конфига */}
-            {selectedPrint && onForceLoadConfig && (
-                <button
-                    onClick={onForceLoadConfig}
-                    className="w-full px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs rounded border border-purple-500/30 transition-colors"
-                    title="Если вы внесли изменения, эта кнопка вернет состояние к последнему сохранению"
-                >
-                    <window.Icon name="refresh-cw" className="w-3 h-3 inline mr-1"/>
-                    Сбросить к сохраненным
-                </button>
-            )}
             {/* Мокапов в строку - Всегда доступно */}
             {setMockupsPerRow && (
                 <div className="space-y-2 pb-4 border-b border-slate-700">
@@ -114,6 +105,38 @@ window.TransformPanel = ({
                 </div>
             )}
 
+            {/* Визуализация маски */}
+            {setMaskColor && (
+                <div className="space-y-2 pb-4 border-b border-slate-700">
+                     <div className="flex justify-between items-center text-xs text-slate-400 font-bold uppercase">
+                        <label>Границы маски</label>
+                        {maskColor && (
+                             <button 
+                                onClick={() => setMaskColor(null)}
+                                className="text-[10px] text-red-400 hover:text-red-300 font-normal normal-case"
+                            >
+                                Сбросить
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex justify-between gap-1">
+                        {['#ffffff', '#ff0000', '#00ff00', '#0000ff', '#000000'].map(color => (
+                            <button
+                                key={color}
+                                onClick={() => setMaskColor(color === maskColor ? null : color)}
+                                className={`w-full h-8 rounded border transition-all ${
+                                    maskColor === color 
+                                        ? 'border-indigo-500 scale-105 shadow-[0_0_10px_rgba(99,102,241,0.5)]' 
+                                        : 'border-slate-700 opacity-60 hover:opacity-100'
+                                }`}
+                                style={{ backgroundColor: color }}
+                                title={color}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {!isActive ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-slate-500 py-10 text-center opacity-50">
                     <window.Icon name="mouse-pointer-click" className="w-8 h-8 mb-2" />
@@ -124,26 +147,26 @@ window.TransformPanel = ({
                     <h3 className="text-xs font-bold text-slate-400 uppercase">Трансформация</h3>
                     
                     {/* Навигация (Стрелки) */}
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-stretch justify-center gap-2">
                          {/* Кнопки копирования/вставки */}
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 w-14">
                             <button 
                                 onClick={copyTransform}
-                                className={`p-2 bg-slate-800 border border-slate-700 rounded transition-colors ${
+                                className={`flex-1 bg-slate-800 border border-slate-700 rounded transition-colors flex items-center justify-center ${
                                     copyStatus === 'success' ? 'text-green-400 border-green-500/50' : 'text-slate-400 hover:text-white'
                                 }`}
                                 title="Копировать трансформацию"
                             >
-                                <window.Icon name={copyStatus === 'success' ? "check" : "copy"} className="w-4 h-4" />
+                                <window.Icon name={copyStatus === 'success' ? "check" : "copy"} className="w-5 h-5" />
                             </button>
                             <button 
                                 onClick={pasteTransform}
-                                className={`p-2 bg-slate-800 border border-slate-700 rounded transition-colors ${
+                                className={`flex-1 bg-slate-800 border border-slate-700 rounded transition-colors flex items-center justify-center ${
                                     pasteStatus === 'success' ? 'text-green-400 border-green-500/50' : 'text-slate-400 hover:text-white'
                                 }`}
                                 title="Вставить трансформацию"
                             >
-                                <window.Icon name={pasteStatus === 'success' ? "check" : "clipboard"} className="w-4 h-4" />
+                                <window.Icon name={pasteStatus === 'success' ? "check" : "clipboard"} className="w-5 h-5" />
                             </button>
                         </div>
                         
@@ -215,37 +238,8 @@ window.TransformPanel = ({
                         </div>
                     </div>
 
-                    {/* Визуализация маски */}
-                    {setMaskColor && (
-                        <div className="space-y-2 pt-2 border-t border-slate-800">
-                             <div className="flex justify-between items-center text-xs text-slate-400">
-                                <label>Границы маски</label>
-                                {maskColor && (
-                                     <button 
-                                        onClick={() => setMaskColor(null)}
-                                        className="text-[10px] text-red-400 hover:text-red-300"
-                                    >
-                                        Сбросить
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex justify-between gap-1">
-                                {['#ffffff', '#ff0000', '#00ff00', '#0000ff', '#000000'].map(color => (
-                                    <button
-                                        key={color}
-                                        onClick={() => setMaskColor(color === maskColor ? null : color)}
-                                        className={`w-full h-6 rounded border transition-all ${
-                                            maskColor === color 
-                                                ? 'border-indigo-500 scale-110 shadow-[0_0_10px_rgba(99,102,241,0.5)]' 
-                                                : 'border-slate-700 opacity-60 hover:opacity-100'
-                                        }`}
-                                        style={{ backgroundColor: color }}
-                                        title={color}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    {/* Секция маски перемещена выше */}
+
 
                     {/* Масштаб */}
                     <div className="space-y-2">
