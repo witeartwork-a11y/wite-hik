@@ -510,7 +510,7 @@ function App() {
             />
 
             <div className="container mx-auto p-4 max-w-[95vw]">
-                {activeTab === 'base' ? (
+                {activeTab === 'base' || activeTab === 'publication' ? (
                     <div className="space-y-4">
                         {galleryTab === 'files' ? (
                             <window.Gallery 

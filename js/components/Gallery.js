@@ -155,6 +155,12 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                 </div>
             </div>
 
+            {/* Папки для организации файлов */}
+            <window.FolderManager 
+                files={filteredFiles} 
+                title="Организация файлов"
+            />
+
             {/* Зона загрузки */}
             <div className={`border-2 border-dashed border-slate-700/50 bg-slate-800/30 rounded-2xl p-8 text-center cursor-pointer hover:border-indigo-500/50 hover:bg-slate-800/50 transition-all relative group ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
                 <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
