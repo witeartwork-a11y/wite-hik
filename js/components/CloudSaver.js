@@ -133,8 +133,13 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
         }
     };
 
-    const handleCopyLink = (url) => {
-        const fullUrl = window.location.origin + url;
+    const handleCopyLink = (url, file) => {
+        // Используем короткую ссылку для товаров, полную для всех остальных
+        let linkToCopy = url;
+        if (file && file.category === 'products' && file.short_url) {
+            linkToCopy = file.short_url;
+        }
+        const fullUrl = window.location.origin + linkToCopy;
         navigator.clipboard.writeText(fullUrl);
         setNotification('Ссылка скопирована');
         setTimeout(() => setNotification(null), 2000);
@@ -342,7 +347,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                                                         <window.Icon name="eye" className="w-3 h-3" />
                                                                         <span>Смотреть</span>
                                                                     </button>
-                                                                    <button onClick={() => handleCopyLink(f.url)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
+                                                                    <button onClick={() => handleCopyLink(f.url, f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
                                                                         <window.Icon name="copy" className="w-3 h-3" />
                                                                         <span>Ссылка</span>
                                                                     </button>
@@ -418,7 +423,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                             </div>
                             <div className="flex items-center gap-2">
                                 <button 
-                                    onClick={() => handleCopyLink(previewFile.url)}
+                                    onClick={() => handleCopyLink(previewFile.url, previewFile)}
                                     className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs flex items-center gap-1.5"
                                 >
                                     <window.Icon name="copy" className="w-3 h-3" />

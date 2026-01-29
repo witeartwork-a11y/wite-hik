@@ -207,7 +207,11 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                 
                                 <div className="flex gap-2">
                                     <button 
-                                        onClick={() => { navigator.clipboard.writeText(window.location.origin + f.url); }} 
+                                        onClick={() => { 
+                                            // Используем короткую ссылку для товаров
+                                            const linkToCopy = f.category === 'products' && f.short_url ? f.short_url : f.url;
+                                            navigator.clipboard.writeText(window.location.origin + linkToCopy);
+                                        }} 
                                         className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
                                         title="Копировать ссылку"
                                     >

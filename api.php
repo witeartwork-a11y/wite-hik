@@ -209,6 +209,37 @@ function createThumbnail($src, $dest, $targetWidth = 300) {
     return false;
 }
 
+// Сжатие товаров в JPG (оптимизация для маркетплейсов)
+function compressProductImage($src, $dest, $quality = 80) {
+    if (!extension_loaded('gd')) return false;
+    $info = @getimagesize($src);
+    if (!$info) return false;
+    
+    list($width, $height, $type) = $info;
+    
+    $source = null;
+    switch ($type) {
+        case IMAGETYPE_JPEG: $source = imagecreatefromjpeg($src); break;
+        case IMAGETYPE_PNG:  $source = imagecreatefrompng($src); break;
+        case IMAGETYPE_WEBP: $source = imagecreatefromwebp($src); break;
+    }
+    if (!$source) return false;
+    
+    // Если исходный файл уже JPG, сохраняем с оптимизацией
+    $tmpDest = $dest . '.tmp';
+    $saved = imagejpeg($source, $tmpDest, $quality);
+    imagedestroy($source);
+    
+    if ($saved && file_exists($tmpDest)) {
+        rename($tmpDest, $dest);
+        return true;
+    }
+    if (file_exists($tmpDest)) {
+        @unlink($tmpDest);
+    }
+    return false;
+}
+
 ensureDir($DATA_DIR);
 ensureDir($THUMBS_DIR);
 ensureDir($UPLOADS_DIR);
@@ -482,6 +513,21 @@ if ($action === 'upload') {
                 $relUrl = '/uploads/assets/' . $newName;
             } else {
                 $relUrl = '/uploads/' . $newName;
+            }
+            
+            // Сжимаем товары в JPG для оптимизации на маркетплейсах
+            if ($uploadType === 'cloud' && $article && $category === 'products') {
+                $originalSize = filesize($finalPath);
+                // Если файл PNG или больше 2MB, конвертуем в JPG качество 82
+                if (strtolower(pathinfo($finalPath, PATHINFO_EXTENSION)) === 'png' || $originalSize > 2097152) {
+                    $jpgPath = str_replace(pathinfo($finalPath, PATHINFO_EXTENSION), 'jpg', $finalPath);
+                    if (compressProductImage($finalPath, $jpgPath, 82)) {
+                        @unlink($finalPath);
+                        $finalPath = $jpgPath;
+                        $newName = pathinfo($jpgPath, PATHINFO_BASENAME);
+                        $relUrl = '/uploads/cloud/' . sanitizeArticle($article) . '/' . $category . '/' . $newName;
+                    }
+                }
             }
             
             // Создаем превью сразу при загрузке
