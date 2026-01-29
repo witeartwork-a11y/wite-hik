@@ -139,11 +139,22 @@ function createThumbnail($src, $dest, $targetWidth = 300) {
     }
 
     imagecopyresampled($newImg, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
-    imagejpeg($newImg, $dest, 80);
+    
+    // Use temporary file for atomic write to avoid partial reads
+    $tmpDest = $dest . '.tmp';
+    $saved = imagejpeg($newImg, $tmpDest, 80);
     
     imagedestroy($newImg);
     imagedestroy($source);
-    return true;
+
+    if ($saved && file_exists($tmpDest)) {
+        rename($tmpDest, $dest);
+        return true;
+    }
+    if (file_exists($tmpDest)) {
+        @unlink($tmpDest);
+    }
+    return false;
 }
 
 ensureDir($DATA_DIR);
@@ -251,7 +262,8 @@ if ($action === 'list') {
         $thumbPath = $THUMBS_DIR . '/' . $thumbName;
         $thumbUrl = null;
 
-        if (!file_exists($thumbPath)) {
+        // Check exists AND if original is newer than thumbnail
+        if (!file_exists($thumbPath) || filemtime($path) > filemtime($thumbPath)) {
             if (createThumbnail($path, $thumbPath)) {
                 $thumbUrl = '/data/thumbnails/' . $thumbName;
             }
@@ -296,7 +308,7 @@ if ($action === 'list') {
                     $thumbPath = $THUMBS_DIR . '/' . $thumbName;
                     $thumbUrl = null;
 
-                    if (!file_exists($thumbPath)) {
+                    if (!file_exists($thumbPath) || filemtime($path) > filemtime($thumbPath)) {
                         if (createThumbnail($path, $thumbPath)) {
                             $thumbUrl = '/data/thumbnails/' . $thumbName;
                         }
