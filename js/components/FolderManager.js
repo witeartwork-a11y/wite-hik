@@ -1,7 +1,7 @@
 // js/components/FolderManager.js
 const { Folder, FolderOpen, Trash2, Plus, ChevronRight, ChevronDown } = lucide;
 
-window.FolderManager = ({ files = [], onFolderChange, title = "Папки", galleryType = 'upload', onAddToCollection, onDeleteFile, toggleSelect, selectedFiles, onRenameFile }) => {
+window.FolderManager = ({ files = [], onFolderChange, title = "Папки", galleryType = 'upload', auth, onAddToCollection, onDeleteFile, toggleSelect, selectedFiles, onRenameFile }) => {
     const { useState, useEffect } = React;
     const [folders, setFolders] = useState({});
     const [openedFolder, setOpenedFolder] = useState(null);
@@ -29,12 +29,16 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
 
     // Сохраняем папки на сервер
     const saveFoldersToServer = async (foldersData) => {
+        if (!auth?.password) {
+            console.error('❌ Нет пароля для сохранения папок');
+            return;
+        }
         try {
             console.log('💾 Сохраняю папки:', { galleryType, title, folders: foldersData });
             const res = await fetch('/api.php?action=save_folders', {
                 method: 'POST',
                 body: JSON.stringify({
-                    password: window.auth?.password || '',
+                    password: auth.password,
                     gallery_type: galleryType,
                     title: title,
                     folders: foldersData

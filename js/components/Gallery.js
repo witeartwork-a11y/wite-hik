@@ -228,6 +228,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                     files={files} 
                     title="Организация файлов"
                     galleryType={galleryType}
+                    auth={auth}
                     onAddToCollection={onAddToCollection} 
                     onDeleteFile={onDeleteFile}
                     toggleSelect={toggleSelect}
