@@ -13,11 +13,27 @@ window.CollectionService = {
         if (!window.Utils) throw new Error('Библиотеки не загружены');
         if (!Array.isArray(prints) || prints.length === 0) throw new Error('Нет принтов для сохранения');
         if (!Array.isArray(enabledProducts) || enabledProducts.length === 0) throw new Error('Нет включенных товаров');
+        
+        console.log('☁️ CollectionService.savePrintsToCloud начало:', {
+            printsCount: prints.length,
+            enabledProductsCount: enabledProducts.length,
+            mode: mode
+        });
 
         const totalItems = prints.length * enabledProducts.length;
         let processed = 0;
 
         for (const printItem of prints) {
+            // 🔑 КРИТИЧЕСКИ ВАЖНО: Загружаем конфиг ДЛЯ КАЖДОГО ПРИНТА из prints_config.json
+            // Это гарантирует, что используются ПРАВИЛЬНЫЕ трансформации
+            const printConfigFromDB = await window.DataService.loadPrintsConfig(printItem.name);
+            
+            console.log(`📂 Загрузил конфиг для принта "${printItem.name}":`, {
+                hasConfig: !!printConfigFromDB,
+                hasTransforms: printConfigFromDB?.transforms ? Object.keys(printConfigFromDB.transforms).length : 0,
+                hasProductTransforms: printConfigFromDB?.productTransforms ? Object.keys(printConfigFromDB.productTransforms).length : 0
+            });
+            
             const printImg = await window.Utils.loadImage(printItem.url);
             if (!printImg) continue;
 
@@ -27,16 +43,34 @@ window.CollectionService = {
                 if (productMode === 'base') productMode = 'mockups';
 
                 let tr;
+                
+                // 1️⃣ ПРИОРИТЕТ 1: Позиции в КОЛЛЕКЦИИ (самые свежие, отредактированные пользователем)
                 if (printItem.positions && printItem.positions[prod.id]) {
                     const savedPos = printItem.positions[prod.id];
-                    // Поддержка новой структуры с разделением на products/mockups
                     if (savedPos.products && savedPos.mockups) {
                         tr = savedPos[productMode];
+                        console.log(`  ✅ [${prod.name}] Используем позицию из КОЛЛЕКЦИИ (${productMode}):`, tr);
                     } else {
-                        // Старый формат (обратная совместимость)
                         tr = savedPos;
+                        console.log(`  ✅ [${prod.name}] Используем позицию из КОЛЛЕКЦИИ (старый формат):`, tr);
                     }
-                } else {
+                }
+                
+                // 2️⃣ ПРИОРИТЕТ 2: Конфиг из БД (prints_config.json)
+                if (!tr && printConfigFromDB) {
+                    const dbTransforms = productMode === 'products' 
+                        ? printConfigFromDB.productTransforms 
+                        : printConfigFromDB.transforms;
+                    
+                    if (dbTransforms && dbTransforms[prod.id]) {
+                        tr = dbTransforms[prod.id];
+                        console.log(`  ✅ [${prod.name}] Используем позицию из КОНФИГА БД (${productMode}):`, tr);
+                    }
+                }
+                
+                // 3️⃣ ПРИОРИТЕТ 3: Глобальные трансформации (fallback)
+                if (!tr) {
+                    console.warn(`  ⚠️ [${prod.name}] Не найдена позиция, использую FALLBACK`);
                     tr = window.RenderService.getTransformByMode(
                         transforms,
                         productTransforms,
@@ -44,6 +78,7 @@ window.CollectionService = {
                         prod.id,
                         productMode === 'products' ? 0.6 : 0.5
                     );
+                    console.log(`  ✅ [${prod.name}] Fallback позиция:`, tr);
                 }
 
                 const productDPI = prod.dpi || 300;
