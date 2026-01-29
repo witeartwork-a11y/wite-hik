@@ -109,6 +109,38 @@ window.DataService = {
         }
     },
 
+    // Загрузить папки с сервера
+    loadFolders: async (galleryType, title) => {
+        try {
+            const res = await fetch(`/api.php?action=load_folders&gallery_type=${encodeURIComponent(galleryType)}&title=${encodeURIComponent(title)}&t=${Date.now()}`);
+            const data = await res.json();
+            return data.success ? (data.folders || {}) : {};
+        } catch (e) {
+            console.error("Ошибка загрузки папок:", e);
+            return {};
+        }
+    },
+
+    // Сохранить папки на сервер
+    saveFolders: async (password, galleryType, title, folders) => {
+        try {
+            const res = await fetch('/api.php?action=save_folders', {
+                method: 'POST',
+                body: JSON.stringify({
+                    password,
+                    gallery_type: galleryType,
+                    title: title,
+                    folders: folders
+                })
+            });
+            const data = await res.json();
+            return data.success;
+        } catch (e) {
+            console.error("Ошибка сохранения папок:", e);
+            return false;
+        }
+    },
+
     // Загрузить файлы (картинки, маски)
     uploadFiles: async (password, fileList) => {
         if (!fileList || fileList.length === 0) return null;

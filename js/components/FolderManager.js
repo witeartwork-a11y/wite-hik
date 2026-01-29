@@ -7,28 +7,53 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
     const [openedFolder, setOpenedFolder] = useState(null);
     const [isCreatingFolder, setIsCreatingFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Загружаем папки из localStorage
+    // Загружаем папки с сервера
     useEffect(() => {
-        const storageKey = `folders_${galleryType}_${title}`;
-        const stored = localStorage.getItem(storageKey);
-        if (stored) {
+        const loadFolders = async () => {
             try {
-                setFolders(JSON.parse(stored));
+                const res = await fetch(`/api.php?action=load_folders&gallery_type=${encodeURIComponent(galleryType)}&title=${encodeURIComponent(title)}&t=${Date.now()}`);
+                const data = await res.json();
+                if (data.success) {
+                    setFolders(data.folders || {});
+                }
             } catch (e) {
                 console.error('Ошибка загрузки папок:', e);
+            } finally {
+                setIsLoading(false);
             }
-        }
-    }, [galleryType, title, files]);
+        };
+        loadFolders();
+    }, [galleryType, title]);
 
-    // Сохраняем папки в localStorage
-    useEffect(() => {
-        const storageKey = `folders_${galleryType}_${title}`;
-        localStorage.setItem(storageKey, JSON.stringify(folders));
-        if (onFolderChange) {
-            onFolderChange(folders);
+    // Сохраняем папки на сервер
+    const saveFoldersToServer = async (foldersData) => {
+        try {
+            const res = await fetch('/api.php?action=save_folders', {
+                method: 'POST',
+                body: JSON.stringify({
+                    password: window.auth?.password || '',
+                    gallery_type: galleryType,
+                    title: title,
+                    folders: foldersData
+                })
+            });
+            const data = await res.json();
+            if (data.success && onFolderChange) {
+                onFolderChange(foldersData);
+            }
+        } catch (e) {
+            console.error('Ошибка сохранения папок:', e);
         }
-    }, [folders, galleryType, title, onFolderChange]);
+    };
+
+    // Обновляем когда меняются папки
+    useEffect(() => {
+        if (!isLoading && Object.keys(folders).length > 0) {
+            saveFoldersToServer(folders);
+        }
+    }, [folders]);
 
     const handleCreateFolder = () => {
         if (!newFolderName.trim()) return;
