@@ -118,7 +118,22 @@ window.usePrintCollection = () => {
      * @param {String} printId - ID принта
      */
     const removePrintFromCollection = useCallback((printId) => {
-        setPrintCollection(prev => prev.filter(p => p.id !== printId));
+        setPrintCollection(prev => {
+            const printToRemove = prev.find(p => p.id === printId);
+            const nextCollection = prev.filter(p => p.id !== printId);
+            
+            // Если принт найден и у него есть артикул
+            if (printToRemove && printToRemove.article) {
+                // Проверяем, используется ли этот артикул другими принтами
+                const isArticleUsed = nextCollection.some(p => p.article === printToRemove.article);
+                if (!isArticleUsed) {
+                    // Если не используется, освобождаем его в pendingSkusRef
+                    pendingSkusRef.current.delete(printToRemove.article);
+                }
+            }
+            
+            return nextCollection;
+        });
         setSelectedPrintIds(prev => prev.filter(id => id !== printId));
     }, []);
 
@@ -128,9 +143,18 @@ window.usePrintCollection = () => {
      * @param {String} newArticle - новое значение артикула
      */
     const updateArticle = useCallback((printId, newArticle) => {
-        setPrintCollection(prev => 
-            prev.map(p => p.id === printId ? { ...p, article: newArticle } : p)
-        );
+        setPrintCollection(prev => {
+            // Пытаемся освободить старый артикул
+            const p = prev.find(p => p.id === printId);
+            if (p) {
+                 const oldArticle = p.article;
+                 const othersWithOldArticle = prev.some(item => item.id !== printId && item.article === oldArticle);
+                 if (!othersWithOldArticle) {
+                     pendingSkusRef.current.delete(oldArticle);
+                 }
+            }
+            return prev.map(p => p.id === printId ? { ...p, article: newArticle } : p);
+        });
     }, []);
 
     /**
@@ -140,6 +164,19 @@ window.usePrintCollection = () => {
     const removeByFileName = useCallback((fileName) => {
         setPrintCollection(prev => {
             const next = prev.filter(p => p.name !== fileName);
+            
+            // Находим артикулы, которые удалились
+            const removedPrints = prev.filter(p => p.name === fileName);
+            removedPrints.forEach(remP => {
+                if (remP.article) {
+                    // Проверяем, остался ли артикул в коллекции
+                    const stillExists = next.some(p => p.article === remP.article);
+                    if (!stillExists) {
+                        pendingSkusRef.current.delete(remP.article);
+                    }
+                }
+            });
+
             setSelectedPrintIds(ids => ids.filter(id => next.some(p => p.id === id)));
             return next;
         });
@@ -158,7 +195,25 @@ window.usePrintCollection = () => {
      * @param {Array} printIds - массив ID принтов для удаления
      */
     const removePrintsByIds = useCallback((printIds) => {
-        setPrintCollection(prev => prev.filter(p => !printIds.includes(p.id)));
+        setPrintCollection(prev => {
+            const next = prev.filter(p => !printIds.includes(p.id));
+            
+            // Очищаем pendingSkus для удаленных принтов, если их артикулы больше не используются (хотя после сохранения артикул по факту "занят" на сервере, но локально pending мы чистим)
+            // Но тут есть нюанс: если мы сохранили, то на сервере артикул ЗАНЯТ. И сервер нам его не вернет во второй раз.
+            // Поэтому pendingSkusRef очищать безопасно - сервер защитит.
+            
+            const removedPrints = prev.filter(p => printIds.includes(p.id));
+            removedPrints.forEach(remP => {
+                if (remP.article) {
+                    const stillExists = next.some(p => p.article === remP.article);
+                    if (!stillExists) {
+                        pendingSkusRef.current.delete(remP.article);
+                    }
+                }
+            });
+            
+            return next;
+        });
         setSelectedPrintIds([]);
     }, []);
 
