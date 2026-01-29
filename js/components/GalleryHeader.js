@@ -44,21 +44,19 @@ window.GalleryHeader = ({ activeSubTab, onSubTabChange, filter, setFilter, dateF
                 )}
 
                 {/* Фильтр по дате */}
-                {activeSubTab !== 'cloud' && (
-                    <div className="flex items-center gap-2 order-3">
-                        <i data-lucide="calendar" className="w-4 h-4 text-slate-500"></i>
-                        <select
-                            value={dateFilter}
-                            onChange={(e) => setDateFilter(e.target.value)}
-                            className="bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500/50 cursor-pointer hover:bg-slate-800 transition-colors"
-                        >
-                            <option value="all">За все время</option>
-                            <option value="today">Сегодня</option>
-                            <option value="week">За неделю</option>
-                            <option value="month">За месяц</option>
-                        </select>
-                    </div>
-                )}
+                <div className="flex items-center gap-2 order-3">
+                    <i data-lucide="calendar" className="w-4 h-4 text-slate-500"></i>
+                    <select
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500/50 cursor-pointer hover:bg-slate-800 transition-colors"
+                    >
+                        <option value="all">За все время</option>
+                        <option value="today">Сегодня</option>
+                        <option value="week">За неделю</option>
+                        <option value="month">За месяц</option>
+                    </select>
+                </div>
 
                 {/* Для облака - поиск по артикулу */}
                 {activeSubTab === 'cloud' && (

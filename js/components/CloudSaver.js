@@ -197,7 +197,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
 
     if (items.length === 0) {
         return (
-            <div className="space-y-6 fade-in pb-10">
+            <div className="space-y-6 pb-10">
                 {header}
                 <div className="text-center py-20 text-slate-500">
                     <window.Icon name="folder-open" className="w-16 h-16 mx-auto mb-4 opacity-30" />
@@ -208,7 +208,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     }
 
     return (
-        <div className="space-y-6 fade-in pb-10">
+        <div className="space-y-6 pb-10">
             {header}
             <div className="space-y-3">
                 {items.map(item => {

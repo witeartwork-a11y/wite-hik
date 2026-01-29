@@ -93,7 +93,23 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     });
 
     return (
-        <div className="space-y-6 fade-in pb-10">
+        <div className="space-y-6 pb-10" 
+             onDragOver={(e) => {
+                 e.preventDefault();
+                 e.currentTarget.classList.add('bg-slate-800/20');
+             }}
+             onDragLeave={(e) => {
+                 e.preventDefault();
+                 e.currentTarget.classList.remove('bg-slate-800/20');
+             }}
+             onDrop={(e) => {
+                 e.preventDefault();
+                 e.currentTarget.classList.remove('bg-slate-800/20');
+                 if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                     handleUploadFiles(e.dataTransfer.files);
+                 }
+             }}
+        >
             {/* Единая панель управления */}
             <window.GalleryHeader 
                 activeSubTab={activeSubTab}
@@ -104,32 +120,33 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                 setDateFilter={setDateFilter}
             />
 
+            {/* Зона загрузки (Компактная) */}
+            <div className={`upload-compact group relative ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isUploading ? 'bg-indigo-500/20' : 'bg-slate-800 group-hover:bg-indigo-500/20'}`}>
+                         {isUploading ? <window.Icon name="loader-2" className="w-5 h-5 text-indigo-400 animate-spin" /> : <window.Icon name="cloud-upload" className="w-5 h-5 text-slate-400 group-hover:text-indigo-400" />}
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-slate-300 group-hover:text-indigo-300 transition-colors">
+                            {isUploading ? "Загружаем файлы..." : "Нажмите или перетащите файлы в любое место"}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* Папки для организации файлов (только для Gallery, не для CloudSaver) */}
             {activeSubTab !== 'cloud' && (
                 <window.FolderManager 
                     files={filteredFiles} 
                     title="Организация файлов"
                     galleryType={galleryType}
+                    onAddToCollection={onAddToCollection} 
+                    onDeleteFile={onDeleteFile}
+                    toggleSelect={toggleSelect}
+                    selectedFiles={selectedFiles}
                 />
             )}
-
-            {/* Зона загрузки */}
-            <div className={`border-2 border-dashed border-slate-700/50 bg-slate-800/30 rounded-2xl p-8 text-center cursor-pointer hover:border-indigo-500/50 hover:bg-slate-800/50 transition-all relative group ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
-                <div className="flex flex-col items-center gap-4">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isUploading ? 'bg-indigo-500/20' : 'bg-slate-800 group-hover:scale-110 group-hover:bg-indigo-500/20 shadow-lg'}`}>
-                         {isUploading ? <window.Icon name="loader-2" className="w-7 h-7 text-indigo-400 animate-spin" /> : <window.Icon name="cloud-upload" className="w-7 h-7 text-slate-400 group-hover:text-indigo-400" />}
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-sm font-medium text-slate-300 group-hover:text-indigo-300 transition-colors">
-                            {isUploading ? "Загружаем файлы..." : "Нажмите или перетащите файлы"}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                            Поддерживаются JPG, PNG, WEBP
-                        </p>
-                    </div>
-                </div>
-            </div>
 
             {/* Сетка галереи */}
             <div className="gallery-grid">
