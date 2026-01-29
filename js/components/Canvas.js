@@ -38,8 +38,8 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
     const dragStartRef = useRef(null);
 
 
-    // Нормализуем трансформацию, чтобы избежать NaN/undefined
-    const t = {
+    // Нормализуем трансформацию, используя RenderService для унификации
+    const t = window.RenderService ? window.RenderService.normalizeTransform(transform) : {
         x: Number.isFinite(transform?.x) ? transform.x : 0,
         y: Number.isFinite(transform?.y) ? transform.y : 0,
         scale: Math.min(10, Math.max(0.05, Number.isFinite(transform?.scale) ? transform.scale : 0.5)),
@@ -119,24 +119,30 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
             if (baseImg) ctx.drawImage(baseImg, 0, 0);
 
             if (printImg) {
-                const tempCanvas = document.createElement('canvas'); // TODO: Оптимизировать создание канваса
+                const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;
                 const tCtx = tempCanvas.getContext('2d');
-                const cx = canvas.width / 2;
-                const cy = canvas.height / 2;
+                tCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-                tCtx.save();
-                tCtx.translate(cx + t.x, cy + t.y);
-                tCtx.rotate((t.rotation || 0) * Math.PI / 180);
-                tCtx.scale(t.scale, t.scale);
-                tCtx.drawImage(printImg, -printImg.width / 2, -printImg.height / 2);
-                tCtx.restore();
+                // Используем единую функцию трансформации из RenderService
+                if (window.RenderService) {
+                    window.RenderService.applyPrintTransform(tCtx, printImg, t, canvas.width, canvas.height);
+                    window.RenderService.applyMask(tCtx, maskImg, canvas.width, canvas.height);
+                } else {
+                    // Fallback если RenderService не загружен
+                    tCtx.save();
+                    tCtx.translate(canvas.width / 2 + t.x, canvas.height / 2 + t.y);
+                    tCtx.rotate(t.rotation * Math.PI / 180);
+                    tCtx.scale(t.scale, t.scale);
+                    tCtx.drawImage(printImg, -printImg.width / 2, -printImg.height / 2);
+                    tCtx.restore();
 
-                if (maskImg) {
-                    tCtx.globalCompositeOperation = 'destination-in';
-                    tCtx.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
-                    tCtx.globalCompositeOperation = 'source-over';
+                    if (maskImg) {
+                        tCtx.globalCompositeOperation = 'destination-in';
+                        tCtx.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
+                        tCtx.globalCompositeOperation = 'source-over';
+                    }
                 }
 
                 ctx.save();
@@ -146,11 +152,12 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
             }
 
             // Overlay рисуется самым последним слоем поверх всего
-            if (overlayImg) {
+            if (overlayImg && window.RenderService) {
+                window.RenderService.applyOverlay(ctx, overlayImg, canvas.width, canvas.height);
+            } else if (overlayImg) {
+                // Fallback
                 ctx.save();
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.globalAlpha = 1.0;
-                // Рисуем оверлей по центру, в реальном размере
                 const ox = (canvas.width - overlayImg.width) / 2;
                 const oy = (canvas.height - overlayImg.height) / 2;
                 ctx.drawImage(overlayImg, ox, oy);

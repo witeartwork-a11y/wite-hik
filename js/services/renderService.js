@@ -1,5 +1,57 @@
 // Сервис для рендеринга мокапов
 window.RenderService = {
+    // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+    
+    // Нормализировать трансформацию (защита от NaN/undefined)
+    normalizeTransform: (transform) => {
+        return {
+            x: Number.isFinite(transform?.x) ? transform.x : 0,
+            y: Number.isFinite(transform?.y) ? transform.y : 0,
+            scale: Math.min(10, Math.max(0.05, Number.isFinite(transform?.scale) ? transform.scale : 1)),
+            rotation: Number.isFinite(transform?.rotation) ? transform.rotation : 0
+        };
+    },
+
+    // Применить трансформацию к принту на отдельном канвасе
+    applyPrintTransform: (ctx, printImg, transform, canvasWidth, canvasHeight) => {
+        const t = window.RenderService.normalizeTransform(transform);
+        
+        ctx.save();
+        // Переводим центр координат в центр канваса
+        ctx.translate(canvasWidth / 2 + t.x, canvasHeight / 2 + t.y);
+        // Применяем поворот
+        ctx.rotate((t.rotation) * Math.PI / 180);
+        // Применяем масштаб
+        ctx.scale(t.scale, t.scale);
+        // Рисуем принт относительно его центра
+        ctx.drawImage(printImg, -printImg.width / 2, -printImg.height / 2);
+        ctx.restore();
+    },
+
+    // Применить маску к слою с принтом
+    applyMask: (ctx, maskImg, canvasWidth, canvasHeight) => {
+        if (!maskImg) return;
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(maskImg, 0, 0, canvasWidth, canvasHeight);
+        ctx.globalCompositeOperation = 'source-over';
+    },
+
+    // Применить оверлей
+    applyOverlay: (ctx, overlayImg, canvasWidth, canvasHeight) => {
+        if (!overlayImg) return;
+        ctx.globalCompositeOperation = 'source-over';
+        if (overlayImg.width > 0 && overlayImg.height > 0) {
+            const scale = Math.max(canvasWidth / overlayImg.width, canvasHeight / overlayImg.height);
+            const scaledWidth = overlayImg.width * scale;
+            const scaledHeight = overlayImg.height * scale;
+            const ox = (canvasWidth - scaledWidth) / 2;
+            const oy = (canvasHeight - scaledHeight) / 2;
+            ctx.drawImage(overlayImg, ox, oy, scaledWidth, scaledHeight);
+        }
+    },
+
+    // === ОСНОВНЫЕ МЕТОДЫ ===
+
     // Построить дефолтные трансформации для всех товаров
     buildDefaultTransforms: (products, mode = 'mockups') => {
         const map = {};
@@ -64,6 +116,7 @@ window.RenderService = {
         
         console.log('🎨 renderMockupBlob:', { 
             productName: product.name,
+            transform: window.RenderService.normalizeTransform(transform),
             maskUrl: maskUrl || '(none)', 
             overlayUrl: overlayUrl || '(none)',
             mockupWidth,
@@ -76,62 +129,51 @@ window.RenderService = {
             utils.loadImage(overlayUrl)
         ]);
 
-        const canvas = document.createElement('canvas');
+        // Определяем размеры холста
         let width = mockupWidth || (base ? base.width : (options.outputWidth || product.width || 1000));
         let height = mockupHeight || (base ? base.height : (options.outputHeight || product.height || 1000));
         
-        // Если заданы оба размера, используем их
         if (mockupWidth && !mockupHeight && base) {
             height = Math.round((mockupWidth / base.width) * base.height);
         } else if (mockupHeight && !mockupWidth && base) {
             width = Math.round((mockupHeight / base.height) * base.width);
         }
         
+        // Создаем основной холст
+        const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
-
         const ctx = canvas.getContext('2d');
-        ctx.globalCompositeOperation = 'source-over';
         ctx.clearRect(0, 0, width, height);
 
-        if (base) ctx.drawImage(base, 0, 0, width, height);
+        // Слой 1: Базовое изображение товара
+        if (base) {
+            ctx.drawImage(base, 0, 0, width, height);
+        }
 
+        // Слой 2: Принт с трансформацией и маской
         if (printImg) {
-            const tempC = document.createElement('canvas');
-            tempC.width = width;
-            tempC.height = height;
-            const tCtx = tempC.getContext('2d');
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.clearRect(0, 0, width, height);
 
-            tCtx.save();
-            tCtx.translate(width / 2 + (transform?.x || 0), height / 2 + (transform?.y || 0));
-            tCtx.rotate((transform?.rotation || 0) * Math.PI / 180);
-            tCtx.scale(transform?.scale || 1, transform?.scale || 1);
-            tCtx.drawImage(printImg, -printImg.width / 2, -printImg.height / 2);
-            tCtx.restore();
+            // Применяем трансформацию принта
+            window.RenderService.applyPrintTransform(tempCtx, printImg, transform, width, height);
 
-            if (mask) {
-                tCtx.globalCompositeOperation = 'destination-in';
-                tCtx.drawImage(mask, 0, 0, width, height);
-                tCtx.globalCompositeOperation = 'source-over'; // СБРАСЫВАЕМ
-            }
+            // Применяем маску (вырезаем видимую область)
+            window.RenderService.applyMask(tempCtx, mask, width, height);
 
+            // Копируем результат на основной холст
             ctx.globalCompositeOperation = 'source-over';
-            ctx.drawImage(tempC, 0, 0);
+            ctx.drawImage(tempCanvas, 0, 0);
         }
 
-        if (overlay) {
-            ctx.globalCompositeOperation = 'source-over';
-            // Масштабируем оверлей чтобы заполнить весь канвас
-            if (overlay.width > 0 && overlay.height > 0) {
-                const scale = Math.max(width / overlay.width, height / overlay.height);
-                const scaledWidth = overlay.width * scale;
-                const scaledHeight = overlay.height * scale;
-                const ox = (width - scaledWidth) / 2;
-                const oy = (height - scaledHeight) / 2;
-                ctx.drawImage(overlay, ox, oy, scaledWidth, scaledHeight);
-            }
-        }
+        // Слой 3: Оверлей поверх всего
+        window.RenderService.applyOverlay(ctx, overlay, width, height);
 
+        // Конвертируем в Blob
         const mimeType = options.mimeType || 'image/png';
         let blob = await new Promise((resolve) => {
             canvas.toBlob(resolve, mimeType, mimeType === 'image/png' ? undefined : 0.9);
@@ -142,6 +184,7 @@ window.RenderService = {
             blob = await window.PNGService.setPNGDPI(blob, mockupDPI);
         }
         
+        console.log('✅ renderMockupBlob завершен:', { width, height, hasBlob: !!blob });
         return blob;
     }
 };

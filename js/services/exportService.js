@@ -9,12 +9,19 @@ window.ExportService = {
         const utils = window.Utils;
         const exportMode = activeTab === 'products' ? 'products' : 'mockups';
 
+        console.log('📦 exportToZip начало:', {
+            printName: selectedPrint.name,
+            mode: exportMode,
+            products: products.filter(p => p.enabled).length
+        });
+
         const printImg = await utils.loadImage(selectedPrint.url);
         if (!printImg) throw new Error("Не удалось загрузить принт");
 
         const enabledProducts = products.filter(p => p.enabled);
 
         for (const prod of enabledProducts) {
+            // Получаем трансформацию правильно
             const tr = window.RenderService.getTransformByMode(
                 transforms,
                 productTransforms,
@@ -23,6 +30,8 @@ window.ExportService = {
                 exportMode === 'products' ? 0.6 : 0.5
             );
             
+            console.log(`📸 Рендер для ZIP ${prod.name}:`, { transform: tr });
+
             // Использовать DPI продукта
             const productDPI = prod.dpi || 300;
             
@@ -43,7 +52,7 @@ window.ExportService = {
             const blob = await window.RenderService.renderMockupBlob(
                 prod,
                 printImg,
-                tr,
+                tr,  // Передаем трансформацию
                 productDPI,
                 targetWidth,
                 targetHeight,
@@ -54,7 +63,10 @@ window.ExportService = {
                 }
             );
             
-            if (!blob) continue;
+            if (!blob) {
+                console.warn(`⚠️ Не удалось отрендерить для ZIP: ${prod.name}`);
+                continue;
+            }
 
             const safeName = selectedPrint.name.split('.')[0];
             const prefix = prod.defaultPrefix || prod.name;
@@ -64,6 +76,7 @@ window.ExportService = {
         }
 
         const content = await zip.generateAsync({ type: "blob" });
+        console.log('✅ exportToZip завершено');
         return content;
     },
 
@@ -84,6 +97,13 @@ window.ExportService = {
         const modeToUse = activeTab === 'base' ? cloudMode : activeTab;
         const utils = window.Utils;
 
+        console.log('☁️ saveToCloud начало:', {
+            printName: selectedPrint.name,
+            mode: modeToUse,
+            totalProducts: products.length,
+            enabledProducts: products.filter(p => p.enabled).length
+        });
+
         const printImg = await utils.loadImage(selectedPrint.url);
         if (!printImg) throw new Error("Не удалось загрузить принт");
 
@@ -100,6 +120,7 @@ window.ExportService = {
         }
 
         for (const prod of enabledProducts) {
+            // ВАЖНО: Получаем трансформацию в зависимости от режима
             const tr = window.RenderService.getTransformByMode(
                 transforms,
                 productTransforms,
@@ -107,6 +128,14 @@ window.ExportService = {
                 prod.id,
                 modeToUse === 'products' ? 0.6 : 0.5
             );
+
+            console.log(`📦 Рендер ${prod.name}:`, {
+                productId: prod.id,
+                mode: modeToUse,
+                transform: tr,
+                hasTransforms: !!transforms[prod.id],
+                hasProductTransforms: !!productTransforms[prod.id]
+            });
 
             if (onProgress) {
                 onProgress(prev => ({ ...prev, current: prod.name }));
@@ -129,10 +158,11 @@ window.ExportService = {
                 targetOverlay = prod.mockupOverlay;
             }
 
+            // КРИТИЧНО: Передаем трансформацию в renderMockupBlob
             const blob = await window.RenderService.renderMockupBlob(
                 prod,
                 printImg,
-                tr,
+                tr,  // Трансформация ДОЛЖНА быть передана сюда
                 productDPI,
                 targetWidth,
                 targetHeight,
@@ -143,16 +173,22 @@ window.ExportService = {
                 }
             );
 
-            if (!blob) continue;
+            if (!blob) {
+                console.warn(`⚠️ Не удалось отрендерить ${prod.name}`);
+                continue;
+            }
 
             const prefix = prod.defaultPrefix || prod.name;
             const fileName = `${prefix}-${article}.png`;
 
+            console.log(`⬆️ Загрузка ${fileName} в облако...`);
             await window.DataService.uploadToCloud(password, blob, fileName, article, categoryFolder, selectedPrint.name);
 
             if (onProgress) {
                 onProgress(prev => ({ ...prev, done: prev.done + 1 }));
             }
         }
+
+        console.log('✅ saveToCloud завершено');
     }
 };
