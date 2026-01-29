@@ -45,52 +45,86 @@ function App() {
     const [isCloudSaving, setIsCloudSaving] = useState(false);
     const [cloudProgress, setCloudProgress] = useState({ total: 0, done: 0, current: '' });
 
-    const handleSavePreset = useCallback((name, printTransforms) => {
+    const handleSavePreset = useCallback((name, scope = 'single') => {
          let dataToSave;
+         const mapToUse = activeTab === 'products' ? productTransforms : transforms;
          
-         // If we have an active product, save ONLY its transform (Universal Preset)
-         if (activeProductId) {
-             const mapToUse = activeTab === 'products' ? productTransforms : transforms;
-             dataToSave = mapToUse[activeProductId] || { x: 0, y: 0, scale: 0.5, rotation: 0 };
+         if (scope === 'all') {
+             // Save configuration for ALL products (current tab)
+             dataToSave = { ...mapToUse };
          } else {
-             // Fallback: save legacy full map (if needed) or use passed printTransforms
-             dataToSave = printTransforms || (activeTab === 'products' ? productTransforms : transforms);
+            // Save configuration for SINGLE active product
+             if (activeProductId) {
+                 dataToSave = mapToUse[activeProductId] || { x: 0, y: 0, scale: 0.5, rotation: 0 };
+             } else {
+                 // Fallback if no active product but single requested
+                 alert("Выберите мокап для сохранения его настроек");
+                 return;
+             }
          }
          
          savePreset(name, dataToSave);
-    }, [presets, transforms, productTransforms, activeProductId, activeTab, savePreset]);
+    }, [transforms, productTransforms, activeProductId, activeTab, savePreset]);
 
     const handleDeletePreset = useCallback((name) => {
         deletePreset(name);
     }, [deletePreset]);
 
-    const handleApplyPreset = useCallback((name) => {
+    const handleApplyPreset = useCallback((name, applyToAll = false) => {
         const preset = getPreset(name);
         if (!preset) return;
 
         if (isSingleTransformPreset(preset)) {
-            // Если выбран товар, применяем пресет к нему
-            if (activeProductId) {
-                if (activeTab === 'products') {
-                     setProductTransforms(prev => ({ ...prev, [activeProductId]: { ...preset } }));
-                } else {
-                     setTransforms(prev => ({ ...prev, [activeProductId]: { ...preset } }));
-                }
-                
-                // Update collection if needed
-                if (selectedPrint && selectedPrint.id) {
-                     const updatedPositions = {
-                        ...(selectedPrint.positions || {}),
-                        [activeProductId]: { ...preset }
-                    };
-                    updatePositions(selectedPrint.id, updatedPositions);
-                }
+            if (applyToAll) {
+                // Apply single preset to ALL active products
+                 const targetTransforms = activeTab === 'products' ? productTransforms : transforms;
+                 const newTransforms = { ...targetTransforms };
+                 let hasChanges = false;
+                 
+                 products.forEach(p => {
+                    // Filter mainly by tab and enabled state
+                    const isCorrectTab = activeTab === 'products' ? (p.tab === 'products') : (!p.tab || p.tab === 'mockups');
+                    if (isCorrectTab && p.enabled) {
+                        newTransforms[p.id] = { ...preset };
+                        hasChanges = true;
+                    }
+                 });
+
+                 if (hasChanges) {
+                     if (activeTab === 'products') setProductTransforms(newTransforms);
+                     else setTransforms(newTransforms);
+
+                     // Also update current print positions if selected
+                     if (selectedPrint && selectedPrint.id) {
+                         // We need to merge for all updated keys
+                         const combined = { ...(selectedPrint.positions || {}), ...newTransforms };
+                         updatePositions(selectedPrint.id, combined);
+                     }
+                 }
+
             } else {
-                alert('Выберите товар для применения пресета');
+                // Apply single preset to SINGLE active product
+                if (activeProductId) {
+                    if (activeTab === 'products') {
+                        setProductTransforms(prev => ({ ...prev, [activeProductId]: { ...preset } }));
+                    } else {
+                        setTransforms(prev => ({ ...prev, [activeProductId]: { ...preset } }));
+                    }
+                    
+                    if (selectedPrint && selectedPrint.id) {
+                        const updatedPositions = {
+                            ...(selectedPrint.positions || {}),
+                            [activeProductId]: { ...preset }
+                        };
+                        updatePositions(selectedPrint.id, updatedPositions);
+                    }
+                } else {
+                    alert('Выберите товар для применения пресета');
+                }
             }
         } else {
-            // Old behavior (Map)
-            if (activeTab === 'products') {
+            // It's a map (Full config) - Apply as is (replace/merge)
+             if (activeTab === 'products') {
                  setProductTransforms(prev => ({ ...prev, ...preset }));
             } else {
                  setTransforms(prev => ({ ...prev, ...preset }));
@@ -101,7 +135,7 @@ function App() {
                  updatePositions(selectedPrint.id, updatedPositions);
             }
         }
-    }, [getPreset, isSingleTransformPreset, activeTab, selectedPrint, activeProductId, updatePositions]);
+    }, [getPreset, isSingleTransformPreset, activeTab, selectedPrint, activeProductId, updatePositions, products, productTransforms, transforms]);
 
 
     // Хук для управления коллекцией принтов

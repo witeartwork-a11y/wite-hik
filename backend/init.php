@@ -33,6 +33,7 @@ $PROTECTED_FILES = ['thumbnails'];
 $CONFIG_FILE = $DATA_DIR . '/products_config.json';
 $PRINTS_CONFIG_FILE = $DATA_DIR . '/prints_config.json';
 $PRINTS_CONFIGS_DIR = $DATA_DIR . '/prints_configs';
+$PRESETS_FILE = $DATA_DIR . '/transform_presets.json';
 
 // Подключение модулей
 require_once __DIR__ . '/utils.php';

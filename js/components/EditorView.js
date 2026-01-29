@@ -247,7 +247,7 @@ function EditorView({
                     mockupsPerRow={mockupsPerRow}
                     setMockupsPerRow={setMockupsPerRow}
                     presets={presets}
-                    onSavePreset={(name) => onSavePreset(name, null)} 
+                    onSavePreset={onSavePreset} 
                     onDeletePreset={onDeletePreset}
                     onApplyPreset={onApplyPreset}
                     saveStatus={saveStatus}

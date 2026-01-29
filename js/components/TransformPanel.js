@@ -34,9 +34,9 @@ window.TransformPanel = ({
         onUpdateTransform({ ...t, rotation: nextRotation });
     };
 
-    const handleSaveClick = () => {
+    const handleSaveClick = (scope = 'single') => {
         if (!presetName.trim()) return alert('Введите имя конфига');
-        onSavePreset(presetName.trim());
+        onSavePreset(presetName.trim(), scope);
         setPresetName('');
     };
 
@@ -288,46 +288,90 @@ window.TransformPanel = ({
             {/* Конфигурация / Пресеты */}
             {onSavePreset && (
                 <div className="border-t border-slate-700 pt-4 space-y-4">
-                     <h3 className="text-xs font-bold text-slate-400 uppercase">Сохранить конфиг</h3>
-                     <div className="flex gap-2">
+                     <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase">
+                        <span>Сохранить конфиг</span>
+                     </div>
+                     <div className="space-y-2">
                         <input 
                             type="text" 
-                            className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white placeholder:text-slate-500 focus:border-indigo-500 outline-none"
+                            className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm text-white placeholder:text-slate-500 focus:border-indigo-500 outline-none"
                             placeholder="Название конфига"
                             value={presetName}
                             onChange={(e) => setPresetName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSaveClick()}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveClick('single')}
                         />
-                        <button 
-                            onClick={handleSaveClick}
-                            className="shrink-0 px-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-sm font-medium"
-                        >
-                            <window.Icon name="save" className="w-4 h-4" />
-                        </button>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => handleSaveClick('single')}
+                                className="flex-1 px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 rounded text-xs font-medium transition-colors flex items-center justify-center gap-2"
+                                title="Сохранить только для текущего мокапа"
+                            >
+                                <window.Icon name="square" className="w-3 h-3" />
+                                Одиночный
+                            </button>
+                            <button 
+                                onClick={() => handleSaveClick('all')}
+                                className="flex-1 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 border border-purple-500/30 rounded text-xs font-medium transition-colors flex items-center justify-center gap-2"
+                                title="Сохранить для всех мокапов сразу"
+                            >
+                                <window.Icon name="layout-grid" className="w-3 h-3" />
+                                Все сразу
+                            </button>
+                        </div>
                      </div>
 
                      {presets && Object.keys(presets).length > 0 && (
                          <div className="space-y-2">
                              <div className="text-xs text-slate-500">Сохраненные конфиги:</div>
-                             <div className="flex flex-wrap gap-2">
-                                 {Object.keys(presets).map(name => (
-                                     <div key={name} className="flex items-center group bg-slate-800 border border-slate-700 rounded overflow-hidden">
-                                         <button 
-                                            onClick={() => onApplyPreset(name)}
-                                            className="px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-                                            title="Применить конфиг"
-                                         >
+                             <div className="flex flex-col gap-2">
+                                 {Object.keys(presets).map(name => {
+                                     const p = presets[name];
+                                     // Quick check if single
+                                     const isSingle = p && (p.x !== undefined || p.scale !== undefined);
+
+                                     return (
+                                     <div key={name} className="flex items-stretch group bg-slate-800 border border-slate-700 rounded overflow-hidden min-h-[28px]">
+                                         <div className="flex-1 flex items-center px-2 text-xs text-slate-300 truncate border-r border-slate-700/50" title={name}>
                                              {name}
-                                         </button>
+                                         </div>
+                                         
+                                         {isSingle ? (
+                                             <>
+                                                 <button 
+                                                    onClick={() => onApplyPreset(name, false)}
+                                                    className="px-2 bg-slate-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 transition-colors border-r border-slate-700/50"
+                                                    title="Применить к текущему"
+                                                 >
+                                                    <window.Icon name="square" className="w-3 h-3" />
+                                                 </button>
+                                                 <button 
+                                                    onClick={() => onApplyPreset(name, true)}
+                                                    className="px-2 bg-slate-800 hover:bg-purple-500/20 text-slate-400 hover:text-purple-300 transition-colors border-r border-slate-700/50"
+                                                    title="Применить ко всем"
+                                                 >
+                                                    <window.Icon name="layers" className="w-3 h-3" />
+                                                 </button>
+                                             </>
+                                         ) : (
+                                             <button 
+                                                onClick={() => onApplyPreset(name)}
+                                                className="px-3 bg-slate-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 transition-colors border-r border-slate-700/50 flex items-center gap-1"
+                                                title="Применить весь набор"
+                                             >
+                                                <window.Icon name="layout-grid" className="w-3 h-3" />
+                                             </button>
+                                         )}
+
                                          <button 
                                             onClick={() => onDeletePreset(name)}
-                                            className="px-1.5 py-1 text-slate-600 hover:text-red-400 hover:bg-slate-700 border-l border-slate-700 transition-colors"
+                                            className="px-2 text-slate-600 hover:text-red-400 hover:bg-slate-700 transition-colors"
                                             title="Удалить"
                                          >
                                              <window.Icon name="x" className="w-3 h-3" />
                                          </button>
                                      </div>
-                                 ))}
+                                     );
+                                 })}
                              </div>
                          </div>
                      )}
