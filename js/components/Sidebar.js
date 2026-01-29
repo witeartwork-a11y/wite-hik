@@ -141,6 +141,7 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
                         product={p}
                         index={idx}
                         totalProducts={filteredProducts.length}
+                        allProducts={products}
                         password={password}
                         onToggle={handleToggle}
                         onUpdate={handleUpdate}

@@ -3,6 +3,7 @@ window.ProductCard = ({
     product, 
     index, 
     totalProducts, 
+    allProducts,
     onToggle, 
     onDelete, 
     onUpdate, 
@@ -108,6 +109,24 @@ window.ProductCard = ({
             : (type === 'mask' ? 'mask' : 'overlay');
             
         onUpdate(product.id, { [fieldName]: '' });
+
+        // Safe delete check: only delete file if no other product uses it
+        if (!window.confirm('Удалить файл с сервера? Отмените, если он нужен для других мокапов.')) {
+            return;
+        }
+
+        const isUsedElsewhere = allProducts && allProducts.some(p => {
+            if (p.id === product.id) return false;
+            return p.mask === fileUrl || 
+                   p.overlay === fileUrl || 
+                   p.mockupMask === fileUrl || 
+                   p.mockupOverlay === fileUrl;
+        });
+
+        if (isUsedElsewhere) {
+            console.log('File is used by another product, skipping physical delete:', fileUrl);
+            return;
+        }
         
         try {
             // Extract filename from URL (e.g., '/uploads/assets/filename.png' -> 'filename.png')

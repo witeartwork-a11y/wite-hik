@@ -32,6 +32,13 @@ for ($i = 0; $i < $count; $i++) {
     $tmp = is_array($files['name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
     
     $newName = sanitize($name);
+    
+    // Если это ассет, добавляем уникальный суффикс, чтобы избежать перезаписи и коллизий
+    if ($uploadType === 'asset') {
+        $info = pathinfo($newName);
+        $newName = $info['filename'] . '_' . uniqid() . '.' . $info['extension'];
+    }
+
     $finalPath = $uploadPath . '/' . $newName;
 
     if (file_exists($finalPath)) {
