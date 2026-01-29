@@ -173,11 +173,33 @@ window.RenderService = {
         // Слой 3: Оверлей поверх всего
         window.RenderService.applyOverlay(ctx, overlay, width, height);
 
-        // Конвертируем в Blob
+        // Конвертируем в Blob (с поддержкой поворота результата)
         const mimeType = options.mimeType || 'image/png';
-        let blob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, mimeType, mimeType === 'image/png' ? undefined : 0.9);
-        });
+        let blob;
+
+        if (options.renderRotation && (options.renderRotation === 90 || options.renderRotation === -90)) {
+             // Если нужно повернуть финальный результат (canvas)
+             const rotCanvas = document.createElement('canvas');
+             // Меняем местами ширину и высоту
+             rotCanvas.width = height; 
+             rotCanvas.height = width;
+             const rotCtx = rotCanvas.getContext('2d');
+             
+             // Перемещаем центр координат в центр нового канваса
+             rotCtx.translate(rotCanvas.width / 2, rotCanvas.height / 2);
+             // Вращаем
+             rotCtx.rotate((options.renderRotation * Math.PI) / 180);
+             // Рисуем исходный канвас (центрируя его)
+             rotCtx.drawImage(canvas, -width / 2, -height / 2);
+             
+             blob = await new Promise((resolve) => {
+                 rotCanvas.toBlob(resolve, mimeType, mimeType === 'image/png' ? undefined : 0.9);
+             });
+        } else {
+             blob = await new Promise((resolve) => {
+                 canvas.toBlob(resolve, mimeType, mimeType === 'image/png' ? undefined : 0.9);
+             });
+        }
         
         // Устанавливаем DPI для PNG
         if (mimeType === 'image/png' && mockupDPI && window.PNGService) {

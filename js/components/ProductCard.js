@@ -242,6 +242,31 @@ window.ProductCard = ({
                         </div>
                     </div>
 
+                    {/* Rotation Control */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => {
+                                const current = product.renderRotation || 0;
+                                let next = 0;
+                                if (current === 0) next = 90;
+                                else if (current === 90) next = -90;
+                                else next = 0;
+                                onUpdate(product.id, { renderRotation: next });
+                            }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md border text-xs font-medium transition-colors ${
+                                product.renderRotation 
+                                    ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300' 
+                                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                            }`}
+                            title="Поворот после рендера"
+                        >
+                            <window.Icon name="rotate-cw" className="w-3.5 h-3.5" />
+                            <span>
+                                {product.renderRotation === 90 ? 'Поворот +90°' : product.renderRotation === -90 ? 'Поворот -90°' : 'Поворот 0°'}
+                            </span>
+                        </button>
+                    </div>
+
                     {/* Files (Mask & Overlay) */}
                     <div className="grid grid-cols-2 gap-2">
                         {/* Mask */}

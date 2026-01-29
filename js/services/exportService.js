@@ -59,7 +59,8 @@ window.ExportService = {
                 { 
                     mimeType: 'image/png',
                     maskUrl: targetMask,
-                    overlayUrl: targetOverlay
+                    overlayUrl: targetOverlay,
+                    renderRotation: prod.renderRotation
                 }
             );
             
@@ -169,7 +170,8 @@ window.ExportService = {
                 { 
                     mimeType: 'image/png',
                     maskUrl: targetMask,
-                    overlayUrl: targetOverlay
+                    overlayUrl: targetOverlay,
+                    renderRotation: prod.renderRotation
                 }
             );
 
