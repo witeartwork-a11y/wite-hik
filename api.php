@@ -393,6 +393,57 @@ if ($action === 'generate_sku') {
     jsonResponse(true, ['sku' => $newSku]);
 }
 
+if ($action === 'rename') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
+    
+    $filename = $input['filename'];
+    $newBaseName = $input['new_name']; 
+    $type = $input['type'] ?? 'upload';
+
+    // Determine directory
+    $basePath = $UPLOADS_DIR;
+    if ($type === 'publication') {
+        $basePath = $BASE_DIR . '/uploads/publication';
+    } elseif ($type === 'cloud') {
+         // Cloud rename is more complex, preventing for now or need article/category context
+         jsonResponse(false, [], 'Cloud rename not supported via this action');
+    }
+
+    $oldPath = $basePath . '/' . $filename;
+    
+    if (!file_exists($oldPath)) {
+        jsonResponse(false, [], 'File not found');
+    }
+    
+    $info = pathinfo($filename);
+    $ext = $info['extension'] ?? '';
+    
+    // Construct new full name
+    $finalNewName = sanitize($newBaseName . '.' . $ext);
+    $newPath = $basePath . '/' . $finalNewName;
+    
+    if ($filename === $finalNewName) {
+        jsonResponse(true, ['name' => $filename]);
+    }
+    
+    if (file_exists($newPath)) {
+        jsonResponse(false, [], 'File already exists');
+    }
+    
+    if (rename($oldPath, $newPath)) {
+        // Rename thumb
+        $oldThumb = $THUMBS_DIR . '/' . getThumbnailName($filename);
+        $newThumb = $THUMBS_DIR . '/' . getThumbnailName($finalNewName);
+        if (file_exists($oldThumb)) {
+            rename($oldThumb, $newThumb);
+        }
+        jsonResponse(true, ['name' => $finalNewName]);
+    } else {
+        jsonResponse(false, [], 'Rename failed');
+    }
+}
+
 if ($action === 'list') {
     $list = [];
     

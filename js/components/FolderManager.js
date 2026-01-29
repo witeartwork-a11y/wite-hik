@@ -1,7 +1,7 @@
 // js/components/FolderManager.js
 const { Folder, FolderOpen, Trash2, Plus, ChevronRight, ChevronDown } = lucide;
 
-window.FolderManager = ({ files = [], onFolderChange, title = "Папки", galleryType = 'upload', onAddToCollection, onDeleteFile, toggleSelect, selectedFiles }) => {
+window.FolderManager = ({ files = [], onFolderChange, title = "Папки", galleryType = 'upload', onAddToCollection, onDeleteFile, toggleSelect, selectedFiles, onRenameFile }) => {
     const { useState, useEffect } = React;
     const [folders, setFolders] = useState({});
     const [openedFolder, setOpenedFolder] = useState(null);
@@ -19,7 +19,7 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
                 console.error('Ошибка загрузки папок:', e);
             }
         }
-    }, [galleryType, title]);
+    }, [galleryType, title, files]);
 
     // Сохраняем папки в localStorage
     useEffect(() => {
@@ -216,24 +216,31 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
                                                  <p className="text-xs font-medium text-white truncate drop-shadow-md">{f.name.replace(/\.[^/.]+$/, "")}</p>
                                                  {f.product_name && <p className="text-[10px] text-indigo-200 truncate drop-shadow-md">{f.product_name}</p>}
                                             </div>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 flex-wrap">
+                                                {onRenameFile && (
+                                                    <button onClick={() => onRenameFile(f)} 
+                                                            className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center min-w-[32px]"
+                                                            title="Переименовать">
+                                                        <window.Icon name="pencil" className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <button onClick={() => { 
                                                             const linkToCopy = f.category === 'products' && f.short_url ? f.short_url : f.url;
                                                             navigator.clipboard.writeText(window.location.origin + linkToCopy);
                                                         }} 
-                                                        className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                                        className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center min-w-[32px]"
                                                         title="Копировать ссылку">
                                                     <window.Icon name="link" className="w-4 h-4" />
                                                 </button>
                                                 {onAddToCollection && (
                                                     <button onClick={() => onAddToCollection(f)} 
-                                                            className="flex-1 bg-indigo-500/80 hover:bg-indigo-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                                            className="flex-1 bg-indigo-500/80 hover:bg-indigo-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center min-w-[32px]"
                                                             title="Добавить в коллекцию">
                                                         <window.Icon name="plus" className="w-4 h-4" />
                                                     </button>
                                                 )}
                                                 <button onClick={() => handleRemoveFileFromFolder(openedFolder, fileName)} 
-                                                        className="flex-1 bg-amber-500/80 hover:bg-amber-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center" 
+                                                        className="flex-1 bg-amber-500/80 hover:bg-amber-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center min-w-[32px]" 
                                                         title="Убрать из папки">
                                                      <window.Icon name="folder-minus" className="w-4 h-4" />
                                                 </button>
@@ -243,7 +250,7 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
                                                                     onDeleteFile(f.name);
                                                                 }
                                                             }} 
-                                                            className="flex-1 bg-red-500/80 hover:bg-red-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                                            className="flex-1 bg-red-500/80 hover:bg-red-500 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center min-w-[32px]"
                                                             title="Удалить файл навсегда">
                                                         <window.Icon name="trash-2" className="w-4 h-4" />
                                                     </button>

@@ -7,6 +7,15 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     const [filter, setFilter] = useState('');
     const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
     const [selectedFiles, setSelectedFiles] = useState(new Set());
+    const [filedFiles, setFiledFiles] = useState(new Set()); // Files that are in folders
+
+    const handleFolderChange = (folders) => {
+        const filed = new Set();
+        Object.values(folders).forEach(fileList => {
+            fileList.forEach(file => filed.add(file));
+        });
+        setFiledFiles(filed);
+    };
 
     const toggleSelect = (fileName) => {
         const newSet = new Set(selectedFiles);
@@ -34,6 +43,53 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
         } catch (e) {
             console.error(e);
             alert('Ошибка при удалении');
+        }
+    };
+
+    const handleRename = async (file) => {
+        const currentName = file.name.replace(/\.[^/.]+$/, "");
+        const newName = prompt("Новое имя файла:", currentName);
+        if (newName && newName !== currentName) {
+             try {
+                 const res = await fetch('/api.php?action=rename', {
+                     method: 'POST',
+                     body: JSON.stringify({
+                         filename: file.name,
+                         new_name: newName,
+                         password: auth.password,
+                         type: galleryType
+                     })
+                 });
+                 const data = await res.json();
+                 if (data.success) {
+                    const newFileName = data.name;
+                    
+                    // Update LocalStorage folders to keep them in sync
+                    const storageKey = `folders_${galleryType}_Организация файлов`;
+                    const stored = localStorage.getItem(storageKey);
+                    if (stored) {
+                        let folders = JSON.parse(stored);
+                        let changed = false;
+                        for (const folder in folders) {
+                            const idx = folders[folder].indexOf(file.name);
+                            if (idx !== -1) {
+                                folders[folder][idx] = newFileName;
+                                changed = true;
+                            }
+                        }
+                        if (changed) {
+                            localStorage.setItem(storageKey, JSON.stringify(folders));
+                        }
+                    }
+                    
+                    await init();
+                 } else {
+                     alert('Ошибка: ' + data.message);
+                 }
+             } catch (e) {
+                 console.error(e);
+                 alert('Ошибка при переименовании');
+             }
         }
     };
 
@@ -88,6 +144,11 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                     break;
             }
         }
+
+        // Скрываем файлы, которые уже есть в папках (если только мы не в режиме просмотра папки - но это управляется FolderManager)
+        // Но FolderManager показывает свои файлы сам.
+        // Здесь мы фильтруем "свободные" файлы.
+        if (filedFiles.has(f.name)) return false;
         
         return true;
     });
@@ -138,13 +199,15 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
             {/* Папки для организации файлов (только для Gallery, не для CloudSaver) */}
             {activeSubTab !== 'cloud' && (
                 <window.FolderManager 
-                    files={filteredFiles} 
+                    files={files} 
                     title="Организация файлов"
                     galleryType={galleryType}
                     onAddToCollection={onAddToCollection} 
                     onDeleteFile={onDeleteFile}
                     toggleSelect={toggleSelect}
                     selectedFiles={selectedFiles}
+                    onRenameFile={handleRename}
+                    onFolderChange={handleFolderChange}
                 />
             )}
 
@@ -190,6 +253,14 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                 </div>
                                 
                                 <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => handleRename(f)}
+                                        className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                                        title="Переименовать"
+                                    >
+                                        <window.Icon name="pencil" className="w-4 h-4" />
+                                    </button>
+
                                     <button 
                                         onClick={() => { 
                                             // Используем короткую ссылку для товаров
