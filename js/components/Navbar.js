@@ -12,7 +12,7 @@ window.Navbar = ({ activeTab, setActiveTab }) => {
             <div className="flex bg-slate-900/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
                 <button onClick={() => setActiveTab('mockups')} className={`tab-button ${activeTab === 'mockups' ? 'tab-active' : 'tab-inactive'}`}>Заготовки</button>
                 <button onClick={() => setActiveTab('products')} className={`tab-button ${activeTab === 'products' ? 'tab-active' : 'tab-inactive'}`}>Мокапы</button>
-                <button onClick={() => setActiveTab('base')} className={`tab-button ${activeTab === 'base' ? 'tab-active' : 'tab-inactive'}`}>Исходники</button>
+                <button onClick={() => setActiveTab('base')} className={`tab-button ${activeTab === 'base' ? 'tab-active' : 'tab-inactive'}`}>Галерея</button>
             </div>
 
             <div className="w-32"></div>
