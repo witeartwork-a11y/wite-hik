@@ -132,27 +132,6 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
             setIsZipping(false);
         }
     };
-        try {
-            const zip = new JSZip();
-            const promises = files.map(async (f) => {
-                try {
-                    const blob = await fetch(f.url).then(r => r.blob());
-                    zip.file(f.name, blob);
-                } catch (e) {
-                    console.error("Failed to load", f.name, e);
-                }
-            });
-            await Promise.all(promises);
-            
-            const content = await zip.generateAsync({ type: "blob" });
-            saveAs(content, `${article.name}_${categoryName}.zip`);
-        } catch (e) {
-            console.error(e);
-            alert("Ошибка создания архива");
-        } finally {
-            setIsZipping(false);
-        }
-    };
 
     const handleCopyLink = (url) => {
         const fullUrl = window.location.origin + url;
