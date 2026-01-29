@@ -50,15 +50,6 @@ window.PrintCollection = ({
                             onClick={() => onSelectPrint(print.id)}
                         >
                             <div className="flex items-center gap-3">
-                                {/* Checkbox */}
-                                <input
-                                    type="checkbox"
-                                    checked={selectedPrints.includes(print.id)}
-                                    onChange={() => {}}
-                                    className="checkbox cursor-pointer accent-indigo"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-
                                 {/* Миниатюра */}
                                 <div className="thumbnail">
                                     <img src={print.thumb || print.url} alt={print.name} />

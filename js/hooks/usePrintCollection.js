@@ -1,9 +1,10 @@
 // js/hooks/usePrintCollection.js
 window.usePrintCollection = () => {
-    const { useState, useCallback } = React;
+    const { useState, useCallback, useRef } = React;
 
     const [printCollection, setPrintCollection] = useState([]);
     const [selectedPrintIds, setSelectedPrintIds] = useState([]);
+    const pendingSkusRef = useRef(new Set());
 
     /**
      * Добавить принт в коллекцию
@@ -13,7 +14,7 @@ window.usePrintCollection = () => {
      * @param {Object} productTransforms - трансформации products
      * @param {String} activeTab - текущая вкладка
      */
-    const addPrintToCollection = useCallback((file, products, transforms, productTransforms, activeTab) => {
+    const addPrintToCollection = useCallback(async (file, products, transforms, productTransforms, activeTab) => {
         if (!file) {
             console.warn('addPrintToCollection: файл не передан');
             return null;
@@ -21,6 +22,39 @@ window.usePrintCollection = () => {
         
         try {
             console.log('Добавление принта в коллекцию:', file.name);
+            
+            let article = file.article;
+            
+            // Если артикула нет, генерируем автоматически
+            if (!article) {
+                if (window.DataService && window.DataService.generateSku) {
+                    const serverSku = await window.DataService.generateSku();
+                    if (serverSku) {
+                        article = serverSku;
+                        
+                        // Проверяем локальные коллизии (если пользователь добавил несколько подряд)
+                        // Используем ref для учета артикулов, которые еще не попали в стейт, но уже назначены
+                        const isBusy = (art) => printCollection.some(p => p.article === art) || pendingSkusRef.current.has(art);
+                        
+                        while (isBusy(article)) {
+                            // Инкрементируем число в конце
+                            const m = article.match(/(\d+)$/);
+                            if (m) {
+                                const num = parseInt(m[1]) + 1;
+                                article = article.substring(0, article.length - m[1].length) + num;
+                            } else {
+                                article = article + "1";
+                            }
+                        }
+                        
+                        pendingSkusRef.current.add(article);
+                    } else {
+                         article = file.name.split('.')[0];
+                    }
+                } else {
+                    article = file.name.split('.')[0];
+                }
+            }
             
             const printId = 'print_' + Date.now();
             // Сохраняем позиции всех включенных товаров
@@ -54,20 +88,20 @@ window.usePrintCollection = () => {
                 name: file.name,
                 url: file.url,
                 thumb: file.thumb || file.url,
-                article: file.article || file.name.split('.')[0],
+                article: article,
                 positions: positions
             };
 
             setPrintCollection(prev => [...prev, newPrint]);
             setSelectedPrintIds(prev => [...prev, printId]);
             
-            console.log('Принт успешно добавлен в коллекцию');
+            console.log('Принт успешно добавлен в коллекцию:', article);
             return newPrint;
         } catch (e) {
             console.error('Ошибка при добавлении принта в коллекцию:', e);
             throw e;
         }
-    }, []);
+    }, [printCollection]);
 
     /**
      * Выбрать принт из коллекции

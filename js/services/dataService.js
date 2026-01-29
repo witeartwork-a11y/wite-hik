@@ -97,6 +97,18 @@ window.DataService = {
         }
     },
 
+    // Сгенерировать новый артикул (SKU)
+    generateSku: async () => {
+        try {
+            const res = await fetch('/api.php?action=generate_sku&t=' + Date.now());
+            const data = await res.json();
+            return data.success ? data.sku : null;
+        } catch (e) {
+            console.error("Ошибка генерации артикула:", e);
+            return null;
+        }
+    },
+
     // Загрузить файлы (картинки, маски)
     uploadFiles: async (password, fileList) => {
         if (!fileList || fileList.length === 0) return null;

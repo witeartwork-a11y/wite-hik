@@ -356,6 +356,43 @@ if ($action === 'save_prints_config') {
     }
 }
 
+if ($action === 'generate_sku') {
+    // Формат: DDMMYYX
+    // 29 - число, 01 - месяц, 26 - год (2 цифры)
+    $today = date('dmy'); // 290126
+    
+    // Сканируем папку облака на наличие папок, начинающихся с $today
+    $maxSuffix = 0;
+    
+    if (is_dir($CLOUD_DIR)) {
+        $articles = scandir($CLOUD_DIR);
+        foreach ($articles as $article) {
+            if ($article === '.' || $article === '..') continue;
+            if (!is_dir($CLOUD_DIR . '/' . $article)) continue;
+            
+            // Проверяем, начинается ли имя папки с сегодняшней даты
+            if (strpos($article, $today) === 0) {
+                // Извлекаем суффикс
+                $suffixStr = substr($article, strlen($today));
+                
+                // Проверяем, является ли остаток числом
+                if (is_numeric($suffixStr)) {
+                    $suffix = intval($suffixStr);
+                    if ($suffix > $maxSuffix) {
+                        $maxSuffix = $suffix;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Генерируем следующий номер
+    $nextSuffix = $maxSuffix + 1;
+    $newSku = $today . $nextSuffix;
+    
+    jsonResponse(true, ['sku' => $newSku]);
+}
+
 if ($action === 'list') {
     $list = [];
     
