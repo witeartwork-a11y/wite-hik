@@ -83,7 +83,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                 // или можно кидать в корень если просили "плоский" вид для артикула с 1 категорией?
                 // Пользователь просил: "папка одна ... раскрывал ... внутри 2 категории"
                 // Значит здесь структура архива тоже должна отражать это.
-                const folderName = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Мокапы' : 'Файлы');
+                const folderName = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Заготовки' : 'Файлы');
                 const catFolder = zip.folder(folderName);
                 
                 const promises = fileList.map(async (f) => {
@@ -122,7 +122,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
             });
             await Promise.all(promises);
             
-            const folderName = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Мокапы' : 'Файлы');
+            const folderName = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Заготовки' : 'Файлы');
             const content = await zip.generateAsync({ type: "blob" });
             saveAs(content, `${articleKey}_${folderName}.zip`);
         } catch (e) {
@@ -308,7 +308,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                             {expandedArticle === item.key && (
                                 <div className="bg-slate-900/30 p-4 border-t border-slate-700 space-y-4">
                                     {Object.entries(item.categories).map(([catName, fileList]) => {
-                                        const catLabel = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Мокапы' : 'Файлы');
+                                        const catLabel = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Заготовки' : 'Файлы');
                                         return (
                                             <div key={catName} className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
                                                 <div className="flex items-center justify-between mb-3">
@@ -346,6 +346,26 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                                                     <button onClick={() => setPreviewFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 rounded text-xs transition-colors text-white">
                                                                         <window.Icon name="eye" className="w-3 h-3" />
                                                                         <span>Смотреть</span>
+                                                                    </button>
+                                                                    <button onClick={async () => {
+                                                                        try {
+                                                                            const response = await fetch(f.url);
+                                                                            const blob = await response.blob();
+                                                                            const url = window.URL.createObjectURL(blob);
+                                                                            const a = document.createElement('a');
+                                                                            a.href = url;
+                                                                            a.download = f.name;
+                                                                            document.body.appendChild(a);
+                                                                            a.click();
+                                                                            window.URL.revokeObjectURL(url);
+                                                                            document.body.removeChild(a);
+                                                                        } catch (e) {
+                                                                            console.error(e);
+                                                                            alert('Ошибка скачивания');
+                                                                        }
+                                                                    }} className="w-full flex items-center gap-2 px-2 py-1.5 bg-emerald-600/80 hover:bg-emerald-500 rounded text-xs transition-colors text-white">
+                                                                        <window.Icon name="download" className="w-3 h-3" />
+                                                                        <span>Скачать</span>
                                                                     </button>
                                                                     <button onClick={() => handleCopyLink(f.url, f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
                                                                         <window.Icon name="copy" className="w-3 h-3" />

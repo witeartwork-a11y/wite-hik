@@ -102,7 +102,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                 onClick={() => onSubTabChange('files')} 
                                 className={`tab-button ${activeSubTab === 'files' ? 'tab-active' : 'tab-inactive'}`}
                             >
-                                Файлы
+                                Исходники
                             </button>
                             <button 
                                 onClick={() => onSubTabChange('cloud')} 
