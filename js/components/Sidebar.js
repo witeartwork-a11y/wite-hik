@@ -69,7 +69,7 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
                 
                 {/* Кнопки создания */}
                 <div className="flex gap-2">
-                    <label className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg cursor-pointer transition-all shadow-sm hover:shadow-indigo-500/25 font-medium group text-xs">
+                    <label className="btn-primary flex-1 flex items-center justify-center gap-2 py-2 rounded-lg cursor-pointer font-medium group text-xs">
                         <window.Icon name="upload" className="w-3.5 h-3.5" />
                         <span>Из файла</span>
                         <input 
@@ -87,7 +87,7 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
                     </label>
                     <button
                         onClick={() => onAddProduct()} 
-                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg cursor-pointer transition-all shadow-sm font-medium group text-xs border border-slate-600"
+                        className="btn-secondary flex-1 flex items-center justify-center gap-2 py-2 rounded-lg cursor-pointer font-medium group text-xs"
                     >
                         <window.Icon name="plus" className="w-3.5 h-3.5" />
                         <span>Пустой</span>
@@ -95,14 +95,14 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
                 </div>
 
                 {/* Поиск */}
-                <div className="relative group">
-                    <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                <div className="search-box group">
+                    <window.Icon name="search" className="search-icon" />
                     <input 
                         type="text" 
                         placeholder="Поиск мокапов..." 
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-indigo-500/50 focus:bg-slate-900 transition-all placeholder:text-slate-600"
+                        className="input-field pl-9"
                     />
                 </div>
 
@@ -110,14 +110,14 @@ window.Sidebar = ({ products, password, onAddProduct, onSaveConfig, onExport, on
                 <div className="flex gap-2">
                     <button
                         onClick={handleSelectAll}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/50 rounded-lg text-[10px] font-medium text-slate-400 hover:bg-slate-700 hover:border-indigo-500/30 hover:text-white transition-all"
+                        className="btn-secondary flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium"
                     >
                         <window.Icon name="check-square" className="w-3.5 h-3.5" />
                         <span>Выделить все</span>
                     </button>
                     <button
                         onClick={handleDeselectAll}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-800/50 border border-slate-700/50 rounded-lg text-[10px] font-medium text-slate-400 hover:bg-slate-700 hover:border-red-500/30 hover:text-white transition-all"
+                        className="btn-secondary flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium"
                     >
                         <window.Icon name="square" className="w-3.5 h-3.5" />
                         <span>Снять все</span>

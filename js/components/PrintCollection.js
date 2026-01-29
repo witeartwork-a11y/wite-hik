@@ -46,13 +46,7 @@ window.PrintCollection = ({
                     {prints.map((print) => (
                         <div 
                             key={print.id}
-                            className={`
-                                p-3 rounded-lg border transition-all cursor-pointer
-                                ${selectedPrints.includes(print.id)
-                                    ? 'bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500/30'
-                                    : 'bg-slate-700/30 border-slate-700 hover:border-slate-600'
-                                }
-                            `}
+                            className={`collection-item ${selectedPrints.includes(print.id) ? 'collection-item-selected' : 'collection-item-unselected'}`}
                             onClick={() => onSelectPrint(print.id)}
                         >
                             <div className="flex items-center gap-3">
@@ -61,13 +55,13 @@ window.PrintCollection = ({
                                     type="checkbox"
                                     checked={selectedPrints.includes(print.id)}
                                     onChange={() => {}}
-                                    className="w-4 h-4 rounded cursor-pointer accent-indigo-500"
+                                    className="checkbox cursor-pointer accent-indigo"
                                     onClick={(e) => e.stopPropagation()}
                                 />
 
                                 {/* Миниатюра */}
-                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-900 border border-slate-700 flex-shrink-0">
-                                    <img src={print.thumb || print.url} className="w-full h-full object-cover" />
+                                <div className="thumbnail">
+                                    <img src={print.thumb || print.url} alt={print.name} />
                                 </div>
 
                                 {/* Контент */}
@@ -104,7 +98,7 @@ window.PrintCollection = ({
                                             <span className="text-sm font-mono bg-slate-900/50 px-2 py-1 rounded text-indigo-300">
                                                 {print.article || print.name.split('.')[0]}
                                             </span>
-                                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/article:opacity-100 transition-opacity" />
+                                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 hover-opacity-show" />
                                         </div>
                                     )}
                                 </div>

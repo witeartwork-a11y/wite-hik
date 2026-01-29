@@ -186,3 +186,507 @@ body {
         height: calc(100vh - 80px) !important;
     }
 }
+/* ===== УТИЛИТЫ КНОПОК ===== */
+.btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: rgba(51, 65, 85, 0.5);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    color: rgb(203, 213, 225);
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(71, 85, 105, 0.5);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+.btn-icon {
+    padding: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    transform: scale(1.05);
+}
+
+.btn-danger {
+    color: rgb(248, 113, 113);
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    color: rgb(239, 68, 68);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* ===== ЭФФЕКТЫ ВЗАИМОДЕЙСТВИЯ ===== */
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.3);
+}
+
+.hover-scale {
+    transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+    transform: scale(1.02);
+}
+
+.hover-opacity {
+    transition: opacity 0.2s ease;
+}
+
+.group:hover .hover-opacity-show {
+    opacity: 1;
+}
+
+.hover-opacity-show {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* ===== СОСТОЯНИЯ ВИДИМОСТИ ===== */
+.visible-on-hover {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.group:hover .visible-on-hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ===== АНИМАЦИИ ЗАГРУЗКИ ===== */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===== КАРТОЧКИ ПРОДУКТОВ ===== */
+.product-card {
+    position: relative;
+    border-radius: 0.75rem;
+    border: 1px solid;
+    transition: all 0.2s ease;
+}
+
+.product-card-enabled {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgb(51, 65, 85);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.product-card-disabled {
+    background: rgba(15, 23, 42, 0.4);
+    border-color: rgb(30, 41, 59);
+    opacity: 0.75;
+}
+
+.product-card-disabled:hover {
+    opacity: 1;
+}
+
+/* ===== ПОЛЯ ВВОДА ===== */
+.input-field {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: white;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.input-field:focus {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgb(15, 23, 42);
+}
+
+.input-field::placeholder {
+    color: rgb(71, 85, 105);
+}
+
+/* ===== ЧЕКБОКСЫ ===== */
+.checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.25rem;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.checkbox-checked {
+    background: rgb(99, 102, 241);
+    border-color: rgb(99, 102, 241);
+    color: white;
+}
+
+.checkbox-unchecked {
+    border-color: rgb(71, 85, 105);
+    background: transparent;
+}
+
+.checkbox-unchecked:hover {
+    border-color: rgb(100, 116, 139);
+}
+
+/* ===== ТАБЫ ===== */
+.tab-button {
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.tab-active {
+    background: rgba(99, 102, 241, 0.2);
+    color: rgb(165, 180, 252);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.5);
+}
+
+.tab-inactive {
+    color: rgb(148, 163, 184);
+}
+
+.tab-inactive:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* ===== UPLOAD ZONE ===== */
+.upload-zone {
+    aspect-ratio: 1;
+    border-radius: 0.375rem;
+    border: 2px dashed rgb(71, 85, 105);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(15, 23, 42, 0.5);
+    position: relative;
+}
+
+.upload-zone:hover {
+    background: rgba(51, 65, 85, 0.5);
+    border-color: rgb(99, 102, 241);
+}
+
+/* ===== BADGE ===== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+}
+
+.badge-primary {
+    background: rgba(99, 102, 241, 0.2);
+    color: rgb(165, 180, 252);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.badge-success {
+    background: rgba(34, 197, 94, 0.2);
+    color: rgb(134, 239, 172);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge-error {
+    background: rgba(239, 68, 68, 0.2);
+    color: rgb(252, 165, 165);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ===== OVERLAY ===== */
+.overlay-dark {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    transition: background 0.2s ease;
+}
+
+.group:hover .overlay-dark {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+/* ===== ИКОНКИ ===== */
+.icon-wrapper {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+/* ===== DIVIDER ===== */
+.divider-vertical {
+    width: 1px;
+    background: rgb(51, 65, 85);
+    margin: 0.25rem 0;
+}
+
+/* ===== CANVAS GRID ===== */
+.responsive-canvas-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+/* ===== FILE UPLOADER BUTTONS ===== */
+.file-upload-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: 2px dashed;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.file-upload-button-active {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.file-upload-button-inactive {
+    background: rgb(30, 41, 59);
+    border-color: rgb(51, 65, 85);
+}
+
+.file-upload-button-inactive:hover {
+    border-color: rgb(100, 116, 139);
+    background: rgb(51, 65, 85);
+}
+
+/* ===== DELETE BUTTON ===== */
+.delete-button {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    background: rgb(15, 23, 42);
+    color: rgb(248, 113, 113);
+    border: 1px solid rgb(51, 65, 85);
+    border-radius: 9999px;
+    padding: 0.125rem;
+    transition: all 0.2s ease;
+}
+
+.delete-button:hover {
+    background: rgb(239, 68, 68);
+    color: white;
+}
+
+/* ===== SEARCH BOX ===== */
+.search-box {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    color: rgb(100, 116, 139);
+    transition: color 0.2s ease;
+}
+
+.search-box:focus-within .search-icon {
+    color: rgb(129, 140, 248);
+}}
+
+/* ===== ПРОГРЕСС БАР ===== */
+.progress-bar-container {
+    width: 100%;
+    background: rgb(30, 41, 59);
+    border-radius: 9999px;
+    height: 0.5rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, rgb(99, 102, 241), rgb(129, 140, 248));
+    transition: width 0.3s ease;
+}
+
+/* ===== COLLECTION ITEM ===== */
+.collection-item {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.collection-item-selected {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgb(99, 102, 241);
+    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.3);
+}
+
+.collection-item-unselected {
+    background: rgba(51, 65, 85, 0.3);
+    border-color: rgb(51, 65, 85);
+}
+
+.collection-item-unselected:hover {
+    border-color: rgb(100, 116, 139);
+}
+
+/* ===== CUSTOM SCROLLBAR ===== */
+.custom-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== NOTIFICATION ===== */
+.notification {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    background: rgb(15, 23, 42);
+    border: 1px solid rgb(99, 102, 241);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    max-width: 20rem;
+    z-index: 50;
+}
+
+/* ===== THUMBNAIL ===== */
+.thumbnail {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: rgb(15, 23, 42);
+    border: 1px solid rgb(51, 65, 85);
+    flex-shrink: 0;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    color: rgb(100, 116, 139);
+    border: 2px dashed rgb(30, 41, 59);
+    border-radius: 0.5rem;
+}
+
+/* ===== EDITABLE FIELD ===== */
+.editable-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.editable-field:hover .edit-icon {
+    opacity: 1;
+}
+
+.edit-icon {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* ===== СТАТУС БЕЙДЖИ ===== */
+.status-saving {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(59, 130, 246, 0.1);
+    color: rgb(96, 165, 250);
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.status-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: rgb(248, 113, 113);
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}

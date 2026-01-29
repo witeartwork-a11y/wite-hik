@@ -100,13 +100,13 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                         <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 shrink-0">
                             <button 
                                 onClick={() => onSubTabChange('files')} 
-                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'files' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                className={`tab-button ${activeSubTab === 'files' ? 'tab-active' : 'tab-inactive'}`}
                             >
                                 Файлы
                             </button>
                             <button 
                                 onClick={() => onSubTabChange('cloud')} 
-                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'cloud' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                                className={`tab-button ${activeSubTab === 'cloud' ? 'tab-active' : 'tab-inactive'}`}
                             >
                                 Облако
                             </button>
@@ -116,14 +116,14 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                 
                 <div className="flex items-center gap-4 w-full md:w-auto justify-end flex-wrap md:flex-nowrap">
                     {/* Фильтр по названию - перемещен вправо */}
-                    <div className="relative group w-full md:w-64 order-2 md:order-1">
-                        <window.Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                    <div className="search-box group w-full md:w-64 order-2 md:order-1">
+                        <window.Icon name="search" className="search-icon" />
                         <input
                             type="text"
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                             placeholder="Поиск файлов..."
-                            className="w-full bg-slate-900 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-indigo-500/50 focus:bg-slate-900/80 transition-all placeholder:text-slate-600"
+                            className="input-field pl-9 text-sm"
                         />
                     </div>
 

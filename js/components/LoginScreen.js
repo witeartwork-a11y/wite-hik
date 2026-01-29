@@ -40,14 +40,14 @@ window.LoginScreen = ({ onLogin }) => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input type="password" value={password} onChange={e => {setPassword(e.target.value); setStatus('idle')}} 
                         placeholder="Пароль доступа" autoFocus
-                        className="w-full bg-slate-950/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-indigo-500 transition-all" />
+                        className="input-field w-full px-4 py-3 rounded-xl" />
                     
                     {status === 'error' && (
-                        <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                        <div className="status-error">
                            <span>{errorMsg}</span>
                         </div>
                     )}
-                    <button type="submit" disabled={status === 'loading'} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                    <button type="submit" disabled={status === 'loading'} className="btn-primary w-full py-3 rounded-xl shadow-lg flex items-center justify-center gap-2">
                         {status === 'loading' ? 'Вход...' : 'Войти'}
                     </button>
                 </form>

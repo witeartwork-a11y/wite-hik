@@ -586,7 +586,7 @@ function App() {
                                 <div className="responsive-sidebar w-full lg:w-72 xl:w-80 flex flex-col gap-4 lg:h-full overflow-y-auto custom-scroll pr-1 shrink-0">
                                     {/* Выбор принта */}
                                     <div
-                                        className="bg-slate-800 rounded-xl border border-slate-700 p-4 flex flex-col transition-all hover:border-indigo-500/50"
+                                        className="glass-card rounded-xl p-4 flex flex-col hover-lift"
                                         onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-indigo-500'); }}
                                         onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove('border-indigo-500'); }}
                                         onDrop={e => {
@@ -597,7 +597,7 @@ function App() {
                                     >
                                         <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Выберите принт</h3>
                                         <div className="grid md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-2 pr-1">
-                                            <div className="aspect-square rounded border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-700/50 hover:border-indigo-500 transition-all relative bg-slate-900/50">
+                                            <div className="upload-zone">
                                                 <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleUploadFiles(e.target.files)} disabled={isUploading} />
                                                 {isUploading ? <window.Icon name="loader-2" className="w-6 h-6 text-indigo-400 animate-spin" /> : <window.Icon name="plus" className="w-6 h-6 text-slate-500" />}
                                             </div>
@@ -624,9 +624,7 @@ function App() {
                                                     </div>
                                                     
                                                     {/* Кнопка добавления в коллекцию (по центру, полупрозрачная) */}
-                                                    <div 
-                                                        className="add-to-collection-btn absolute inset-0 w-full h-full flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto"
-                                                    >
+                                                    <div className="visible-on-hover absolute inset-0 w-full h-full flex items-center justify-center overlay-dark">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -642,7 +640,7 @@ function App() {
                                                                     alert('Ошибка при добавлении: ' + err.message);
                                                                 }
                                                             }}
-                                                            className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-400/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-indigo-500/40 hover:border-indigo-400"
+                                                            className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500/20 border-2 border-indigo-400/40 hover:bg-indigo-500/40 hover:border-indigo-400"
                                                             title="Добавить в коллекцию"
                                                         >
                                                             <window.Icon name="plus" className="w-6 h-6 text-white" />

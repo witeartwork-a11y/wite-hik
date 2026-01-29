@@ -127,22 +127,12 @@ window.ProductCard = ({
     };
 
     return (
-        <div className={`
-            relative rounded-xl border transition-all duration-200 group
-            ${product.enabled 
-                ? 'bg-slate-800/80 border-slate-700 shadow-sm' 
-                : 'bg-slate-900/40 border-slate-800 opacity-75 hover:opacity-100'}
-        `}>
+        <div className={`product-card group ${product.enabled ? 'product-card-enabled' : 'product-card-disabled'}`}>
             {/* --- HEAD --- */}
             <div className="p-3 flex items-center gap-3 border-b border-slate-700/50">
                 <button 
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggle(product.id); }}
-                    className={`
-                        w-5 h-5 rounded border flex items-center justify-center transition-colors
-                        ${product.enabled 
-                            ? 'bg-indigo-500 border-indigo-500 text-white' 
-                            : 'border-slate-600 hover:border-slate-500 bg-transparent'}
-                    `}
+                    className={`checkbox ${product.enabled ? 'checkbox-checked' : 'checkbox-unchecked'}`}
                 >
                     {product.enabled && <span><window.Icon name="check" className="w-3.5 h-3.5" /></span>}
                 </button>
@@ -160,7 +150,7 @@ window.ProductCard = ({
                     ) : (
                         <div className="flex items-center gap-2 group/name cursor-pointer" onClick={() => setIsEditing(true)}>
                             <span className="text-sm font-medium text-slate-200 truncate">{product.name}</span>
-                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 hover-opacity-show" />
                         </div>
                     )}
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex gap-2 items-center">
@@ -189,9 +179,9 @@ window.ProductCard = ({
                                 <span>px</span>
                             </div>
                         ) : (
-                            <span className="cursor-pointer hover:text-slate-300 transition-colors group/res flex items-center gap-1" onClick={() => setIsEditingResolution(true)}>
+                            <span className="cursor-pointer hover:text-slate-300 group/res flex items-center gap-1" onClick={() => setIsEditingResolution(true)}>
                                 {currentWidth}x{currentHeight}px ({configTab === 'mockup' ? 'Мокап' : 'Товар'})
-                                <window.Icon name="pencil" className="w-2.5 h-2.5 text-slate-600 opacity-0 group-hover/res:opacity-100 transition-opacity" />
+                                <window.Icon name="pencil" className="w-2.5 h-2.5 text-slate-600 hover-opacity-show" />
                             </span>
                         )}
                         <span>|</span>
@@ -201,7 +191,7 @@ window.ProductCard = ({
 
                 <button 
                     onClick={() => onDelete(product.id)}
-                    className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                    className="btn-icon btn-danger hover-opacity-show"
                     title="Удалить"
                 >
                     <window.Icon name="trash-2" className="w-4 h-4" />
@@ -217,7 +207,7 @@ window.ProductCard = ({
                             <button 
                                 disabled={index === 0}
                                 onClick={() => onMove(index, 'up')}
-                                className="p-1.5 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400"
+                                className="btn-icon text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400"
                             >
                                 <window.Icon name="arrow-up" className="w-3.5 h-3.5" />
                             </button>
@@ -225,7 +215,7 @@ window.ProductCard = ({
                             <button 
                                 disabled={index === totalProducts - 1}
                                 onClick={() => onMove(index, 'down')}
-                                className="p-1.5 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400"
+                                className="btn-icon text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400"
                             >
                                 <window.Icon name="arrow-down" className="w-3.5 h-3.5" />
                             </button>
@@ -233,7 +223,7 @@ window.ProductCard = ({
 
                         <button 
                             onClick={() => onDuplicate(product)}
-                            className="p-1.5 px-2 bg-slate-800 text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 rounded-md text-xs flex items-center gap-1.5 transition-all"
+                            className="btn-secondary p-1.5 px-2 rounded-md text-xs flex items-center gap-1.5"
                         >
                             <window.Icon name="copy" className="w-3.5 h-3.5" />
                             <span>Дубль</span>
@@ -256,12 +246,7 @@ window.ProductCard = ({
                     <div className="grid grid-cols-2 gap-2">
                         {/* Mask */}
                         <div className="relative">
-                            <label className={`
-                                flex flex-col items-center justify-center gap-1 p-2 rounded-lg border border-dashed cursor-pointer transition-all
-                                ${currentMask 
-                                    ? 'bg-indigo-500/10 border-indigo-500/50' 
-                                    : 'bg-slate-800 border-slate-700 hover:border-slate-500 hover:bg-slate-700'}
-                            `}>
+                            <label className={`file-upload-button ${currentMask ? 'file-upload-button-active' : 'file-upload-button-inactive'}`}>
                                 <div className="flex items-center gap-1.5 text-xs font-medium">
                                     <window.Icon name="layers" className={`w-3.5 h-3.5 ${currentMask ? 'text-indigo-400' : 'text-slate-400'}`} />
                                     <span className={currentMask ? 'text-indigo-300' : 'text-slate-400'}>{configTab === 'mockup' ? 'М. Маска' : 'Маска'}</span>
@@ -269,7 +254,7 @@ window.ProductCard = ({
                                 <input type="file" className="hidden" accept="image/png" onChange={e => handleFileUpload(e, 'mask')} />
                             </label>
                             {currentMask && (
-                                <button onClick={() => handleFileDelete('mask', currentMask)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
+                                <button onClick={() => handleFileDelete('mask', currentMask)} className="delete-button">
                                     <window.Icon name="x" className="w-3 h-3" />
                                 </button>
                             )}
@@ -277,12 +262,7 @@ window.ProductCard = ({
 
                         {/* Overlay */}
                         <div className="relative">
-                            <label className={`
-                                flex flex-col items-center justify-center gap-1 p-2 rounded-lg border border-dashed cursor-pointer transition-all
-                                ${currentOverlay 
-                                    ? 'bg-indigo-500/10 border-indigo-500/50' 
-                                    : 'bg-slate-800 border-slate-700 hover:border-slate-500 hover:bg-slate-700'}
-                            `}>
+                            <label className={`file-upload-button ${currentOverlay ? 'file-upload-button-active' : 'file-upload-button-inactive'}`}>
                                 <div className="flex items-center gap-1.5 text-xs font-medium">
                                     <window.Icon name="eye" className={`w-3.5 h-3.5 ${currentOverlay ? 'text-indigo-400' : 'text-slate-400'}`} />
                                     <span className={currentOverlay ? 'text-indigo-300' : 'text-slate-400'}>{configTab === 'mockup' ? 'М. Оверлей' : 'Оверлей'}</span>
@@ -290,7 +270,7 @@ window.ProductCard = ({
                                 <input type="file" className="hidden" accept="image/png" onChange={e => handleFileUpload(e, 'overlay')} />
                             </label>
                             {currentOverlay && (
-                                <button onClick={() => handleFileDelete('overlay', currentOverlay)} className="absolute -top-1 -right-1 bg-slate-900 text-red-400 border border-slate-700 rounded-full p-0.5 hover:bg-red-400 hover:text-white transition-colors">
+                                <button onClick={() => handleFileDelete('overlay', currentOverlay)} className="delete-button">
                                     <window.Icon name="x" className="w-3 h-3" />
                                 </button>
                             )}
