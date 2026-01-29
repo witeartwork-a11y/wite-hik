@@ -9,10 +9,9 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     const [filter, setFilter] = useState('');
     const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
 
-    // Группируем файлы облака: каждый артикул + категория = отдельная строка (но скачиваются вместе)
+    // Группируем файлы облака по артикулам для UI (один артикул = одна строка)
     const items = useMemo(() => {
-        const itemsMap = {}; // key: "article__category"
-        const articlesMeta = {}; // Метаданные артикулов для группировки при скачивании
+        const articleMap = {}; // key: article
         
         files.forEach(f => {
             if (f.type !== 'cloud' || !f.article) return;
@@ -38,7 +37,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                 }
             }
             
-            // Фильтрация по тексту (имя файла, артикул или оригинальное имя принта)
+            // Фильтрация по тексту
             if (filter.trim() !== '') {
                 const searchLower = filter.toLowerCase();
                 const matchArticle = f.article.toLowerCase().includes(searchLower);
@@ -49,84 +48,47 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
             
             const article = f.article;
             const cat = f.category || 'files';
-            const itemKey = `${article}__${cat}`;
             
-            // Сохраняем метаданные артикула
-            if (!articlesMeta[article]) {
-                articlesMeta[article] = {
-                    name: article,
-                    thumbnail: f.article_thumb || f.thumb || f.url,
-                    mtime: f.mtime
-                };
-            }
-            if (f.mtime > articlesMeta[article].mtime) {
-                articlesMeta[article].mtime = f.mtime;
-            }
-            
-            // Создаем отдельный элемент для каждой комбинации артикула + категории
-            if (!itemsMap[itemKey]) {
-                itemsMap[itemKey] = {
-                    key: itemKey,
+            if (!articleMap[article]) {
+                articleMap[article] = {
+                    key: article,
                     article: article,
-                    category: cat,
-                    categoryLabel: cat === 'mockups' ? 'Мокапы' : cat === 'products' ? 'Товары' : 'Файлы',
                     thumbnail: f.article_thumb || f.thumb || f.url,
                     mtime: f.mtime,
-                    files: []
+                    categories: {}
                 };
             }
-            itemsMap[itemKey].files.push(f);
-            if (f.mtime > itemsMap[itemKey].mtime) itemsMap[itemKey].mtime = f.mtime;
+            
+            if (f.mtime > articleMap[article].mtime) articleMap[article].mtime = f.mtime;
+            
+            if (!articleMap[article].categories[cat]) {
+                articleMap[article].categories[cat] = [];
+            }
+            articleMap[article].categories[cat].push(f);
         });
         
-        // Сортируем по времени
-        const sorted = Object.values(itemsMap).sort((a, b) => b.mtime - a.mtime);
-        
-        return { items: sorted, articlesMeta };
+        // Сортируем артикулы по дате обновления
+        return Object.values(articleMap).sort((a, b) => b.mtime - a.mtime);
     }, [files, filter, dateFilter]);
 
-    const handleDownloadArticle = async (item) => {
-        if (!item || !item.files.length) return;
+    // Скачать весь артикул
+    const handleDownloadArticle = async (articleItem) => {
         setIsZipping(true);
         try {
             const zip = new JSZip();
             
-            const promises = item.files.map(async (f) => {
-                try {
-                    const blob = await fetch(f.url).then(r => r.blob());
-                    // Сохраняем с префиксом категории папки
-                    const catFolder = zip.folder(f.category === 'products' ? 'Товары' : 'Мокапы');
-                    catFolder.file(f.name, blob);
-                } catch (e) {
-                    console.error("Failed to load", f.name, e);
-                }
-            });
-            await Promise.all(promises);
-            
-            const content = await zip.generateAsync({ type: "blob" });
-            saveAs(content, `${item.article}__${item.category}.zip`);
-        } catch (e) {
-            console.error(e);
-            alert("Ошибка создания архива");
-        } finally {
-            setIsZipping(false);
-        }
-    };
-
-    // Скачать ВСЕ файлы артикула (обе категории вместе)
-    const handleDownloadFullArticle = async (articleKey) => {
-        const allItemsForArticle = items.items.filter(item => item.article === articleKey);
-        if (!allItemsForArticle.length) return;
-        
-        setIsZipping(true);
-        try {
-            const zip = new JSZip();
-            
-            for (const item of allItemsForArticle) {
-                const promises = item.files.map(async (f) => {
+            const cats = Object.entries(articleItem.categories);
+            for (const [catName, fileList] of cats) {
+                // Если две категории, создаем папки. Если только одна, тоже создаем для единообразия, 
+                // или можно кидать в корень если просили "плоский" вид для артикула с 1 категорией?
+                // Пользователь просил: "папка одна ... раскрывал ... внутри 2 категории"
+                // Значит здесь структура архива тоже должна отражать это.
+                const folderName = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Мокапы' : 'Файлы');
+                const catFolder = zip.folder(folderName);
+                
+                const promises = fileList.map(async (f) => {
                     try {
                         const blob = await fetch(f.url).then(r => r.blob());
-                        const catFolder = zip.folder(f.category === 'products' ? 'Товары' : 'Мокапы');
                         catFolder.file(f.name, blob);
                     } catch (e) {
                         console.error("Failed to load", f.name, e);
@@ -136,7 +98,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
             }
             
             const content = await zip.generateAsync({ type: "blob" });
-            saveAs(content, `${articleKey}_полный.zip`);
+            saveAs(content, `${articleItem.article}.zip`);
         } catch (e) {
             console.error(e);
             alert("Ошибка создания архива");
@@ -145,9 +107,31 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
         }
     };
 
-    const handleDownloadCategory = async (article, categoryName, files) => {
-        if (!files || !files.length) return;
+    // Скачать отдельную категорию
+    const handleDownloadCategory = async (articleKey, catName, fileList) => {
         setIsZipping(true);
+        try {
+            const zip = new JSZip();
+            const promises = fileList.map(async (f) => {
+                try {
+                    const blob = await fetch(f.url).then(r => r.blob());
+                    zip.file(f.name, blob);
+                } catch (e) {
+                    console.error("Failed to load", f.name, e);
+                }
+            });
+            await Promise.all(promises);
+            
+            const folderName = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Мокапы' : 'Файлы');
+            const content = await zip.generateAsync({ type: "blob" });
+            saveAs(content, `${articleKey}_${folderName}.zip`);
+        } catch (e) {
+            console.error(e);
+            alert("Ошибка создания архива");
+        } finally {
+            setIsZipping(false);
+        }
+    };
         try {
             const zip = new JSZip();
             const promises = files.map(async (f) => {
@@ -268,7 +252,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     );
 
 
-    if (items.items.length === 0) {
+    if (items.length === 0) {
         return (
             <div className="space-y-6 fade-in pb-10">
                 {header}
@@ -284,123 +268,129 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
         <div className="space-y-6 fade-in pb-10">
             {header}
             <div className="space-y-3">
-                {items.items.map(item => (
-                <div key={item.key} className="border border-slate-700 rounded-lg overflow-hidden">
-                    <button
-                        onClick={() => setExpandedArticle(expandedArticle === item.key ? null : item.key)}
-                        className="w-full flex items-center gap-4 p-4 bg-slate-800 hover:bg-slate-750 transition-colors text-left"
-                    >
-                        {/* Thumbnail */}
-                        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-slate-900 border border-slate-700">
-                            <img src={item.thumbnail} className="w-full h-full object-cover" />
-                        </div>
-                        
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-white truncate">
-                                {item.article}
-                                <span className="text-slate-400 ml-2 text-sm">
-                                    {item.categoryLabel}
-                                </span>
-                            </h3>
-                            <p className="text-xs text-slate-400">
-                                {item.files.length} файлов
-                            </p>
-                        </div>
+                {items.map(item => {
+                    const totalFiles = Object.values(item.categories).flat().length;
+                    const catCount = Object.keys(item.categories).length;
 
-                        {/* Buttons */}
-                        <div className="flex gap-2">
+                    return (
+                        <div key={item.key} className="border border-slate-700 rounded-lg overflow-hidden">
                             <button
-                                onClick={(e) => { e.stopPropagation(); handleDownloadArticle(item); }}
-                                disabled={isZipping}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors disabled:opacity-50"
-                                title="Скачать эту категорию"
+                                onClick={() => setExpandedArticle(expandedArticle === item.key ? null : item.key)}
+                                className="w-full flex items-center gap-4 p-4 bg-slate-800 hover:bg-slate-750 transition-colors text-left"
                             >
-                                {isZipping ? <window.Icon name="loader-2" className="animate-spin w-3 h-3" /> : <window.Icon name="download" className="w-3 h-3" />}
-                                <span>Скачать</span>
-                            </button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleDownloadFullArticle(item.article); }}
-                                disabled={isZipping}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs rounded transition-colors disabled:opacity-50"
-                                title="Скачать все категории этого артикула"
-                            >
-                                {isZipping ? <window.Icon name="loader-2" className="animate-spin w-3 h-3" /> : <window.Icon name="download" className="w-3 h-3" />}
-                                <span>Весь артикул</span>
-                            </button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleDeleteCategory(item.article, item.category); }}
-                                disabled={busy.type === 'category' && busy.key === item.key}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-200 text-xs rounded border border-red-500/30 transition-colors disabled:opacity-50"
-                                title="Удалить категорию"
-                            >
-                                {busy.type === 'category' && busy.key === item.key
-                                    ? <window.Icon name="loader-2" className="animate-spin w-3 h-3" />
-                                    : <window.Icon name="trash-2" className="w-3 h-3" />}
-                                <span>Удалить</span>
-                            </button>
-                        </div>
-                        
-                        {/* Expand arrow */}
-                        <window.Icon name={expandedArticle === item.key ? "chevron-up" : "chevron-down"} className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                    </button>
+                                {/* Thumbnail */}
+                                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-slate-900 border border-slate-700">
+                                    <img src={item.thumbnail} className="w-full h-full object-cover" />
+                                </div>
+                                
+                                {/* Info */}
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-white truncate text-lg">
+                                        {item.article}
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        {catCount} категоий · {totalFiles} файлов
+                                    </p>
+                                </div>
 
-                    {expandedArticle === item.key && (
-                        <div className="bg-slate-900/30 p-4 border-t border-slate-700">
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                                {item.files.map(f => (
-                                    <div key={f.name} className="group relative bg-slate-900 rounded-lg overflow-visible border border-slate-700 flex flex-col">
-                                        <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                                            <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer" onClick={() => setPreviewFile(f)} />
-                                            <div className="absolute inset-0 bg-slate-900/95 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center p-2 gap-2">
-                                                <button onClick={() => setPreviewFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 rounded text-xs transition-colors text-white">
-                                                    <window.Icon name="eye" className="w-3 h-3" />
-                                                    <span>Смотреть</span>
-                                                </button>
-                                                <button onClick={() => handleCopyLink(f.url)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
-                                                    <window.Icon name="copy" className="w-3 h-3" />
-                                                    <span>Получить ссылку</span>
-                                                </button>
-                                                <button onClick={() => window.open(f.url, '_blank')} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
-                                                    <window.Icon name="external-link" className="w-3 h-3" />
-                                                    <span>Открыть</span>
-                                                </button>
-                                                <button onClick={() => handleDeleteFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 rounded text-xs transition-colors text-red-200 border border-red-500/30 disabled:opacity-50" disabled={busy.type === 'file' && busy.key === f.url}>
-                                                    {busy.type === 'file' && busy.key === f.url
-                                                        ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" />
-                                                        : <window.Icon name="trash-2" className="w-3 h-3" />}
-                                                    <span>Удалить</span>
-                                                </button>
+                                {/* Buttons */}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleDownloadArticle(item); }}
+                                        disabled={isZipping}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded transition-colors disabled:opacity-50 font-medium"
+                                        title="Скачать весь артикул (все категории)"
+                                    >
+                                        {isZipping ? <window.Icon name="loader-2" className="animate-spin w-3 h-3" /> : <window.Icon name="download" className="w-3 h-3" />}
+                                        <span>Весь артикул</span>
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteArticle(item.key); }}
+                                        disabled={busy.type === 'article' && busy.key === item.key}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-200 text-xs rounded border border-red-500/30 transition-colors disabled:opacity-50"
+                                        title="Удалить весь артикул"
+                                    >
+                                        {busy.type === 'article' && busy.key === item.key
+                                            ? <window.Icon name="loader-2" className="animate-spin w-3 h-3" />
+                                            : <window.Icon name="trash-2" className="w-3 h-3" />}
+                                        <span>Удалить</span>
+                                    </button>
+                                </div>
+                                
+                                {/* Expand arrow */}
+                                <window.Icon name={expandedArticle === item.key ? "chevron-up" : "chevron-down"} className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                            </button>
+
+                            {expandedArticle === item.key && (
+                                <div className="bg-slate-900/30 p-4 border-t border-slate-700 space-y-4">
+                                    {Object.entries(item.categories).map(([catName, fileList]) => {
+                                        const catLabel = catName === 'products' ? 'Товары' : (catName === 'mockups' ? 'Мокапы' : 'Файлы');
+                                        return (
+                                            <div key={catName} className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <window.Icon name={catName === 'products' ? 'package' : 'image'} className="w-4 h-4 text-indigo-400" />
+                                                        <span className="font-semibold text-white/90">{catLabel}</span>
+                                                        <span className="text-xs text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">{fileList.length} шт.</span>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleDownloadCategory(item.article, catName, fileList)}
+                                                            disabled={isZipping}
+                                                            className="flex items-center gap-1 px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white text-[11px] rounded transition-colors disabled:opacity-50"
+                                                        >
+                                                            <window.Icon name="download" className="w-3 h-3" />
+                                                            <span>Скачать</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteCategory(item.article, catName)}
+                                                            disabled={busy.type === 'category' && busy.key === `${item.article}:${catName}`}
+                                                            className="flex items-center gap-1 px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-300 text-[11px] rounded border border-red-500/20 transition-colors disabled:opacity-50"
+                                                        >
+                                                            <window.Icon name="trash-2" className="w-3 h-3" />
+                                                            <span>Удалить</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                                                    {fileList.map(f => (
+                                                        <div key={f.name} className="group relative bg-slate-900 rounded-lg overflow-visible border border-slate-700 flex flex-col">
+                                                            <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                                                                <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300" onClick={() => setPreviewFile(f)} />
+                                                                <div className="absolute inset-0 bg-slate-900/95 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center p-2 gap-2">
+                                                                    <button onClick={() => setPreviewFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 rounded text-xs transition-colors text-white">
+                                                                        <window.Icon name="eye" className="w-3 h-3" />
+                                                                        <span>Смотреть</span>
+                                                                    </button>
+                                                                    <button onClick={() => handleCopyLink(f.url)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
+                                                                        <window.Icon name="copy" className="w-3 h-3" />
+                                                                        <span>Ссылка</span>
+                                                                    </button>
+                                                                    <button onClick={() => handleDeleteFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 rounded text-xs transition-colors text-red-200 border border-red-500/30 disabled:opacity-50" disabled={busy.type === 'file' && busy.key === f.url}>
+                                                                        {busy.type === 'file' && busy.key === f.url ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" /> : <window.Icon name="trash-2" className="w-3 h-3" />}
+                                                                        <span>Удалить</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="p-1.5 bg-slate-800/80 rounded-b-lg border-t border-slate-700">
+                                                                <p className="text-[10px] bg-slate-900/50 rounded px-1 text-slate-400 truncate text-center" title={f.name}>
+                                                                    {f.print_name || f.name}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                        {/* Постоянная подпись с артикулом и именем файла */}
-                                        <div className="p-2 bg-slate-800/80 rounded-b-lg border-t border-slate-700">
-                                            <p className="text-xs font-semibold text-indigo-300 truncate" title={f.article}>
-                                                {f.article}
-                                            </p>
-                                            {f.print_name ? (
-                                                <>
-                                                    <p className="text-[10px] text-slate-300 truncate" title={f.print_name}>
-                                                        {f.print_name}
-                                                    </p>
-                                                    <p className="text-[10px] text-slate-500 truncate" title={f.name}>
-                                                        {f.name}
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                <p className="text-[10px] text-slate-400 truncate" title={f.name}>
-                                                    {f.name}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            ))}
+                    );
+                })}
             </div>
+
             
             {/* Modal Preview */}
             {previewFile && (

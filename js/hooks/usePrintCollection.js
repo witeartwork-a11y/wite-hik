@@ -28,21 +28,25 @@ window.usePrintCollection = () => {
             const positions = {};
             
             enabledProducts.forEach(prod => {
-                const currentTransforms = activeTab === 'products' ? productTransforms : transforms;
-                // Используем текущую трансформацию или вычисляем правильно
-                if (currentTransforms[prod.id]) {
-                    positions[prod.id] = currentTransforms[prod.id];
-                } else if (window.RenderService && window.RenderService.getTransformByMode) {
-                    positions[prod.id] = window.RenderService.getTransformByMode(
+                // Сохраняем и мокапы, и товары независимо от текущей вкладки
+                // Это исправляет баг, когда сохранялись только трансформации текущей вкладки
+                positions[prod.id] = {
+                    mockups: transforms[prod.id] || (window.RenderService ? window.RenderService.getTransformByMode(
                         transforms,
                         productTransforms,
-                        activeTab === 'products' ? 'products' : 'mockups',
+                        'mockups',
                         prod.id,
-                        activeTab === 'products' ? 0.6 : 0.5
-                    );
-                } else {
-                    positions[prod.id] = { x: 0, y: 0, scale: 0.5, rotation: 0 };
-                }
+                        0.5
+                    ) : { x: 0, y: 0, scale: 0.5, rotation: 0 }),
+                    
+                    products: productTransforms[prod.id] || (window.RenderService ? window.RenderService.getTransformByMode(
+                        transforms,
+                        productTransforms,
+                        'products',
+                        prod.id,
+                        0.6
+                    ) : { x: 0, y: 0, scale: 0.6, rotation: 0 })
+                };
             });
             
             const newPrint = {

@@ -25,15 +25,25 @@ window.CollectionService = {
                 // Определяем реальный режим для текущего товара
                 const productMode = prod.tab || mode; // 'products' или 'mockups'
 
-                const tr = (printItem.positions && printItem.positions[prod.id])
-                    ? printItem.positions[prod.id]
-                    : window.RenderService.getTransformByMode(
+                let tr;
+                if (printItem.positions && printItem.positions[prod.id]) {
+                    const savedPos = printItem.positions[prod.id];
+                    // Поддержка новой структуры с разделением на products/mockups
+                    if (savedPos.products && savedPos.mockups) {
+                        tr = savedPos[productMode];
+                    } else {
+                        // Старый формат (обратная совместимость)
+                        tr = savedPos;
+                    }
+                } else {
+                    tr = window.RenderService.getTransformByMode(
                         transforms,
                         productTransforms,
                         productMode,
                         prod.id,
                         productMode === 'products' ? 0.6 : 0.5
                     );
+                }
 
                 const productDPI = prod.dpi || 300;
                 let targetWidth, targetHeight, targetMask, targetOverlay;
