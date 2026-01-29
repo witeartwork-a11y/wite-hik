@@ -314,7 +314,16 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                     <button 
                                         onClick={async () => { 
                                             if(confirm('Удалить файл навсегда?')) {
-                                                await fetch('/api.php?action=delete', { method:'POST', body: JSON.stringify({filename: f.name, password: auth.password}) });
+                                                await fetch('/api.php?action=delete', { 
+                                                    method: 'POST', 
+                                                    body: JSON.stringify({
+                                                        filename: f.name, 
+                                                        password: auth.password,
+                                                        type: f.type,
+                                                        article: f.article,
+                                                        category: f.category
+                                                    }) 
+                                                });
                                                 if (onDeleteFile) onDeleteFile(f.name);
                                                 init();
                                             }
