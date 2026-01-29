@@ -121,6 +121,9 @@ if (is_dir($CLOUD_DIR)) {
                         if (!empty($meta['product_name'])) {
                             $cloudItem['product_name'] = $meta['product_name'];
                         }
+                        if (!empty($meta['print_name'])) {
+                            $cloudItem['print_name'] = $meta['print_name'];
+                        }
                     }
                 }
                 

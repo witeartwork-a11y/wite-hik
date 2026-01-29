@@ -92,13 +92,22 @@ for ($i = 0; $i < $count; $i++) {
             }
             
             $metaData = [];
-            if ($printName) $metaData['print_name'] = $printName;
-            if ($productName) $metaData['product_name'] = $productName;
+            if ($printName) {
+                $metaData['print_name'] = $printName;
+            }
+            if ($productName) {
+                $metaData['product_name'] = $productName;
+            }
             
             if (!empty($metaData)) {
                 file_put_contents($finalPath . '.meta.json', json_encode($metaData));
                 $uploadedItem['meta'] = $metaData;
+                
+                // Copy to top level for frontend compatibility
+                if (isset($metaData['print_name'])) $uploadedItem['print_name'] = $metaData['print_name'];
+                if (isset($metaData['product_name'])) $uploadedItem['product_name'] = $metaData['product_name'];
             }
+
         }
         
         $uploaded[] = $uploadedItem;
