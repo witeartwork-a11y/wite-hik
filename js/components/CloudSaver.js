@@ -190,13 +190,13 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                      <div className="flex bg-slate-800/50 p-1 rounded-lg border border-white/5 shrink-0">
                          <button 
                              onClick={() => onSubTabChange('files')} 
-                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'files' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                             className={`tab-button ${activeSubTab === 'files' ? 'tab-active' : 'tab-inactive'}`}
                          >
-                             Файлы
+                             Исходники
                          </button>
                          <button 
                              onClick={() => onSubTabChange('cloud')} 
-                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeSubTab === 'cloud' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                             className={`tab-button ${activeSubTab === 'cloud' ? 'tab-active' : 'tab-inactive'}`}
                          >
                              Облако
                          </button>
