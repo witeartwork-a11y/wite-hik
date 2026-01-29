@@ -44,31 +44,60 @@ window.CollectionService = {
 
                 let tr;
                 
-                // 1️⃣ ПРИОРИТЕТ 1: Позиции в КОЛЛЕКЦИИ (самые свежие, отредактированные пользователем)
+                // Получаем кандидатов из разных источников
+                
+                // A. Из коллекции (текущий сеанс)
+                let posFromCollection = null;
                 if (printItem.positions && printItem.positions[prod.id]) {
                     const savedPos = printItem.positions[prod.id];
                     if (savedPos.products && savedPos.mockups) {
-                        tr = savedPos[productMode];
-                        console.log(`  ✅ [${prod.name}] Используем позицию из КОЛЛЕКЦИИ (${productMode}):`, tr);
+                        posFromCollection = savedPos[productMode];
                     } else {
-                        tr = savedPos;
-                        console.log(`  ✅ [${prod.name}] Используем позицию из КОЛЛЕКЦИИ (старый формат):`, tr);
+                        posFromCollection = savedPos;
                     }
                 }
-                
-                // 2️⃣ ПРИОРИТЕТ 2: Конфиг из БД (prints_config.json)
-                if (!tr && printConfigFromDB) {
+
+                // B. Из БД (сохраненный конфиг)
+                let posFromDB = null;
+                if (printConfigFromDB) {
                     const dbTransforms = productMode === 'products' 
                         ? printConfigFromDB.productTransforms 
                         : printConfigFromDB.transforms;
                     
                     if (dbTransforms && dbTransforms[prod.id]) {
-                        tr = dbTransforms[prod.id];
-                        console.log(`  ✅ [${prod.name}] Используем позицию из КОНФИГА БД (${productMode}):`, tr);
+                        posFromDB = dbTransforms[prod.id];
                     }
                 }
+
+                // C. Проверка на "дефолтность" коллекции (пустые значения)
+                // Если в коллекции лежат нули (x=0, y=0, rot=0), скорее всего это авто-заглушка
+                const isCollectionDefault = posFromCollection && 
+                                          Math.abs(posFromCollection.x) < 0.1 && 
+                                          Math.abs(posFromCollection.y) < 0.1 && 
+                                          Math.abs(posFromCollection.rotation) < 0.1;
+
+                // ЛОГИКА ВЫБОРА (ИЗМЕНЕНА ПО ПРОСЬБЕ ПОЛЬЗОВАТЕЛЯ - ПРИОРИТЕТ БД)
                 
-                // 3️⃣ ПРИОРИТЕТ 3: Глобальные трансформации (fallback)
+                // 1️⃣ Если есть конфиг в БД — берем его! (особенно если коллекция пустая/дефолтная)
+                if (posFromDB) {
+                    if (isCollectionDefault) {
+                        tr = posFromDB;
+                        console.log(`  ✅ [${prod.name}] Используем БД (коллекция была дефолтной 0/0/0):`, tr);
+                    } else {
+                        // Конфликт: есть и в БД, и в коллекции (не дефолт). 
+                        // По просьбе "брать именно инфу из prints_config" — берем БД.
+                        // Если вы захотите вернуть приоритет ручным правкам — поменяйте местами.
+                        tr = posFromDB;
+                        console.log(`  ✅ [${prod.name}] Используем БД (приоритет над коллекцией):`, tr);
+                    }
+                } 
+                // 2️⃣ Если в БД нет, берем из коллекции
+                else if (posFromCollection) {
+                    tr = posFromCollection;
+                    console.log(`  ✅ [${prod.name}] Используем КОЛЛЕКЦИЮ (в БД нет записи):`, tr);
+                }
+                
+                // 3️⃣ Fallback
                 if (!tr) {
                     console.warn(`  ⚠️ [${prod.name}] Не найдена позиция, использую FALLBACK`);
                     tr = window.RenderService.getTransformByMode(
