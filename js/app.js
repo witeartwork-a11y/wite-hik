@@ -119,6 +119,7 @@ function App() {
 
     const [activeProductId, setActiveProductId] = useState(null);
     const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
+    const [maskColor, setMaskColor] = useState(null); // 'idle', color hex
 
     // Функция для принудительной загрузки конфига (для дебага)
     const handleForceLoadConfig = useCallback(async () => {
@@ -717,6 +718,7 @@ function App() {
                                                                 isActive={isActive}
                                                                 setActiveProductId={setActiveProductId}
                                                                 isProductsTab={isProductsTab}
+                                                                maskColor={maskColor}
                                                             />
                                                         );
                                                     })}
@@ -744,6 +746,8 @@ function App() {
                                         saveStatus={saveStatus}
                                         selectedPrint={selectedPrint}
                                         onForceLoadConfig={handleForceLoadConfig}
+                                        maskColor={maskColor}
+                                        setMaskColor={setMaskColor}
                                     />
                                 </div>
                             </div>

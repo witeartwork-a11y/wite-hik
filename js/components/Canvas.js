@@ -1,7 +1,7 @@
 
 // js/components/Canvas.js
 
-window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUpdateTransform, productId, dpi, onDPIChange, isActive, onActivate }) => {
+window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUpdateTransform, productId, dpi, onDPIChange, isActive, onActivate, maskColor }) => {
     // В будущем здесь можно будет добавить переключение рендереров
     const rendererType = product.renderer || 'canvas'; 
 
@@ -18,6 +18,7 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
             onDPIChange={onDPIChange}
             isActive={isActive}
             onActivate={onActivate}
+            maskColor={maskColor}
         />;
     } else if (rendererType === 'pixi') {
          // Placeholder for PixiJS renderer
@@ -30,7 +31,7 @@ window.MockupCanvas = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUp
     }
 };
 
-const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUpdateTransform, productId, dpi, onDPIChange, isActive, onActivate }) => {
+const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onUpdateTransform, productId, dpi, onDPIChange, isActive, onActivate, maskColor }) => {
     const { useRef, useState, useEffect } = React;
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
@@ -148,6 +149,25 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
                 ctx.save();
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.drawImage(tempCanvas, 0, 0);
+
+                // Визуализация границ маски (Если выбран цвет)
+                if (maskColor && maskImg) {
+                    const maskOverlayCanvas = document.createElement('canvas');
+                    maskOverlayCanvas.width = canvas.width;
+                    maskOverlayCanvas.height = canvas.height;
+                    const mCtx = maskOverlayCanvas.getContext('2d');
+                    
+                    mCtx.fillStyle = maskColor;
+                    mCtx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    mCtx.globalCompositeOperation = 'destination-out';
+                    mCtx.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
+                    
+                    ctx.globalAlpha = 0.85; 
+                    ctx.drawImage(maskOverlayCanvas, 0, 0);
+                    ctx.globalAlpha = 1.0;
+                }
+                
                 ctx.restore();
             }
 

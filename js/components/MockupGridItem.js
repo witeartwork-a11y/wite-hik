@@ -7,7 +7,8 @@ window.MockupGridItem = React.memo(({
     updateProductDPI, 
     isActive, 
     setActiveProductId,
-    isProductsTab 
+    isProductsTab,
+    maskColor
 }) => {
     
     // Вычисляем displayProduct здесь, чтобы не передавать новый объект каждый раз
@@ -58,6 +59,7 @@ window.MockupGridItem = React.memo(({
                     onDPIChange={(newDPI) => updateProductDPI(product.id, newDPI)}
                     isActive={isActive}
                     onActivate={() => setActiveProductId(product.id)}
+                    maskColor={maskColor}
                 />
             </div>
         </div>
@@ -70,6 +72,7 @@ window.MockupGridItem = React.memo(({
     if (prev.product !== next.product) return false;
     if (prev.selectedPrint?.url !== next.selectedPrint?.url) return false;
     if (prev.isProductsTab !== next.isProductsTab) return false;
+    if (prev.maskColor !== next.maskColor) return false;
     
     // Сравнение трансформации. Так как при обновлении стейта в App
     // мы делаем spread копию объекта transforms, но ссылки на вложенные объекты

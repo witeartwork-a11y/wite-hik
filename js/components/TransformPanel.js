@@ -14,7 +14,9 @@ window.TransformPanel = ({
     onApplyPreset,
     saveStatus = 'saved', // 'saved' | 'saving' | 'error'
     selectedPrint,
-    onForceLoadConfig
+    onForceLoadConfig,
+    maskColor,
+    setMaskColor
 }) => {
     const [presetName, setPresetName] = React.useState('');
     const [copyStatus, setCopyStatus] = React.useState('idle'); // 'idle' | 'success'
@@ -198,6 +200,38 @@ window.TransformPanel = ({
                             </button>
                         </div>
                     </div>
+
+                    {/* Визуализация маски */}
+                    {setMaskColor && (
+                        <div className="space-y-2 pt-2 border-t border-slate-800">
+                             <div className="flex justify-between items-center text-xs text-slate-400">
+                                <label>Границы маски</label>
+                                {maskColor && (
+                                     <button 
+                                        onClick={() => setMaskColor(null)}
+                                        className="text-[10px] text-red-400 hover:text-red-300"
+                                    >
+                                        Сбросить
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex justify-between gap-1">
+                                {['#ffffff', '#ff0000', '#00ff00', '#0000ff', '#000000'].map(color => (
+                                    <button
+                                        key={color}
+                                        onClick={() => setMaskColor(color === maskColor ? null : color)}
+                                        className={`w-full h-6 rounded border transition-all ${
+                                            maskColor === color 
+                                                ? 'border-indigo-500 scale-110 shadow-[0_0_10px_rgba(99,102,241,0.5)]' 
+                                                : 'border-slate-700 opacity-60 hover:opacity-100'
+                                        }`}
+                                        style={{ backgroundColor: color }}
+                                        title={color}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Масштаб */}
                     <div className="space-y-2">
