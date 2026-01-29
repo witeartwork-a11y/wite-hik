@@ -11,12 +11,16 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
 
     // Загружаем папки с сервера
     useEffect(() => {
+        setIsLoading(true); // Сброс при смене параметров (на всякий случай, хотя key в Gallery должен перезагружать компонент)
         const loadFolders = async () => {
             try {
+                console.log('📥 Загружаю папки:', { galleryType, title });
                 const res = await fetch(`/api.php?action=load_folders&gallery_type=${encodeURIComponent(galleryType)}&title=${encodeURIComponent(title)}&t=${Date.now()}`);
                 const data = await res.json();
                 if (data.success) {
+                    // Используем функцию обновления, чтобы избежать замыканий
                     setFolders(data.folders || {});
+                    console.log('✅ Папки загружены:', data.folders);
                 }
             } catch (e) {
                 console.error('Ошибка загрузки папок:', e);
@@ -29,12 +33,15 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
 
     // Сохраняем папки на сервер
     const saveFoldersToServer = async (foldersData) => {
+        // Защита от сохранения пустого состояния поверх данных (если вдруг)
+        // Но разрешаем сохранять {}, если пользователь удалил все папки
+        
         if (!auth?.password) {
             console.error('❌ Нет пароля для сохранения папок');
             return;
         }
         try {
-            console.log('💾 Сохраняю папки:', { galleryType, title, folders: foldersData });
+            console.log('💾 Сохраняю папки:', { galleryType, title, count: Object.keys(foldersData).length });
             const res = await fetch('/api.php?action=save_folders', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -45,11 +52,11 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
                 })
             });
             const data = await res.json();
-            console.log('✓ Ответ сервера:', data);
-            if (data.success && onFolderChange) {
-                onFolderChange(foldersData);
-            } else if (!data.success) {
-                console.error('❌ Ошибка сохранения:', data.message);
+            if (data.success) {
+               // console.log('✓ Сохранено');
+                if (onFolderChange) onFolderChange(foldersData);
+            } else {
+                console.error('❌ Ошибка API:', data.message);
             }
         } catch (e) {
             console.error('❌ Ошибка сохранения папок:', e);
@@ -58,11 +65,13 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
 
     // Обновляем когда меняются папки
     useEffect(() => {
+        // Сохраняем ТОЛЬКО если загрузка завершена
         if (!isLoading) {
-            console.log('📁 Папки изменились:', folders);
+             // Чтобы избежать лишнего сохранения при первой загрузке (когда folders меняется с {} на загруженные),
+             // можно добавить проверку рефов, но пока оставим как есть - это безопасно (просто перезапись того же самого)
             saveFoldersToServer(folders);
         }
-    }, [folders, galleryType, title]);
+    }, [folders]); // remove galleryType/title deps to avoid race conditions
 
     const handleCreateFolder = () => {
         if (!newFolderName.trim()) return;

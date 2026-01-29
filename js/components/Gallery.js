@@ -225,6 +225,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
             {/* Папки для организации файлов (только для Gallery, не для CloudSaver) */}
             {activeSubTab !== 'cloud' && (
                 <window.FolderManager 
+                    key={`${galleryType}_${activeSubTab}`}
                     files={files} 
                     title="Организация файлов"
                     galleryType={galleryType}
