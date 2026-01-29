@@ -184,8 +184,6 @@ window.ProductCard = ({
                                 <window.Icon name="pencil" className="w-2.5 h-2.5 text-slate-600 hover-opacity-show" />
                             </span>
                         )}
-                        <span>|</span>
-                        <span>{product.category}</span>
                     </div>
                 </div>
 
