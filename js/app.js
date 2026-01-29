@@ -47,7 +47,7 @@ function App() {
 
     // Управление классом на body для отключения скролла в режиме редактора
     useEffect(() => {
-        if (auth.isAuth && activeTab !== 'gallery') {
+        if (auth.isAuth && activeTab !== 'base') {
             document.body.classList.add('app-mode-editor');
         } else {
             document.body.classList.remove('app-mode-editor');
