@@ -62,7 +62,16 @@ for ($i = 0; $i < $count; $i++) {
         }
         
         // Превью
-        $thumbName = getThumbnailName($newName);
+        $thumbPrefix = 'upload';
+        if ($uploadType === 'cloud' && $article) {
+             $thumbPrefix = 'cloud_' . sanitizeArticle($article) . '_' . $category;
+        } elseif ($uploadType === 'publication') {
+             $thumbPrefix = 'pub';
+        } elseif ($uploadType === 'asset') {
+             $thumbPrefix = 'asset';
+        }
+
+        $thumbName = getThumbnailName($newName, $thumbPrefix);
         $thumbPath = $THUMBS_DIR . '/' . $thumbName;
         $thumbUrl = null;
         

@@ -1,13 +1,21 @@
 <?php
 // === ОБРАБОТКА ИЗОБРАЖЕНИЙ ===
 
-function getThumbnailName($filename) {
+function getThumbnailName($filename, $prefix = '') {
     $info = pathinfo($filename);
     $filename_clean = transliterate($info['filename']); // Используем transliterate из utils.php
     $filename_clean = preg_replace('/[^a-zA-Z0-9\-_]/', '', $filename_clean);
     $filename_clean = preg_replace('/[\-_]+/', '_', $filename_clean);
     if (!$filename_clean) $filename_clean = 'file_' . time();
-    return 'thumb_' . $filename_clean . '.jpg';
+    
+    $prefix_clean = '';
+    if ($prefix) {
+        $prefix_clean = preg_replace('/[^a-zA-Z0-9\-_]/', '', $prefix);
+        $prefix_clean = preg_replace('/[\-_]+/', '_', $prefix_clean);
+        if ($prefix_clean) $prefix_clean .= '_';
+    }
+
+    return 'thumb_' . $prefix_clean . $filename_clean . '.jpg';
 }
 
 function createThumbnail($src, $dest, $targetWidth = 300) {

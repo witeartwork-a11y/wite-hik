@@ -9,7 +9,7 @@ foreach ($files as $f) {
     $path = $UPLOADS_DIR . '/' . $f;
     if (!is_file($path)) continue;
     
-    $thumbName = getThumbnailName($f);
+    $thumbName = getThumbnailName($f, 'upload');
     $thumbPath = $THUMBS_DIR . '/' . $thumbName;
     $thumbUrl = null;
 
@@ -39,7 +39,7 @@ if (is_dir($publicationDir)) {
         $path = $publicationDir . '/' . $f;
         if (!is_file($path)) continue;
         
-        $thumbName = getThumbnailName($f);
+        $thumbName = getThumbnailName($f, 'pub');
         $thumbPath = $THUMBS_DIR . '/' . $thumbName;
         $thumbUrl = null;
 
@@ -82,7 +82,7 @@ if (is_dir($CLOUD_DIR)) {
                 if (!is_file($path)) continue;
                 if (substr($f, -10) === '.meta.json') continue;
                 
-                $thumbName = getThumbnailName($f);
+                $thumbName = getThumbnailName($f, 'cloud_' . $article . '_' . $category);
                 $thumbPath = $THUMBS_DIR . '/' . $thumbName;
                 $thumbUrl = null;
 

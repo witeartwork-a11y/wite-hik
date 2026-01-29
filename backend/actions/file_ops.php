@@ -10,8 +10,10 @@ if ($action === 'rename') {
     $type = $input['type'] ?? 'upload';
 
     $basePath = $UPLOADS_DIR;
+    $prefix = 'upload';
     if ($type === 'publication') {
         $basePath = $BASE_DIR . '/uploads/publication';
+        $prefix = 'pub';
     } elseif ($type === 'cloud') {
          jsonResponse(false, [], 'Cloud rename not supported via this action');
     }
@@ -37,8 +39,8 @@ if ($action === 'rename') {
     }
     
     if (rename($oldPath, $newPath)) {
-        $oldThumb = $THUMBS_DIR . '/' . getThumbnailName($filename);
-        $newThumb = $THUMBS_DIR . '/' . getThumbnailName($finalNewName);
+        $oldThumb = $THUMBS_DIR . '/' . getThumbnailName($filename, $prefix);
+        $newThumb = $THUMBS_DIR . '/' . getThumbnailName($finalNewName, $prefix);
         if (file_exists($oldThumb)) {
             rename($oldThumb, $newThumb);
         }
@@ -56,16 +58,21 @@ if ($action === 'delete') {
     $article = $input['article'] ?? null;
     $category = $input['category'] ?? null;
     $isAsset = $input['isAsset'] ?? false;
-    $fileType = $input['type'] ?? 'upload'; 
+    $fileType = $input['type'] ?? 'upload';
+    $prefix = 'upload';
     
     if ($isAsset || $fileType === 'asset') {
         $path = $ASSETS_DIR . '/' . $filename;
+        $prefix = 'asset';
     } elseif ($fileType === 'publication') {
         $path = $BASE_DIR . '/uploads/publication/' . $filename;
+        $prefix = 'pub';
     } elseif ($article && $category) {
         $path = $CLOUD_DIR . '/' . sanitizeArticle($article) . '/' . $category . '/' . $filename;
+        $prefix = 'cloud_' . $article . '_' . $category;
     } else {
         $path = $UPLOADS_DIR . '/' . $filename;
+        $prefix = 'upload';
     }
     
     if (file_exists($path)) {
@@ -73,7 +80,7 @@ if ($action === 'delete') {
         $metaFile = $path . '.meta.json';
         if (file_exists($metaFile)) unlink($metaFile);
         
-        $thumbName = getThumbnailName($filename);
+        $thumbName = getThumbnailName($filename, $prefix);
         $thumbPath = $THUMBS_DIR . '/' . $thumbName;
         if (file_exists($thumbPath)) unlink($thumbPath);
         jsonResponse(true);
@@ -93,7 +100,7 @@ if ($action === 'delete_category') {
 
     $files = array_diff(scandir($targetDir), ['.', '..']);
     foreach ($files as $f) {
-        $thumbName = getThumbnailName($f);
+        $thumbName = getThumbnailName($f, 'cloud_' . $article . '_' . $category);
         $thumbPath = $THUMBS_DIR . '/' . $thumbName;
         if (file_exists($thumbPath)) @unlink($thumbPath);
     }
@@ -118,7 +125,7 @@ if ($action === 'delete_article') {
         if (!is_dir($categoryPath)) continue;
         $files = array_diff(scandir($categoryPath), ['.', '..']);
         foreach ($files as $f) {
-            $thumbName = getThumbnailName($f);
+            $thumbName = getThumbnailName($f, 'cloud_' . $article . '_' . $cat);
             $thumbPath = $THUMBS_DIR . '/' . $thumbName;
             if (file_exists($thumbPath)) @unlink($thumbPath);
         }
