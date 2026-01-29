@@ -1,41 +1,49 @@
 // js/components/FolderManager.js
 const { Folder, FolderOpen, Trash2, Plus, ChevronRight, ChevronDown } = lucide;
 
-window.FolderManager = ({ files = [], onFolderChange, title = "Папки", galleryType = 'upload', auth, onAddToCollection, onDeleteFile, toggleSelect, selectedFiles, onRenameFile }) => {
-    const { useState, useEffect } = React;
+window.FolderManager = ({ files = [], onFolderChange, title = "Папки", galleryType = 'upload', auth, onAddToCollection, onDeleteFile, toggleSelect, selectedFiles, onRenameFile, onLoading }) => {
+    const { useState, useEffect, useRef } = React;
     const [folders, setFolders] = useState({});
     const [openedFolder, setOpenedFolder] = useState(null);
     const [isCreatingFolder, setIsCreatingFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Ref to track if the initial load has happened so we don't save back to server immediately
+    const isInitialLoad = useRef(true);
 
     // Загружаем папки с сервера
     useEffect(() => {
-        setIsLoading(true); // Сброс при смене параметров (на всякий случай, хотя key в Gallery должен перезагружать компонент)
+        setIsLoading(true); 
+        if (onLoading) onLoading(true);
+        
         const loadFolders = async () => {
             try {
                 console.log('📥 Загружаю папки:', { galleryType, title });
                 const res = await fetch(`/api.php?action=load_folders&gallery_type=${encodeURIComponent(galleryType)}&title=${encodeURIComponent(title)}&t=${Date.now()}`);
                 const data = await res.json();
                 if (data.success) {
-                    // Используем функцию обновления, чтобы избежать замыканий
-                    setFolders(data.folders || {});
-                    console.log('✅ Папки загружены:', data.folders);
+                    const loadedFolders = data.folders || {};
+                    setFolders(loadedFolders);
+                    console.log('✅ Папки загружены:', loadedFolders);
+                    
+                    // Сразу сообщаем родителю о папках, чтобы он мог скрыть файлы
+                    if (onFolderChange) onFolderChange(loadedFolders);
                 }
             } catch (e) {
                 console.error('Ошибка загрузки папок:', e);
             } finally {
                 setIsLoading(false);
+                if (onLoading) onLoading(false);
+                // Allow saving only after initial load is complete and processed
+                setTimeout(() => { isInitialLoad.current = false; }, 100);
             }
         };
         loadFolders();
-    }, [galleryType, title]);
+    }, [galleryType, title]); // Dependencies ensure this runs on tab switch
 
     // Сохраняем папки на сервер
     const saveFoldersToServer = async (foldersData) => {
-        // Защита от сохранения пустого состояния поверх данных (если вдруг)
-        // Но разрешаем сохранять {}, если пользователь удалил все папки
-        
         if (!auth?.password) {
             console.error('❌ Нет пароля для сохранения папок');
             return;
@@ -53,7 +61,6 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
             });
             const data = await res.json();
             if (data.success) {
-               // console.log('✓ Сохранено');
                 if (onFolderChange) onFolderChange(foldersData);
             } else {
                 console.error('❌ Ошибка API:', data.message);
@@ -65,13 +72,11 @@ window.FolderManager = ({ files = [], onFolderChange, title = "Папки", gall
 
     // Обновляем когда меняются папки
     useEffect(() => {
-        // Сохраняем ТОЛЬКО если загрузка завершена
-        if (!isLoading) {
-             // Чтобы избежать лишнего сохранения при первой загрузке (когда folders меняется с {} на загруженные),
-             // можно добавить проверку рефов, но пока оставим как есть - это безопасно (просто перезапись того же самого)
+        // Не сохраняем если идет загрузка или это первое обновление после загрузки
+        if (!isLoading && !isInitialLoad.current) {
             saveFoldersToServer(folders);
         }
-    }, [folders]); // remove galleryType/title deps to avoid race conditions
+    }, [folders]);
 
     const handleCreateFolder = () => {
         if (!newFolderName.trim()) return;
