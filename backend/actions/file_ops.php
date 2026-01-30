@@ -64,6 +64,25 @@ if ($action === 'delete') {
     if ($isAsset || $fileType === 'asset') {
         $path = $ASSETS_DIR . '/' . $filename;
         $prefix = 'asset';
+    } elseif ($fileType === 'linked') {
+        $linkedFile = __DIR__ . '/../../data/linked_files.json';
+        if (file_exists($linkedFile)) {
+            $data = json_decode(file_get_contents($linkedFile), true);
+            $newData = [];
+            $found = false;
+            foreach ($data as $d) {
+                if ($d['name'] === $filename) {
+                    $found = true;
+                } else {
+                    $newData[] = $d;
+                }
+            }
+            if ($found) {
+                file_put_contents($linkedFile, json_encode($newData, JSON_PRETTY_PRINT));
+                jsonResponse(true);
+            }
+        }
+        jsonResponse(false, [], 'Linked file not found');
     } elseif ($fileType === 'publication') {
         $path = $BASE_DIR . '/uploads/publication/' . $filename;
         $prefix = 'pub';

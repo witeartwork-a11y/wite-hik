@@ -556,7 +556,7 @@ function App() {
                 setActiveTab={setActiveTab}
             />
 
-            <div className="container mx-auto p-4 max-w-[95vw]">
+            <div className="max-w-[1920px] mx-auto px-4 pb-4">
                 {activeTab === 'base' ? (
                     <div className="space-y-4">
                         {galleryTab === 'files' ? (

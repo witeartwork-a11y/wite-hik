@@ -2,7 +2,7 @@
 window.GalleryHeader = ({ activeSubTab, onSubTabChange, filter, setFilter, dateFilter, setDateFilter, onWiteAiToggle, isWiteAiMode }) => {
     return (
         <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl shadow-xl p-4 mb-6">
-            <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center">
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 justify-between items-start lg:items-center">
                 
                 {/* Tabs */}
                 {onSubTabChange && (
@@ -30,7 +30,7 @@ window.GalleryHeader = ({ activeSubTab, onSubTabChange, filter, setFilter, dateF
                     </div>
                 )}
 
-                <div className="flex flex-col md:flex-row items-center gap-3 w-full xl:w-auto">
+                <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto shrink-0">
                     
                     {/* Wite AI Toggle (Only in Files tab) */}
                     {activeSubTab === 'files' && onWiteAiToggle && (

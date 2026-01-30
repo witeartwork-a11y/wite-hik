@@ -24,7 +24,8 @@ $actions = [
     'delete_article' => 'file_ops.php',
     'list' => 'list.php',
     'upload' => 'upload.php',
-    'cloud_products' => 'api_cloud.php'
+    'cloud_products' => 'api_cloud.php',
+    'link_remote' => 'link_remote.php'
 ];
 
 if (isset($actions[$action])) {

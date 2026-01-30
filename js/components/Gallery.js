@@ -58,6 +58,40 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
         fetchRemoteGallery();
     };
 
+    const handleLinkRemote = async (file) => {
+        setIsUploading(true);
+        try {
+            const baseUrl = witeApiUrl.replace(/\/$/, '');
+            let fileUrl = file.imageUrl;
+            if (!fileUrl.startsWith('http')) {
+                fileUrl = `${baseUrl}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+            }
+
+            const response = await fetch('/api.php?action=link_remote', { 
+                method: 'POST', 
+                body: JSON.stringify({
+                    url: fileUrl,
+                    name: `remote_${file.id || Date.now()}.png`, 
+                    prompt: file.prompt,
+                    model: file.model,
+                    thumb: file.thumbnail_url ? (file.thumbnail_url.startsWith('http') ? file.thumbnail_url : baseUrl + file.thumbnail_url) : fileUrl
+                }) 
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                await init(); 
+            } else {
+                alert('Ошибка: ' + data.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Ошибка привязки: ' + e.message);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const handleImportFromRemote = async (file) => {
         // if (!confirm(`Импортировать "${file.prompt || 'image'}" в галерею?`)) return;
         
@@ -197,7 +231,8 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
         }
 
         const fileType = f.type || 'upload';
-        if (fileType !== galleryType) return false;
+        // Show linked files in upload tab
+        if (fileType !== galleryType && !(galleryType === 'upload' && fileType === 'linked')) return false;
         
         const matchesName = f.name.toLowerCase().includes(filter.toLowerCase());
         if (!matchesName) return false;
@@ -313,7 +348,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-20 items-start">
+                        <div className="masonry-grid pb-20">
                             {displayedFiles.map((file, idx) => {
                                 // Determine thumbnail URL with fallback
                                 const baseUrl = witeApiUrl.replace(/\/$/, '');
@@ -331,7 +366,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                 const thumbUrl = thumbPath.startsWith('http') ? thumbPath : `${baseUrl}${thumbPath.startsWith('/') ? '' : '/'}${thumbPath}`;
                                 
                                 return (
-                                <div key={idx} className="group relative rounded-xl overflow-hidden bg-slate-800 border border-slate-700/50 hover:border-indigo-500 transition-all shadow-lg">
+                                <div key={idx} className="masonry-item mb-4 group relative rounded-xl overflow-hidden bg-slate-800 border border-slate-700/50 hover:border-indigo-500 transition-all shadow-lg">
                                     <img 
                                         src={thumbUrl} 
                                         alt={file.prompt} 
@@ -340,15 +375,24 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                         loading="lazy"
                                     />
                                     <div className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 gap-3 backdrop-blur-sm">
-                                        <p className="text-[10px] text-slate-300 line-clamp-2 text-center">{file.prompt}</p>
-                                        <button 
-                                            onClick={() => handleImportFromRemote(file)}
-                                            disabled={isUploading}
-                                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform shadow-lg shadow-indigo-600/20"
-                                        >
-                                            {isUploading ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" /> : <window.Icon name="image-down" className="w-3 h-3" />}
-                                            {isUploading ? '...' : 'Импорт'}
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => handleLinkRemote(file)}
+                                                disabled={isUploading}
+                                                className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform shadow-lg"
+                                                title="Добавить ссылку (без скачивания)"
+                                            >
+                                                <window.Icon name="link" className="w-3 h-3" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleImportFromRemote(file)}
+                                                disabled={isUploading}
+                                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform shadow-lg"
+                                                title="Скачать файл"
+                                            >
+                                                {isUploading ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" /> : <window.Icon name="image-down" className="w-3 h-3" />}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="absolute top-2 right-2 bg-black/60 px-1.5 py-0.5 rounded text-[9px] text-indigo-300 font-mono border border-white/10 backdrop-blur-md">
                                         {file.model}
@@ -361,7 +405,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                 /* LOCAL MODE */
                 <>
                 {/* Folders Section */}
-                    {activeSubTab === 'files' && (
+                    {(activeSubTab === 'files' || activeSubTab === 'publication') && (
                         <div className="mb-6">
                             <window.FolderManager 
                                 key={`${galleryType}_${activeSubTab}`}
@@ -381,7 +425,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                     )}
 
                     {/* Upload Drop Area */}
-                    {!areFoldersLoading && galleryType === 'upload' && activeSubTab === 'files' && (
+                    {!areFoldersLoading && (activeSubTab === 'files' || activeSubTab === 'publication') && (
                          <div className={`mb-6 p-1 rounded-2xl border-2 border-dashed transition-all ${isUploading ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 hover:border-slate-600'}`}>
                             <label className="flex items-center justify-center gap-4 py-8 cursor-pointer group">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isUploading ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-white'}`}>
@@ -399,14 +443,14 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                     )}
 
                     {!areFoldersLoading && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-20 items-start">
+                        <div className="masonry-grid pb-20">
                             {displayedFiles.map((file) => {
                                 const isSelected = selectedFiles.has(file.name);
                                 
                                 return (
                                     <div 
                                         key={file.name} 
-                                        className={`group relative rounded-xl overflow-hidden bg-slate-900 border transition-all cursor-pointer shadow-lg hover:shadow-xl ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-slate-800 hover:border-slate-600'}`}
+                                        className={`masonry-item mb-4 group relative rounded-xl overflow-hidden bg-slate-900 border transition-all cursor-pointer shadow-lg hover:shadow-xl ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-slate-800 hover:border-slate-600'}`}
                                         onClick={() => toggleSelect(file.name)}
                                         draggable
                                         onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('fileName', file.name); }}
@@ -445,24 +489,31 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                             </div>
                                             <button 
                                                 onClick={() => {
-                                                    if(confirm('Удалить файл?')) {
+                                                    if(confirm(file.type === 'linked' ? 'Отвязать ссылку?' : 'Удалить файл?')) {
                                                         const formData = new FormData();
                                                         formData.append('filename', file.name);
                                                         fetch('/api.php?action=delete', {
                                                             method: 'POST',
-                                                            body: JSON.stringify({ filename: file.name, password: auth.password, type: galleryType })
+                                                            body: JSON.stringify({ filename: file.name, password: auth.password, type: file.type || galleryType })
                                                         }).then(init);
                                                     }
                                                 }}
                                                 className="mt-2 text-red-400 hover:text-red-300 text-xs font-bold flex items-center gap-1 bg-red-500/10 px-3 py-1.5 rounded-full hover:bg-red-500/20 transition-colors"
                                             >
-                                                <window.Icon name="trash-2" className="w-3 h-3" /> Удалить
+                                                <window.Icon name="trash-2" className="w-3 h-3" /> {file.type === 'linked' ? 'Отвязать' : 'Удалить'}
                                             </button>
                                         </div>
 
                                         {isSelected && (
                                             <div className="absolute top-2 right-2 bg-indigo-500 rounded-full p-1 shadow-lg z-20 ring-2 ring-white/20">
                                                 <window.Icon name="check" className="w-3 h-3 text-white" />
+                                            </div>
+                                        )}
+                                        
+                                        {/* Linked File Indicator */}
+                                        {file.type === 'linked' && !isSelected && (
+                                            <div className="absolute top-2 right-2 bg-emerald-500/80 rounded-full p-1.5 shadow-lg z-20 backdrop-blur-md border border-white/20" title="Внешняя ссылка">
+                                                <window.Icon name="link" className="w-3 h-3 text-white" />
                                             </div>
                                         )}
                                         

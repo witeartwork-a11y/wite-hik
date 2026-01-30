@@ -13,7 +13,7 @@ window.Navbar = ({ activeTab, setActiveTab }) => {
                             <div className="bg-gradient-to-br from-blue-600 to-indigo-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
                                 <img src="favicon/favicon-32x32.png" className="w-6 h-6 object-contain brightness-0 invert" alt="Icon" /> 
                             </div>
-                            <span className="font-bold text-white text-lg tracking-tight hidden lg:block">Wite-Hik</span>
+                            <span className="font-bold text-white text-lg tracking-tight hidden lg:block">Wite-Mockup</span>
                         </a>
                     </div>
 

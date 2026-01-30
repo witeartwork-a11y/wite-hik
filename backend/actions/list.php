@@ -31,6 +31,25 @@ foreach ($files as $f) {
     ];
 }
 
+// Загружаем ЛИНКОВАННЫЕ (удаленные) файлы
+$linkedFile = __DIR__ . '/../../data/linked_files.json';
+if (file_exists($linkedFile)) {
+    $linkedData = json_decode(file_get_contents($linkedFile), true);
+    if (is_array($linkedData)) {
+        foreach ($linkedData as $l) {
+            $list[] = [
+                'name' => $l['name'],
+                'url' => $l['url'],
+                'thumb' => $l['thumb'] ?? $l['url'],
+                'mtime' => $l['mtime'] ?? time(),
+                'size' => $l['size'] ?? 0,
+                'type' => 'linked',
+                'is_remote' => true
+            ];
+        }
+    }
+}
+
 // Сканируем ФАЙЛЫ НА ПУБЛИКАЦИЮ
 $publicationDir = $BASE_DIR . '/uploads/publication';
 if (is_dir($publicationDir)) {
