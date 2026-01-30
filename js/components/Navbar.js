@@ -1,31 +1,59 @@
 // js/components/Navbar.js
-const { Package, Download, Images, CloudUpload } = lucide;
+const { Package, Download, Images, CloudUpload, Table } = lucide;
 
 window.Navbar = ({ activeTab, setActiveTab }) => {
     return (
-        <header className="h-16 glass flex items-center px-6 justify-between fixed top-0 left-0 right-0 z-50 w-full">
-            <div className="flex items-center gap-3">
-                <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                    <img src="favicon/favicon-32x32.png" className="w-8 h-8 object-contain rounded-full shadow-sm" alt="Icon" />
-                    <img src="favicon/logo.png" className="h-8 object-contain" alt="WiteHik Logo" />
-                </a>
-            </div>
+        <header className="sticky top-0 z-50 px-4 pt-4 pb-2">
+            <div className="max-w-[1920px] mx-auto bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl shadow-2xl shadow-black/20 relative">
+                <div className="flex flex-col md:flex-row justify-between items-center px-4 py-3 gap-4 relative z-10 min-h-[60px]">
+                    
+                    {/* Logo */}
+                    <div className="flex items-center gap-3 shrink-0 md:flex-1">
+                        <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+                            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
+                                <img src="favicon/favicon-32x32.png" className="w-6 h-6 object-contain brightness-0 invert" alt="Icon" /> 
+                            </div>
+                            <span className="font-bold text-white text-lg tracking-tight hidden lg:block">Wite-Hik</span>
+                        </a>
+                    </div>
 
-            <div className="flex bg-slate-900/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
-                <button onClick={() => setActiveTab('mockups')} className={`tab-button ${activeTab === 'mockups' ? 'tab-active' : 'tab-inactive'}`}>Заготовки</button>
-                <button onClick={() => setActiveTab('products')} className={`tab-button ${activeTab === 'products' ? 'tab-active' : 'tab-inactive'}`}>Мокапы</button>
-                <button onClick={() => setActiveTab('base')} className={`tab-button ${activeTab === 'base' ? 'tab-active' : 'tab-inactive'}`}>Галерея</button>
-            </div>
+                    {/* Navigation Tabs */}
+                    <div className="flex bg-slate-800/50 p-1 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+                        {[
+                            { id: 'mockups', label: 'Заготовки', icon: 'package' },
+                            { id: 'products', label: 'Мокапы', icon: 'images' },
+                            { id: 'base', label: 'Галерея', icon: 'cloud-upload' }
+                        ].map(tab => (
+                            <button 
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)} 
+                                className={`
+                                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                                    ${activeTab === tab.id 
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                    }
+                                `}
+                            >
+                                <window.Icon name={tab.icon} className="w-4 h-4" />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
 
-            <div className="w-48 flex justify-end">
-                 <a 
-                    href="http://wb.wite-hik.ru" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition-colors border border-white/5"
-                >
-                    <span>выгрузка эксель</span>
-                </a>
+                    {/* Right Actions */}
+                    <div className="flex justify-end md:flex-1 gap-2">
+                         <a 
+                            href="http://wb.wite-hik.ru" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium transition-all border border-slate-700 hover:border-slate-600 shadow-lg shadow-black/20 group"
+                        >
+                            <window.Icon name="table" className="w-4 h-4 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+                            <span>Выгрузка Excel</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </header>
     );

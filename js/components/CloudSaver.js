@@ -296,55 +296,76 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                                     {fileList.map(f => (
-                                                        <div key={f.name} className="group relative bg-slate-900 rounded-lg overflow-visible border border-slate-700 flex flex-col">
-                                                            <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                                                                <img src={f.thumb || f.url} loading="lazy" className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300" onClick={() => setPreviewFile(f)} />
-                                                                <div className="absolute inset-0 bg-slate-900/95 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center p-2 gap-2">
-                                                                    <button onClick={() => setPreviewFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-indigo-600/80 hover:bg-indigo-500 rounded text-xs transition-colors text-white">
-                                                                        <window.Icon name="eye" className="w-3 h-3" />
-                                                                        <span>Смотреть</span>
-                                                                    </button>
-                                                                    <button onClick={async () => {
-                                                                        try {
-                                                                            const response = await fetch(f.url);
-                                                                            const blob = await response.blob();
-                                                                            const url = window.URL.createObjectURL(blob);
-                                                                            const a = document.createElement('a');
-                                                                            a.href = url;
-                                                                            a.download = f.name;
-                                                                            document.body.appendChild(a);
-                                                                            a.click();
-                                                                            window.URL.revokeObjectURL(url);
-                                                                            document.body.removeChild(a);
-                                                                        } catch (e) {
-                                                                            console.error(e);
-                                                                            alert('Ошибка скачивания');
-                                                                        }
-                                                                    }} className="w-full flex items-center gap-2 px-2 py-1.5 bg-emerald-600/80 hover:bg-emerald-500 rounded text-xs transition-colors text-white">
-                                                                        <window.Icon name="download" className="w-3 h-3" />
-                                                                        <span>Скачать</span>
-                                                                    </button>
-                                                                    <button onClick={() => handleCopyLink(f.url, f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded text-xs transition-colors text-white">
-                                                                        <window.Icon name="copy" className="w-3 h-3" />
-                                                                        <span>Ссылка</span>
-                                                                    </button>
-                                                                    <button onClick={() => handleDeleteFile(f)} className="w-full flex items-center gap-2 px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 rounded text-xs transition-colors text-red-200 border border-red-500/30 disabled:opacity-50" disabled={busy.type === 'file' && busy.key === f.url}>
-                                                                        {busy.type === 'file' && busy.key === f.url ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" /> : <window.Icon name="trash-2" className="w-3 h-3" />}
-                                                                        <span>Удалить</span>
-                                                                    </button>
+                                                        <div key={f.name} className="group relative bg-slate-900 rounded-xl overflow-hidden border border-slate-700 hover:border-indigo-500 transition-all shadow-lg flex flex-col">
+                                                            <div className="aspect-square relative bg-slate-800 group-hover:opacity-100 transition-all">
+                                                                <img 
+                                                                    src={f.thumb || f.url} 
+                                                                    loading="lazy" 
+                                                                    className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-500" 
+                                                                    onClick={() => setPreviewFile(f)} 
+                                                                />
+                                                                
+                                                                {/* Hover Actions Overlay */}
+                                                                <div className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center p-3 gap-2 backdrop-blur-sm">
+                                                                    <div className="grid grid-cols-2 gap-2 w-full">
+                                                                         <button onClick={() => setPreviewFile(f)} className="flex items-center justify-center gap-1.5 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-[10px] font-bold text-white transition-colors shadow-lg uppercase tracking-wide">
+                                                                            <window.Icon name="eye" className="w-3 h-3" />
+                                                                            <span>Смотреть</span>
+                                                                        </button>
+                                                                        <button onClick={async () => {
+                                                                            try {
+                                                                                const response = await fetch(f.url);
+                                                                                const blob = await response.blob();
+                                                                                const url = window.URL.createObjectURL(blob);
+                                                                                const a = document.createElement('a');
+                                                                                a.href = url;
+                                                                                a.download = f.name;
+                                                                                document.body.appendChild(a);
+                                                                                a.click();
+                                                                                window.URL.revokeObjectURL(url);
+                                                                                document.body.removeChild(a);
+                                                                            } catch (e) {
+                                                                                console.error(e);
+                                                                                alert('Ошибка скачивания');
+                                                                            }
+                                                                        }} className="flex items-center justify-center gap-1.5 px-2 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-[10px] font-bold text-white transition-colors shadow-lg uppercase tracking-wide">
+                                                                            <window.Icon name="download" className="w-3 h-3" />
+                                                                            <span>Скачать</span>
+                                                                        </button>
+                                                                        
+                                                                        <button onClick={() => handleDeleteFile(f)} className="flex items-center justify-center gap-1.5 px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 rounded-lg text-[10px] font-bold transition-colors col-span-2 disabled:opacity-50 uppercase tracking-wide" disabled={busy.type === 'file' && busy.key === f.url}>
+                                                                            {busy.type === 'file' && busy.key === f.url ? <window.Icon name="loader-2" className="w-3 h-3 animate-spin" /> : <window.Icon name="trash-2" className="w-3 h-3" />}
+                                                                            <span>Удалить</span>
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="p-1.5 bg-slate-800/80 rounded-b-lg border-t border-slate-700 flex flex-col gap-0.5">
-                                                                <p className="text-[10px] font-medium text-white truncate text-center" title={f.name}>
-                                                                    {f.name.replace(/\.[^/.]+$/, "")}
-                                                                </p>
-                                                                {f.product_name && (
-                                                                    <p className="text-[9px] text-indigo-300 truncate text-center" title={f.product_name}>
-                                                                        {f.product_name}
-                                                                    </p>
-                                                                )}
+                                                            
+                                                            {/* Footer Info */}
+                                                            <div className="p-3 bg-slate-800 border-t border-slate-700 flex flex-col gap-1 relative group/footer">
+                                                                <div className="flex justify-between items-start gap-2">
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <p className="text-[11px] font-bold text-slate-200 truncate cursor-help" title={f.name}>
+                                                                            {f.name.replace(/\.[^/.]+$/, "")}
+                                                                        </p>
+                                                                        {f.product_name && (
+                                                                            <p className="text-[10px] text-indigo-400 truncate font-medium mt-0.5" title={f.product_name}>
+                                                                                {f.product_name}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                    
+                                                                    {/* Permanent Copy Button */}
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); handleCopyLink(f.url, f); }}
+                                                                        className="p-1.5 bg-slate-700 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-lg transition-all flex-shrink-0 shadow-sm border border-slate-600 hover:border-indigo-500 active:scale-95"
+                                                                        title="Копировать ссылку"
+                                                                    >
+                                                                        <window.Icon name="copy" className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ))}
