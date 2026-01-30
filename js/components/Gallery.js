@@ -32,33 +32,69 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
         }
     }, [isWiteAiMode]); // Removed witeApiUrl/witeApiKey from deps to prevent auto-fetch on typing
 
-    const fetchRemoteGallery = async () => {
+    const fetchRemoteGallery = async (urlOverride, keyOverride) => {
+        const urlToUse = urlOverride || witeApiUrl;
+        const keyToUse = keyOverride || witeApiKey;
+        
+        if (!urlToUse || !keyToUse) return;
+
         setWiteLoading(true);
         setWiteError(null);
         try {
-            const baseUrl = witeApiUrl.replace(/\/$/, '');
-            const res = await fetch(`${baseUrl}/api/external_gallery?key=${witeApiKey}`);
-            if (!res.ok) throw new Error('Failed to connect');
+            const baseUrl = urlToUse.replace(/\/$/, '');
+            const res = await fetch(`${baseUrl}/api/external_gallery?key=${keyToUse}`);
+            
+            if (!res.ok) {
+                 const text = await res.text();
+                 throw new Error(`Status: ${res.status} ${text.substring(0, 50)}`);
+            }
+            
             const data = await res.json();
             if (Array.isArray(data)) {
                 setWiteFiles(data);
                 setIsConfiguringWite(false);
+                // Also update stored values to ensure they are insync with what worked
+                localStorage.setItem('wite_api_url', urlToUse);
+                localStorage.setItem('wite_api_key', keyToUse);
             } else if (data.error) {
-                setWiteError(data.error);
+                throw new Error(data.error);
+            } else {
+                throw new Error('Invalid response format');
             }
         } catch (e) {
             console.error(e);
             setWiteError(e.message);
+            // If failed, maybe show configuration again?
+            // setIsConfiguringWite(true); 
         } finally {
             setWiteLoading(false);
         }
     };
 
     const handleSaveWiteSettings = () => {
-        localStorage.setItem('wite_api_url', witeApiUrl);
-        localStorage.setItem('wite_api_key', witeApiKey);
+        const cleanUrl = witeApiUrl.trim();
+        const cleanKey = witeApiKey.trim();
+        
+        setWiteApiUrl(cleanUrl);
+        setWiteApiKey(cleanKey);
+        
+        // Optimistic save
+        localStorage.setItem('wite_api_url', cleanUrl);
+        localStorage.setItem('wite_api_key', cleanKey);
+        
         setIsConfiguringWite(false);
-        fetchRemoteGallery();
+        fetchRemoteGallery(cleanUrl, cleanKey);
+    };
+
+    const handleResetSettings = () => {
+        if(!confirm('Сбросить сохраненные настройки подключения?')) return;
+        localStorage.removeItem('wite_api_url');
+        localStorage.removeItem('wite_api_key');
+        setWiteApiUrl('');
+        setWiteApiKey('');
+        setWiteFiles([]);
+        setWiteError(null);
+        setIsConfiguringWite(true);
     };
 
     const handleLinkRemote = async (file) => {
@@ -333,6 +369,13 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                 className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white mb-6 focus:border-indigo-500 outline-none"
                             />
                             <div className="flex gap-2 w-full">
+                                <button 
+                                    onClick={handleResetSettings}
+                                    className="px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold py-3 rounded-xl transition-colors border border-red-500/20"
+                                    title="Сбросить и очистить настройки"
+                                >
+                                    <window.Icon name="trash-2" className="w-5 h-5" />
+                                </button>
                                 {witeApiKey && (
                                     <button 
                                         onClick={() => setIsConfiguringWite(false)}
