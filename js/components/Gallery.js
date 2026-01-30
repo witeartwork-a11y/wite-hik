@@ -17,6 +17,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     const [witeFiles, setWiteFiles] = useState([]);
     const [witeLoading, setWiteLoading] = useState(false);
     const [witeError, setWiteError] = useState(null);
+    const [isConfiguringWite, setIsConfiguringWite] = useState(false);
 
     useEffect(() => {
         setFiledFiles(new Set());
@@ -24,12 +25,12 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
         if (activeSubTab !== 'files') setIsWiteAiMode(false);
     }, [activeSubTab, galleryType]);
     
-    // Wite AI Data Fetching
+    // Wite AI Data Fetching - Load only on mode enter or explicit action
     useEffect(() => {
-        if (isWiteAiMode && witeApiUrl && witeApiKey) {
+        if (isWiteAiMode && witeApiUrl && witeApiKey && !isConfiguringWite) {
             fetchRemoteGallery();
         }
-    }, [isWiteAiMode, witeApiUrl, witeApiKey]);
+    }, [isWiteAiMode]); // Removed witeApiUrl/witeApiKey from deps to prevent auto-fetch on typing
 
     const fetchRemoteGallery = async () => {
         setWiteLoading(true);
@@ -41,6 +42,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
             const data = await res.json();
             if (Array.isArray(data)) {
                 setWiteFiles(data);
+                setIsConfiguringWite(false);
             } else if (data.error) {
                 setWiteError(data.error);
             }
@@ -55,6 +57,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     const handleSaveWiteSettings = () => {
         localStorage.setItem('wite_api_url', witeApiUrl);
         localStorage.setItem('wite_api_key', witeApiKey);
+        setIsConfiguringWite(false);
         fetchRemoteGallery();
     };
 
@@ -257,8 +260,11 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
             }
         }
 
-        // if (activeSubTab === 'files' && filedFiles.has(f.name) && !filter && dateFilter === 'week') return false;
-        
+        // Hide files that are in folders, UNLESS a filter is active
+        if (filedFiles.has(f.name) && !filter) {
+             return false;
+        }
+
         return true;
     });
 
@@ -304,7 +310,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                 
                 {/* WITE AI MODE */}
                 {isWiteAiMode ? (
-                     (!witeApiUrl || !witeApiKey) ? (
+                     (isConfiguringWite || !witeApiUrl || !witeApiKey) ? (
                         <div className="flex flex-col items-center justify-center p-8 bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700 max-w-lg mx-auto mt-10 shadow-2xl">
                             <div className="bg-indigo-500/20 p-4 rounded-full mb-6">
                                 <window.Icon name="settings" className="w-8 h-8 text-indigo-400" />
@@ -326,13 +332,23 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                 onChange={e => setWiteApiKey(e.target.value)}
                                 className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white mb-6 focus:border-indigo-500 outline-none"
                             />
-                            <button 
-                                onClick={handleSaveWiteSettings}
-                                disabled={!witeApiUrl || !witeApiKey}
-                                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Подключиться
-                            </button>
+                            <div className="flex gap-2 w-full">
+                                {witeApiKey && (
+                                    <button 
+                                        onClick={() => setIsConfiguringWite(false)}
+                                        className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-colors"
+                                    >
+                                        Отмена
+                                    </button>
+                                )}
+                                <button 
+                                    onClick={handleSaveWiteSettings}
+                                    disabled={!witeApiUrl || !witeApiKey}
+                                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Подключиться
+                                </button>
+                            </div>
                         </div>
                     ) : witeLoading ? (
                         <div className="flex justify-center items-center h-64">
@@ -344,7 +360,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                             <p className="text-slate-400 text-sm mb-4">{witeError}</p>
                             <button onClick={handleSaveWiteSettings} className="text-indigo-400 hover:text-indigo-300 underline text-sm">Повторить</button>
                             <div className="mt-4 pt-4 border-t border-slate-700/50">
-                                <button onClick={() => { localStorage.removeItem('wite_api_key'); setWiteApiKey(''); }} className="text-slate-500 hover:text-white text-xs">Сбросить настройки</button>
+                                <button onClick={() => { setIsConfiguringWite(true); setWiteError(null); }} className="text-slate-500 hover:text-white text-xs">Настроить подключение</button>
                             </div>
                         </div>
                     ) : (
