@@ -2,7 +2,7 @@
 // const { Upload, Loader2, Link, Trash2, Plus, ChevronLeft, ChevronRight, Settings, ImageDown, ExternalLink } = lucide;
 
 window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSubTab, onSubTabChange, galleryType = 'upload' }) => {
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useLayoutEffect } = React;
     const [isUploading, setIsUploading] = useState(false);
     const [filter, setFilter] = useState('');
     const [dateFilter, setDateFilter] = useState('week'); // 'all', 'today', 'week', 'month'
@@ -19,7 +19,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     const [witeError, setWiteError] = useState(null);
     const [isConfiguringWite, setIsConfiguringWite] = useState(false);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         setFiledFiles(new Set());
         setAreFoldersLoading(activeSubTab !== 'cloud'); 
         if (activeSubTab !== 'files') setIsWiteAiMode(false);
