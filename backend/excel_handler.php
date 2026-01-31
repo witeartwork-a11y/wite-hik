@@ -32,10 +32,10 @@ if (!is_dir(EXCEL_DATA_DIR)) {
     mkdir(EXCEL_DATA_DIR, 0755, true);
 }
 
-// Увеличиваем лимит памяти для работы с большими файлами
-ini_set('memory_limit', '2048M');
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Disable HTML error printing
+// Увеличиваем лимит памяти (безопасное значение)
+ini_set('memory_limit', '512M');
+// error_reporting(E_ALL); // Commented out for production safety
+// ini_set('display_errors', 0);
 
 $action = $_GET['action'] ?? '';
 
@@ -69,13 +69,11 @@ try {
             throw new Exception('Неизвестное действие');
     }
 } catch (Throwable $e) {
-    http_response_code(500);
+    // http_response_code(500); // Removed to prevent 502 on some server configs
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage(),
-        'trace' => $e->getTraceAsString(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine()
+        'trace' => $e->getTraceAsString()
     ]);
 }
 
@@ -231,7 +229,7 @@ function getSheet() {
 }
 
 function saveExcel() {
-    set_time_limit(300); // 5 minutes
+    // set_time_limit(300); // Removed for safety on shared hosting
     
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true);
