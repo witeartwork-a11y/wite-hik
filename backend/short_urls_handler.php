@@ -2,7 +2,8 @@
 // === ОБНОВЛЕНИЕ СТАТИСТИКИ И РЕДИРЕКТ КОРОТКИХ ССЫЛОК ===
 
 // Если URL вида /img/ABC123, редиректим на полный путь
-if (preg_match('~/img/([A-Za-z0-9]{8})~', $_SERVER['REQUEST_URI'], $matches)) {
+$requestUri = $_SERVER['REQUEST_URI'] ?? '';
+if (preg_match('~/img/([A-Za-z0-9]{8})~', $requestUri, $matches)) {
     $shortId = $matches[1];
     $urls = loadShortUrls($SHORT_URLS_FILE);
     

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Менеджер</title>
+    
+    <link rel="stylesheet" href="../css/style.css?v=2">
+    <link rel="stylesheet" href="css/excel.css?v=1">
+    <link rel="icon" type="image/x-icon" href="../favicon/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS для работы с Excel на клиенте -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        theme: {
+                            primary: 'var(--theme-primary)',
+                            secondary: 'var(--theme-secondary)',
+                            glow: 'var(--theme-glow)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --theme-primary: #2563eb;
+            --theme-secondary: #9333ea;
+            --theme-glow: rgba(37, 99, 235, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center">
+        <!-- Background Effects -->
+        <div class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black z-0"></div>
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] animate-pulse" style="animation-delay: 1s;"></div>
+
+        <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-10 rounded-3xl w-full max-w-md shadow-2xl relative z-10 transition-all duration-300">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg shadow-blue-500/30">
+                    <svg class="text-white w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Excel Manager</h1>
+                <p class="text-slate-400 mt-2 font-medium">Вход в систему</p>
+            </div>
+
+            <div id="loginError" class="hidden bg-red-500/10 text-red-300 p-4 rounded-xl mb-6 text-sm text-center border border-red-500/20 flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Неверный пароль</span>
+            </div>
+
+            <form id="loginForm" class="space-y-4">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <input 
+                        type="password" 
+                        id="passwordInput"
+                        class="block w-full pl-11 pr-4 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-medium" 
+                        placeholder="Введите пароль доступа..."
+                        required
+                    />
+                </div>
+
+                <button 
+                    type="submit" 
+                    id="submitBtn"
+                    class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
+                >
+                    <span>Войти</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Шапка -->
+    <header class="bg-slate-900/50 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="../" class="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+                        <div class="bg-gradient-to-br from-blue-600 to-indigo-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
+                            <img src="../favicon/favicon-32x32.png" class="w-6 h-6 object-contain brightness-0 invert" alt="Icon">
+                        </div>
+                        <span class="text-xl font-bold text-white tracking-tight">Excel менеджер</span>
+                    </a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="uploadBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        Загрузить Excel
+                    </button>
+                    <button id="saveBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                        </svg>
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid grid-cols-12 gap-6">
+            <!-- Левая панель - Информация и управление -->
+            <aside class="col-span-12 lg:col-span-3">
+                <div class="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-white/5 p-6 sticky top-24">
+                    <h2 class="text-xl font-semibold text-white mb-4">Информация о файле</h2>
+                    
+                    <div id="fileInfo" class="flex flex-col h-[500px] lg:h-[calc(100vh-200px)]">
+                        <!-- Вкладки (Tabs) -->
+                        <div class="flex border-b border-white/10 mb-4 items-center shrink-0">
+                            <button id="tabTemplates" class="flex-1 py-2 text-sm text-center border-b-2 border-blue-500 text-white font-medium transition-colors">
+                                Шаблоны
+                            </button>
+                            <button id="tabExports" class="flex-1 py-2 text-sm text-center border-b-2 border-transparent text-slate-400 hover:text-slate-300 transition-colors">
+                                История
+                            </button>
+                        </div>
+
+                        <!-- Список шаблонов -->
+                        <div id="templatesSection" class="flex-1 flex flex-col min-h-0">
+                            <div class="flex justify-between items-center mb-2 shrink-0">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Выберите файл</label>
+                            </div>
+                            <div id="templatesList" class="flex-1 overflow-y-auto space-y-1 pr-2 -mr-2 custom-scrollbar">
+                                <div class="text-center py-8 text-slate-500 text-sm">Нет шаблонов</div>
+                            </div>
+                        </div>
+
+                         <!-- Список экспортов -->
+                        <div id="exportsSection" class="hidden flex-1 flex flex-col min-h-0">
+                            <div class="flex justify-between items-center mb-2 shrink-0">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">История версий</label>
+                                <button id="bulkDeleteBtn" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-2 py-1 rounded text-xs transition-colors hidden" onclick="excelManager.deleteSelectedFiles()">
+                                    Удалить выбранные
+                                </button>
+                            </div>
+                            <div id="exportsList" class="flex-1 overflow-y-auto space-y-1 pr-2 -mr-2 custom-scrollbar">
+                                <div class="text-center py-8 text-slate-500 text-sm">Нет файлов истории</div>
+                            </div>
+                        </div>
+
+                        <div id="filePlaceholder" class="shrink-0 pt-4 mt-auto border-t border-white/5 text-center text-slate-400">
+                             <!-- Placeholder info or selected file actions -->
+                             <div id="selectedFileActions" class="hidden flex flex-col gap-2">
+                                 <div class="text-sm text-white font-medium truncate" id="selectedFileName">File.xlsx</div>
+                                 <div class="flex gap-2">
+                                     <button id="actionLoadBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition-colors">Загрузить</button>
+                                     <button id="actionDownloadBtn" class="px-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors border border-white/10" title="Скачать">
+                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                     </button>
+                                     <button id="actionDeleteBtn" class="px-3 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-lg transition-colors border border-red-500/20" title="Удалить">
+                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                     </button>
+                                 </div>
+                             </div>
+                             <div id="noSelectionMsg" class="py-2">
+                                <p class="text-xs">Выберите файл из списка</p>
+                             </div>
+                        </div>
+
+                        <!-- Детали загруженного файла (листы, колонки) -->
+                        <div id="fileDetails" class="hidden shrink-0 pt-4 mt-2 border-t border-white/5 space-y-4 overflow-y-auto max-h-[50vh]">
+                            <!-- Инфо -->
+                            <div class="space-y-2">
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+                                    <div class="flex-1">
+                                        <div class="text-sm text-slate-400">Листов</div>
+                                        <div id="sheetsCount" class="text-white font-medium">—</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+                                    <div class="flex-1">
+                                        <div class="text-sm text-slate-400">Загружен</div>
+                                        <div id="uploadDate" class="text-white font-medium">—</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Выбор листа -->
+                            <div class="space-y-2">
+                                <label class="text-sm text-slate-400">Активный лист</label>
+                                <select id="sheetSelector" class="w-full px-3 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                                    <option value="">Выберите лист</option>
+                                </select>
+                            </div>
+
+                            <!-- Управление столбцами -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm text-slate-400">Столбцы</label>
+                                    <button onclick="document.getElementById('fileDetails').classList.add('hidden'); document.getElementById('filePlaceholder').classList.remove('hidden'); excelManager.currentFile = null;" class="text-xs text-blue-400 hover:text-blue-300">
+                                        Закрыть
+                                    </button>
+                                </div>
+                                <div id="columnsList" class="space-y-2">
+                                    <div class="text-sm text-slate-400 text-center py-2">Не настроено</div>
+                                </div>
+                                <button id="addColumnBtn" class="w-full px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 text-sm border border-blue-500/20">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Добавить столбец
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Правая панель - Редактор данных -->
+            <section class="col-span-12 lg:col-span-9">
+                <div class="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-white/5 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-white">Редактор данных</h2>
+                        <div class="flex items-center gap-2">
+                            <span id="unsavedIndicator" class="hidden text-sm text-amber-400 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                Есть несохраненные изменения
+                            </span>
+                        </div>
+                    </div>
+
+                    <div id="editorContent">
+                        <!-- Пустое состояние -->
+                        <div id="emptyState" class="text-center py-16">
+                            <svg class="w-24 h-24 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <h3 class="text-xl font-semibold text-slate-300 mb-2">Загрузите Excel файл</h3>
+                            <p class="text-slate-400 mb-6">Начните работу, загрузив файл Excel для редактирования</p>
+                            <button onclick="document.getElementById('uploadBtn').click()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 inline-flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                </svg>
+                                Загрузить файл
+                            </button>
+                        </div>
+
+                        <!-- Контент с данными -->
+                        <div id="dataContent" class="hidden">
+                            <div id="dataRows" class="space-y-4">
+                                <!-- Здесь будут динамические строки данных -->
+                            </div>
+
+                            <button id="addRowBtn" class="mt-4 w-full px-4 py-3 bg-slate-700/50 hover:bg-slate-700/70 text-slate-300 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border border-dashed border-slate-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Добавить строку
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Скрытый input для загрузки файлов -->
+    <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
+
+    <!-- Модальное окно для добавления столбца -->
+    <div id="columnModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-xl border border-white/10 p-6 max-w-md w-full shadow-2xl">
+            <h3 class="text-xl font-semibold text-white mb-4">Добавить столбец</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">Название столбца</label>
+                    <input type="text" id="columnNameInput" placeholder="Например: Имя, Email, Телефон" class="w-full px-3 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">Ячейка в Excel (например: A, B, C)</label>
+                    <input type="text" id="columnCellInput" placeholder="A" class="w-full px-3 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">Начальная строка</label>
+                    <input type="number" id="columnStartRowInput" value="2" min="1" class="w-full px-3 py-2 bg-slate-900/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                    <p class="text-xs text-slate-500 mt-1">С какой строки начинать заполнение (обычно 2, если 1 строка - заголовки)</p>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button id="cancelColumnBtn" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">
+                    Отмена
+                </button>
+                <button id="confirmColumnBtn" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно облачной галереи -->
+    <div id="cloudModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-xl border border-white/10 w-full max-w-6xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-slate-900/50">
+                <div class="flex items-center gap-4">
+                    <h3 class="text-xl font-semibold text-white">Галерея изображений</h3>
+                    <div class="flex bg-slate-800 rounded-lg p-1 border border-white/10">
+                        <input type="text" id="cloudSearch" placeholder="Поиск..." 
+                           class="bg-transparent border-none text-sm text-white focus:outline-none px-3 py-1 w-64"
+                           oninput="excelManager.filterCloudImages(this.value)">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                     <span id="selectionCounter" class="text-sm text-slate-400 hidden">Выбрано: 0</span>
+                     <button onclick="excelManager.insertSelectedImages()" id="insertBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg hidden">Вставить выбранные</button>
+                     <button onclick="excelManager.insertArticleFromSelection()" id="insertArticleBtn" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg hidden">Вставить артикул</button>
+                     <button onclick="excelManager.closeCloudGallery()" class="text-slate-400 hover:text-white p-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Body -->
+            <div class="flex flex-1 overflow-hidden">
+                <!-- Sidebar (Publication Folders) -->
+                <div class="w-64 bg-slate-900/50 border-r border-white/10 flex flex-col">
+                    <div class="p-4 border-b border-white/5">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">На публикацию</h4>
+                        <div id="pubFolderList" class="space-y-1 overflow-y-auto max-h-[calc(85vh-150px)]">
+                             <!-- Folders injected here -->
+                             <div class="text-xs text-slate-500 text-center py-4">Нет папок</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content (Cloud Folders) -->
+                <div class="flex-1 flex flex-col overflow-hidden bg-slate-800">
+                     <div class="p-4 border-b border-white/5 bg-slate-800/50">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Облачное хранилище</h4>
+                     </div>
+                     <div id="cloudGalleryList" class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                        <!-- Cloud Groups injected here -->
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты -->
+    <script src="../js/services/authService.js"></script>
+    <script src="js/excelManager.js"></script>
+    <script src="js/excelEditor.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

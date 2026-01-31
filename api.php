@@ -33,4 +33,3 @@ if (isset($actions[$action])) {
 } else {
     jsonResponse(false, [], 'Unknown action');
 }
-?>

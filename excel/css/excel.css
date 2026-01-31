@@ -1,0 +1,176 @@
+/* excel/css/excel.css */
+
+/* Стили для редактора Excel */
+.data-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0.75rem;
+    transition: all 0.2s;
+    position: relative;
+    max-width: 100%; /* Ensure it doesn't overflow parent */
+    box-sizing: border-box;
+}
+
+.data-row:hover {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.data-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.data-row-number {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.data-row-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.data-row-delete {
+    padding: 0.25rem 0.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.75rem;
+}
+
+.data-row-delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.data-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.data-field-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #cbd5e1;
+}
+
+.data-field-input {
+    padding: 0.625rem 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    color: #f1f5f9;
+    font-size: 0.9375rem;
+    transition: all 0.2s;
+    min-width: 0; /* Important for flex child in grid */
+}
+
+.data-field-input:focus {
+    outline: none;
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.data-field-input::placeholder {
+    color: #475569;
+}
+
+.column-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #60a5fa;
+    transition: all 0.2s;
+}
+
+.column-badge:hover {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.column-badge-cell {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #93c5fd;
+}
+
+.column-badge-remove {
+    width: 1rem;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #ef4444;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.column-badge-remove:hover {
+    opacity: 1;
+}
+
+/* Анимации */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.data-row {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Индикатор загрузки */
+.loading-spinner {
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Подсветка несохраненных изменений */
+.data-field-input.modified {
+    border-color: rgba(251, 191, 36, 0.5);
+    background: rgba(251, 191, 36, 0.05);
+}
+
+/* Мобильная адаптация */
+@media (max-width: 1024px) {
+    .data-row {
+        grid-template-columns: 1fr;
+    }
+}

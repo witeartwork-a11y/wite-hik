@@ -43,8 +43,18 @@ window.Navbar = ({ activeTab, setActiveTab }) => {
 
                     {/* Right Actions */}
                     <div className="flex justify-end md:flex-1 gap-2">
+                        <a 
+                            href="https://gemini.wite-hik.ru/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium transition-all border border-slate-700 hover:border-slate-600 shadow-lg shadow-black/20 group hover:ring-2 hover:ring-purple-500/20"
+                        >
+                            <window.Icon name="sparkles" className="w-4 h-4 text-purple-400 group-hover:text-purple-300 transition-colors" />
+                            <span>Gemini</span>
+                        </a>
+
                          <a 
-                            href="http://wb.wite-hik.ru" 
+                            href="/excel/" 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium transition-all border border-slate-700 hover:border-slate-600 shadow-lg shadow-black/20 group"

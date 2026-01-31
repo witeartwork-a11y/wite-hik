@@ -1,0 +1,10 @@
+{
+  "require": {
+    "phpoffice/phpspreadsheet": "1.23.0"
+  },
+  "config": {
+    "audit": {
+      "block-insecure": false
+    }
+  }
+}
