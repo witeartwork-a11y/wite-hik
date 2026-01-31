@@ -54,7 +54,7 @@ function jsonShutdownHandler() {
 register_shutdown_function('jsonShutdownHandler');
 
 // Увеличиваем лимит памяти
-@ini_set('memory_limit', '1024M');
+@ini_set('memory_limit', '1536M');
 
 $action = $_GET['action'] ?? '';
 
@@ -249,9 +249,11 @@ function getSheet() {
 
 function saveExcel() {
     // set_time_limit(300); // Removed for safety on shared hosting
+    gc_enable(); // Enable garbage collector
     
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true);
+    unset($rawInput); // Free memory
     
     if (json_last_error() !== JSON_ERROR_NONE) {
         throw new Exception('Invalid JSON input: ' . json_last_error_msg());
@@ -286,7 +288,10 @@ function saveExcel() {
              throw new Exception('ZipArchive missing on server');
         }
         
-        $spreadsheet = IOFactory::load($filePath);
+        // Optimizing Reader
+        $reader = IOFactory::createReaderForFile($filePath);
+        $reader->setReadEmptyCells(false);
+        $spreadsheet = $reader->load($filePath);
         
         // Получаем лист
         if ($sheetIndex >= $spreadsheet->getSheetCount()) {
@@ -312,6 +317,12 @@ function saveExcel() {
             }
             $rowCount++;
         }
+
+        // Free up memory from input data before saving (crucial for large files)
+        unset($data);
+        unset($columns);
+        unset($input);
+        gc_collect_cycles(); // Force garbage collection
 
         $writer = new Xlsx($spreadsheet);
 
