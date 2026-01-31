@@ -32,10 +32,29 @@ if (!is_dir(EXCEL_DATA_DIR)) {
     mkdir(EXCEL_DATA_DIR, 0755, true);
 }
 
-// Увеличиваем лимит памяти (безопасное значение)
-ini_set('memory_limit', '512M');
-// error_reporting(E_ALL); // Commented out for production safety
-// ini_set('display_errors', 0);
+// Настройка обработки ошибок для возврата JSON даже при фатальных сбоях
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+
+function jsonShutdownHandler() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR])) {
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
+        echo json_encode([
+            'success' => false,
+            'message' => 'Critical Error: ' . $error['message'],
+            'file' => $error['file'],
+            'line' => $error['line']
+        ]);
+    }
+}
+register_shutdown_function('jsonShutdownHandler');
+
+// Увеличиваем лимит памяти
+@ini_set('memory_limit', '1024M');
 
 $action = $_GET['action'] ?? '';
 
