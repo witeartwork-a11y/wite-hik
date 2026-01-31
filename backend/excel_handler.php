@@ -366,6 +366,18 @@ function listFiles() {
         
         if (!$metadata) continue;
 
+        // Auto-cleanup: Check if actual file exists
+        if (!isset($metadata['filePath']) || !file_exists($metadata['filePath'])) {
+            // Remove metadata file
+            unlink($file);
+            // Remove data file if exists
+            $dataFile = str_replace('.json', '_data.json', $file);
+            if (file_exists($dataFile)) {
+                unlink($dataFile);
+            }
+            continue;
+        }
+
         $isExport = isset($metadata['is_export']) && $metadata['is_export'];
         $urlBase = $isExport ? '../uploads/excel/history/' : '../uploads/excel/';
 
