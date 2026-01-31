@@ -1089,12 +1089,21 @@ class ExcelManager {
     }
 
     // Вспомогательные методы для уведомлений
-    showLoading(message) {
-        // Можно добавить индикатор загрузки
+    showLoading(message = 'Загрузка...') {
+        const overlay = document.getElementById('loadingOverlay');
+        const msgEl = document.getElementById('loadingMessage');
+        if (overlay && msgEl) {
+            msgEl.textContent = message;
+            overlay.classList.remove('hidden');
+        }
         console.log('Loading:', message);
     }
 
     hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+        }
         console.log('Loading complete');
     }
 

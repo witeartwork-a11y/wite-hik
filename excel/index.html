@@ -363,6 +363,14 @@
         </div>
     </div>
 
+    <!-- Индикатор загрузки -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center">
+        <div class="bg-slate-800 border border-white/10 rounded-xl p-6 shadow-2xl flex flex-col items-center gap-4">
+            <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p id="loadingMessage" class="text-white font-medium">Загрузка...</p>
+        </div>
+    </div>
+
     <!-- Скрипты -->
     <script src="../js/services/authService.js"></script>
     <script src="js/excelManager.js"></script>
