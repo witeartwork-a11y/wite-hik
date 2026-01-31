@@ -34,6 +34,8 @@ if (!is_dir(EXCEL_DATA_DIR)) {
 
 // Увеличиваем лимит памяти для работы с большими файлами
 ini_set('memory_limit', '2048M');
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Disable HTML error printing
 
 $action = $_GET['action'] ?? '';
 
@@ -66,11 +68,14 @@ try {
         default:
             throw new Exception('Неизвестное действие');
     }
-} catch (Exception $e) {
+} catch (Throwable $e) {
+    http_response_code(500);
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage(),
-        'trace' => $e->getTraceAsString()
+        'trace' => $e->getTraceAsString(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
     ]);
 }
 
@@ -226,8 +231,15 @@ function getSheet() {
 }
 
 function saveExcel() {
-    $input = json_decode(file_get_contents('php://input'), true);
+    set_time_limit(300); // 5 minutes
     
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('Invalid JSON input: ' . json_last_error_msg());
+    }
+
     $fileId = $input['file'] ?? '';
     // $sheetIndex может быть числом или строкой
     $sheetIndex = isset($input['sheet']) ? (int)$input['sheet'] : 0;
@@ -347,8 +359,8 @@ function saveExcel() {
                 'fileName' => $exportFileName
             ]);
         }
-    } catch (Exception $e) {
-        throw new Exception('Ошибка при сохранении Excel: ' . $e->getMessage());
+    } catch (Throwable $e) {
+        throw $e; // Re-throw to top level handler
     }
 }
 
