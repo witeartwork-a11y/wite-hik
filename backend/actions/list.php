@@ -4,7 +4,7 @@
 $list = [];
 
 // Сканируем ОБЫЧНЫЕ файлы
-$files = array_diff(scandir($UPLOADS_DIR), ['.', '..', 'cloud', 'assets', 'publication']);
+$files = array_diff(scandir($UPLOADS_DIR), ['.', '..', 'cloud', 'assets', 'publication', 'source']);
 foreach ($files as $f) {
     $path = $UPLOADS_DIR . '/' . $f;
     if (!is_file($path)) continue;
@@ -29,6 +29,46 @@ foreach ($files as $f) {
         'size' => filesize($path),
         'type' => 'upload'
     ];
+}
+
+// Сканируем ИСХОДНИКИ В ПАПКАХ (source/DD-MM-YYYY)
+$sourceDir = $UPLOADS_DIR . '/source';
+if (is_dir($sourceDir)) {
+    $dates = array_diff(scandir($sourceDir), ['.', '..']);
+    foreach ($dates as $date) {
+        $datePath = $sourceDir . '/' . $date;
+        if (!is_dir($datePath)) continue;
+        
+        $dateFiles = array_diff(scandir($datePath), ['.', '..']);
+        foreach ($dateFiles as $f) {
+            $path = $datePath . '/' . $f;
+            if (!is_file($path)) continue;
+            
+            $subPath = 'source/' . $date;
+            $thumbPrefix = str_replace(['/', '-'], '_', $subPath);
+            
+            $thumbName = getThumbnailName($f, $thumbPrefix);
+            $thumbPath = $THUMBS_DIR . '/' . $thumbName;
+            $thumbUrl = null;
+
+            if (!file_exists($thumbPath) || filemtime($path) > filemtime($thumbPath)) {
+                if (createThumbnail($path, $thumbPath)) {
+                    $thumbUrl = '/data/thumbnails/' . $thumbName;
+                }
+            } else {
+                $thumbUrl = '/data/thumbnails/' . $thumbName;
+            }
+
+            $list[] = [
+                'name' => $subPath . '/' . $f,
+                'url' => '/uploads/' . $subPath . '/' . $f,
+                'thumb' => $thumbUrl ? $thumbUrl : '/uploads/' . $subPath . '/' . $f,
+                'mtime' => filemtime($path),
+                'size' => filesize($path),
+                'type' => 'upload'
+            ];
+        }
+    }
 }
 
 // Загружаем ЛИНКОВАННЫЕ (удаленные) файлы

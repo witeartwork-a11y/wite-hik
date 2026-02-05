@@ -114,7 +114,7 @@ function EditorView({
                             <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => onUploadFiles(e.target.files)} disabled={isUploading} />
                             {isUploading ? <window.Icon name="loader-2" className="w-6 h-6 text-indigo-400 animate-spin" /> : <window.Icon name="plus" className="w-6 h-6 text-slate-500" />}
                         </div>
-                        {files.filter(f => f.type === 'upload').sort((a, b) => (b.mtime || 0) - (a.mtime || 0)).slice(0, 7).map(f => (
+                        {files.filter(f => (f.type === 'upload' || f.type === 'linked')).sort((a, b) => (b.mtime || 0) - (a.mtime || 0)).slice(0, 7).map(f => (
                             <div 
                                 key={f.name} 
                                 className={`aspect-square rounded border overflow-hidden bg-slate-900 relative group ${selectedPrint?.name === f.name ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-slate-700'}`}

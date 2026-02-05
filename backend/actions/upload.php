@@ -24,7 +24,9 @@ if ($uploadType === 'cloud' && $article) {
 } elseif ($uploadType === 'asset') {
     $uploadPath = $ASSETS_DIR;
 } else {
-    $uploadPath = $UPLOADS_DIR;
+    $subPath = 'source/' . date('d-m-Y');
+    $uploadPath = $UPLOADS_DIR . '/' . $subPath;
+    ensureDir($uploadPath);
 }
 
 for ($i = 0; $i < $count; $i++) {
@@ -51,7 +53,11 @@ for ($i = 0; $i < $count; $i++) {
         } elseif ($uploadType === 'asset') {
             $relUrl = '/uploads/assets/' . $newName;
         } else {
-            $relUrl = '/uploads/' . $newName;
+            if (isset($subPath)) {
+                $relUrl = '/uploads/' . $subPath . '/' . $newName;
+            } else {
+                $relUrl = '/uploads/' . $newName;
+            }
         }
         
         // Сжатие в JPG
@@ -76,6 +82,8 @@ for ($i = 0; $i < $count; $i++) {
              $thumbPrefix = 'pub';
         } elseif ($uploadType === 'asset') {
              $thumbPrefix = 'asset';
+        } elseif (isset($subPath)) {
+             $thumbPrefix = str_replace(['/', '-'], '_', $subPath);
         }
 
         $thumbName = getThumbnailName($newName, $thumbPrefix);

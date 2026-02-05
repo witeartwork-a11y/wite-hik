@@ -11,6 +11,15 @@ if ($action === 'rename') {
 
     $basePath = $UPLOADS_DIR;
     $prefix = 'upload';
+    
+    // Support for subdirectories in uploads
+    $subDir = '';
+    if ($type === 'upload' && strpos($filename, 'source/') === 0) {
+         $subDir = dirname($filename);
+         if (strpos($subDir, '..') !== false) jsonResponse(false, [], 'Invalid path');
+         $prefix = str_replace(['/', '-'], '_', $subDir);
+    }
+    
     if ($type === 'publication') {
         $basePath = $BASE_DIR . '/uploads/publication';
         $prefix = 'pub';
@@ -27,10 +36,19 @@ if ($action === 'rename') {
     $info = pathinfo($filename);
     $ext = $info['extension'] ?? '';
     
+    // Only sanitize the filename part, preserve directory if present
     $finalNewName = sanitize($newBaseName . '.' . $ext);
-    $newPath = $basePath . '/' . $finalNewName;
     
-    if ($filename === $finalNewName) {
+    if ($subDir) {
+        $newPath = $basePath . '/' . $subDir . '/' . $finalNewName;
+        // Updated filename for response and thumb
+        $finalRelativeName = $subDir . '/' . $finalNewName;
+    } else {
+        $newPath = $basePath . '/' . $finalNewName;
+        $finalRelativeName = $finalNewName;
+    }
+    
+    if ($filename === ($subDir ? $finalRelativeName : $finalNewName)) {
         jsonResponse(true, ['name' => $filename]);
     }
     
@@ -39,12 +57,12 @@ if ($action === 'rename') {
     }
     
     if (rename($oldPath, $newPath)) {
-        $oldThumb = $THUMBS_DIR . '/' . getThumbnailName($filename, $prefix);
-        $newThumb = $THUMBS_DIR . '/' . getThumbnailName($finalNewName, $prefix);
+        $oldThumb = $THUMBS_DIR . '/' . getThumbnailName(basename($filename), $prefix);
+        $newThumb = $THUMBS_DIR . '/' . getThumbnailName($finalNewName, $prefix); // getThumbnailName expects flattened filename
         if (file_exists($oldThumb)) {
             rename($oldThumb, $newThumb);
         }
-        jsonResponse(true, ['name' => $finalNewName]);
+        jsonResponse(true, ['name' => $finalRelativeName]);
     } else {
         jsonResponse(false, [], 'Rename failed');
     }
@@ -54,7 +72,9 @@ if ($action === 'delete') {
     $input = json_decode(file_get_contents('php://input'), true);
     if (($input['password'] ?? '') !== $PASSWORD) jsonResponse(false, [], 'Auth error');
     
-    $filename = basename($input['filename']);
+    $rawFilename = $input['filename'];
+    $filename = basename($rawFilename);
+    
     $article = $input['article'] ?? null;
     $category = $input['category'] ?? null;
     $isAsset = $input['isAsset'] ?? false;
@@ -71,7 +91,7 @@ if ($action === 'delete') {
             $newData = [];
             $found = false;
             foreach ($data as $d) {
-                if ($d['name'] === $filename) {
+                if ($d['name'] === $rawFilename) { // Match against raw filename just in case
                     $found = true;
                 } else {
                     $newData[] = $d;
@@ -90,8 +110,14 @@ if ($action === 'delete') {
         $path = $CLOUD_DIR . '/' . sanitizeArticle($article) . '/' . $category . '/' . $filename;
         $prefix = 'cloud_' . $article . '_' . $category;
     } else {
-        $path = $UPLOADS_DIR . '/' . $filename;
-        $prefix = 'upload';
+        if (strpos($rawFilename, 'source/') === 0 && strpos($rawFilename, '..') === false) {
+             $path = $UPLOADS_DIR . '/' . $rawFilename;
+             $subdir = dirname($rawFilename);
+             $prefix = str_replace(['/', '-'], '_', $subdir);
+        } else {
+             $path = $UPLOADS_DIR . '/' . $filename;
+             $prefix = 'upload';
+        }
     }
     
     if (file_exists($path)) {
