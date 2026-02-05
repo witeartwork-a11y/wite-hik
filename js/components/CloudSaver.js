@@ -192,6 +192,33 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
         await refresh();
     };
 
+    const handleUploadToCloudCategory = async (articleKey, category, fileList) => {
+        if (!password) return alert('Нет пароля для загрузки');
+        if (!fileList || fileList.length === 0) return;
+        setBusy({ type: 'upload', key: `${articleKey}:${category}` });
+        try {
+            const formData = new FormData();
+            formData.append('password', password);
+            formData.append('type', 'cloud');
+            formData.append('article', articleKey);
+            formData.append('category', category);
+            for (let i = 0; i < fileList.length; i++) {
+                formData.append('files[]', fileList[i]);
+            }
+            const response = await fetch('/api.php?action=upload', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (!data.success) {
+                alert('Ошибка загрузки: ' + (data.message || 'Неизвестная ошибка'));
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Ошибка загрузки');
+        } finally {
+            setBusy({ type: null, key: null });
+            await refresh();
+        }
+    };
+
     const header = (
         <window.GalleryHeader 
             activeSubTab={activeSubTab}
@@ -298,6 +325,23 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                                         <span className="text-xs text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">{fileList.length} шт.</span>
                                                     </div>
                                                     <div className="flex gap-2">
+                                                        <label className="flex items-center gap-1 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] rounded transition-colors cursor-pointer">
+                                                            <window.Icon name="upload" className="w-3 h-3" />
+                                                            <span>Загрузить</span>
+                                                            <input
+                                                                type="file"
+                                                                multiple
+                                                                accept="image/*"
+                                                                className="hidden"
+                                                                onChange={(e) => {
+                                                                    if (e.target.files && e.target.files.length > 0) {
+                                                                        handleUploadToCloudCategory(item.article, catName, e.target.files);
+                                                                        e.target.value = '';
+                                                                    }
+                                                                }}
+                                                                disabled={busy.type === 'upload' && busy.key === `${item.article}:${catName}`}
+                                                            />
+                                                        </label>
                                                         <button
                                                             onClick={() => handleDownloadCategory(item.article, catName, fileList)}
                                                             disabled={isZipping}
