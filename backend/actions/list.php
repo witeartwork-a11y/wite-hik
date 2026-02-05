@@ -209,6 +209,9 @@ if (is_dir($CLOUD_DIR)) {
                 // Если нет source_name у файла, пробуем взять из метаданных артикула
                 if (empty($cloudItem['source_name']) && !empty($articleMeta['source_name'])) {
                     $cloudItem['source_name'] = $articleMeta['source_name'];
+                }
+
+                $list[] = $cloudItem;
             }
         }
     }
