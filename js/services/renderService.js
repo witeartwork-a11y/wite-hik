@@ -146,6 +146,14 @@ window.RenderService = {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, width, height);
 
+        // Белая подложка по умолчанию (чтобы прозрачные принты не становились черными)
+        if (options.backgroundColor !== null) {
+            ctx.save();
+            ctx.fillStyle = options.backgroundColor || '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            ctx.restore();
+        }
+
         // Слой 1: Базовое изображение товара
         if (base) {
             ctx.drawImage(base, 0, 0, width, height);
