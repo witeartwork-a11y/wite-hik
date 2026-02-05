@@ -269,7 +269,7 @@ window.DataService = {
             console.error('Ошибка удаления артикула из облака:', e);
             return false;
         }
-    }
+    },
     
     // Обновить метаданные артикула в облаке
     updateCloudArticleMeta: async (password, { article, printName }) => {
