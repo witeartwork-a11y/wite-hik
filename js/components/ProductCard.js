@@ -279,9 +279,27 @@ window.ProductCard = ({
                         >
                             <window.Icon name="rotate-cw" className="w-3.5 h-3.5" />
                             <span>
-                                {product.renderRotation === 90 ? 'Поворот +90°' : product.renderRotation === -90 ? 'Поворот -90°' : 'Поворот 0°'}
+                                {product.renderRotation === 90 ? '+90°' : product.renderRotation === -90 ? '-90°' : '0°'}
                             </span>
                         </button>
+
+                        <select
+                            value={product.blendMode || 'source-over'}
+                            onChange={(e) => onUpdate(product.id, { blendMode: e.target.value })}
+                            className="bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-md px-2 py-1.5 outline-none hover:border-slate-600 focus:border-indigo-500 transition-colors cursor-pointer"
+                            title="Режим наложения"
+                        >
+                            <option value="source-over">Нормальный</option>
+                            <option value="multiply">Умножение</option>
+                            <option value="screen">Экран</option>
+                            <option value="overlay">Перекрытие</option>
+                            <option value="darken">Затемнение</option>
+                            <option value="lighten">Осветление</option>
+                            <option value="color-dodge">Осветл. основы</option>
+                            <option value="color-burn">Затемн. основы</option>
+                            <option value="hard-light">Жесткий свет</option>
+                            <option value="soft-light">Мягкий свет</option>
+                        </select>
                     </div>
 
                     {/* Files (Mask & Overlay) */}

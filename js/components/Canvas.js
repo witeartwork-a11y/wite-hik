@@ -147,7 +147,7 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
                 }
 
                 ctx.save();
-                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalCompositeOperation = product.blendMode || 'source-over';
                 ctx.drawImage(tempCanvas, 0, 0);
 
                 // Визуализация границ маски (Если выбран цвет)
@@ -190,7 +190,7 @@ const CanvasRenderer = ({ product, imageUrl, maskUrl, overlayUrl, transform, onU
         return () => {
             cancelAnimationFrame(animationFrameId);
         };
-    }, [images, t.x, t.y, t.scale, t.rotation, product.width, product.height, maskColor]);
+    }, [images, t.x, t.y, t.scale, t.rotation, product.width, product.height, maskColor, product.blendMode]);
 
     const stateRef = useRef({ t, onUpdateTransform, imageUrl, isDragging: isDragging });
     useEffect(() => {
