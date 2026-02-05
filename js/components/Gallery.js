@@ -641,7 +641,7 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                         
                                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 pt-6 z-20">
                                             <p className="text-[10px] text-slate-200 truncate text-center font-medium drop-shadow-md">
-                                                {file.name.replace(/\.[^/.]+$/, "")}
+                                                {file.name.split('/').pop().replace(/\.[^/.]+$/, "")}
                                             </p>
                                         </div>
                                     </div>

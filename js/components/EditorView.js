@@ -97,7 +97,7 @@ function EditorView({
     return (
         <div className="responsive-layout flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-140px)] fade-in">
             {/* ЛЕВАЯ КОЛОНКА (Сайдбар) */}
-            <div className="responsive-sidebar w-full lg:w-72 xl:w-80 flex flex-col gap-4 lg:h-full overflow-y-auto custom-scroll pr-1 shrink-0">
+            <div className="responsive-sidebar w-full lg:w-72 xl:w-80 flex flex-col gap-4 lg:h-full overflow-y-auto custom-scroll pr-1 shrink-0 pb-24">
                 {/* Выбор принта */}
                 <div
                     className="glass-card rounded-xl p-4 flex flex-col hover-lift"
@@ -238,7 +238,7 @@ function EditorView({
             </div>
 
             {/* ПРАВАЯ КОЛОНКА (Настройки) */}
-            <div className="responsive-sidebar w-full lg:w-64 bg-slate-900/50 rounded-xl border border-slate-800 shrink-0 lg:h-full overflow-y-auto custom-scroll max-h-[calc(100vh-200px)]">
+            <div className="responsive-sidebar w-full lg:w-64 bg-slate-900/50 rounded-xl border border-slate-800 shrink-0 lg:h-full overflow-y-auto custom-scroll max-h-[calc(100vh-240px)] pb-24">
                 <window.TransformPanel 
                     transform={activeProductId ? (currentTransforms[activeProductId] || { x: 0, y: 0, scale: 0.5, rotation: 0 }) : null}
                     onUpdateTransform={(newT) => activeProductId && updateTransform(activeProductId, newT)}

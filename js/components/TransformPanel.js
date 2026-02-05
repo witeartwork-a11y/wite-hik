@@ -65,9 +65,9 @@ window.TransformPanel = ({
 
     return (
         <div className="flex flex-col gap-3 p-3 text-slate-200">
-            {/* Статус сохранения (перенесен в левый нижний угол сайта) */}
+            {/* Статус сохранения (перенесен в левый нижний угол сайта, но выше, чтобы не перекрываться футером) */}
             {(saveStatus === 'saving' || saveStatus === 'error') && ReactDOM.createPortal(
-                <div className={`fixed bottom-4 left-4 z-[9999] flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-xl border transition-all duration-300 ${
+                <div className={`fixed bottom-20 left-4 z-[9999] flex items-center gap-2 px-4 py-2 text-sm rounded-lg shadow-xl border transition-all duration-300 ${
                     saveStatus === 'saving' 
                         ? 'bg-slate-900/90 text-blue-400 border-blue-500/30' 
                         : 'bg-slate-900/90 text-red-400 border-red-500/30'

@@ -410,7 +410,7 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                             <>
                                                 <span className="text-slate-600">|</span>
                                                 <span className="text-slate-500 font-mono truncate max-w-[200px]" title={`Оригинальное имя: ${item.source_name}`}>
-                                                    src: {item.source_name}
+                                                    src: {item.source_name.split('/').pop()}
                                                 </span>
                                             </>
                                         )}
