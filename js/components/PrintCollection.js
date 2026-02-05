@@ -6,6 +6,7 @@ window.PrintCollection = ({
     onSelectPrint, 
     onRemovePrint, 
     onUpdateArticle,
+    onUpdatePrintName,
     onSaveToCloud,
     isSaving,
     onSavePreset
@@ -13,6 +14,8 @@ window.PrintCollection = ({
     const { useState } = React;
     const [editingId, setEditingId] = useState(null);
     const [editingValue, setEditingValue] = useState('');
+    const [editingPrintNameId, setEditingPrintNameId] = useState(null);
+    const [editingPrintNameValue, setEditingPrintNameValue] = useState('');
 
     const handleEditArticle = (print) => {
         setEditingId(print.id);
@@ -25,6 +28,37 @@ window.PrintCollection = ({
             onUpdateArticle(print.id, val);
         }
         setEditingId(null);
+    };
+
+    const handleEditPrintName = (print) => {
+        setEditingPrintNameId(print.id);
+        setEditingPrintNameValue(print.printName || '');
+    };
+
+    const handleSavePrintName = (print) => {
+        const val = editingPrintNameValue.trim();
+        if (onUpdatePrintName) {
+            onUpdatePrintName(print.id, val);
+        }
+        setEditingPrintNameId(null);
+    };
+
+    const handleCopyArticle = async (print) => {
+        const value = print.article || print.name.split('.')[0];
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(value);
+            } else {
+                const temp = document.createElement('textarea');
+                temp.value = value;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+            }
+        } catch (e) {
+            console.warn('Не удалось скопировать артикул:', e);
+        }
     };
 
     return (
@@ -88,6 +122,47 @@ window.PrintCollection = ({
                                         >
                                             <span className="text-sm font-mono bg-slate-900/50 px-2 py-1 rounded text-indigo-300">
                                                 {print.article || print.name.split('.')[0]}
+                                            </span>
+                                            <button
+                                                className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-indigo-400/10 rounded transition-colors"
+                                                title="Скопировать артикул"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleCopyArticle(print);
+                                                }}
+                                            >
+                                                <window.Icon name="copy" className="w-3 h-3" />
+                                            </button>
+                                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 hover-opacity-show" />
+                                        </div>
+                                    )}
+
+                                    {/* Имя принта (редактируемое) */}
+                                    {editingPrintNameId === print.id ? (
+                                        <input
+                                            type="text"
+                                            value={editingPrintNameValue}
+                                            onChange={(e) => setEditingPrintNameValue(e.target.value)}
+                                            onBlur={() => handleSavePrintName(print)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleSavePrintName(print);
+                                                if (e.key === 'Escape') setEditingPrintNameId(null);
+                                            }}
+                                            autoFocus
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white outline-none"
+                                            placeholder="Имя принта"
+                                        />
+                                    ) : (
+                                        <div
+                                            className="flex items-center gap-2 group/article"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditPrintName(print);
+                                            }}
+                                        >
+                                            <span className={`text-sm px-2 py-1 rounded ${print.printName ? 'text-slate-200 bg-slate-900/50' : 'text-slate-500 bg-slate-900/30'}`}>
+                                                {print.printName ? print.printName : 'Имя принта'}
                                             </span>
                                             <window.Icon name="pencil" className="w-3 h-3 text-slate-600 hover-opacity-show" />
                                         </div>

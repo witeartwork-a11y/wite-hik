@@ -214,7 +214,7 @@ window.ExportService = {
                 result.fileName, 
                 article, 
                 categoryFolder, 
-                selectedPrint.name, 
+                selectedPrint.printName || selectedPrint.print_name || selectedPrint.name, 
                 result.prod.name
             );
 

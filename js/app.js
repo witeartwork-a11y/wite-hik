@@ -158,6 +158,7 @@ function App() {
         selectPrintInCollection,
         removePrintFromCollection,
         updateArticle,
+        updatePrintName,
         removeByFileName,
         getPrintsByIds,
         removePrintsByIds,
@@ -619,6 +620,7 @@ function App() {
                         onSelectPrintInCollection={handleSelectPrintInCollection}
                         onRemovePrintFromCollection={handleRemovePrintFromCollection}
                         onUpdateArticle={handleUpdateArticle}
+                        onUpdatePrintName={(printId, newName) => updatePrintName(printId, newName)}
                         onSaveCollectionToCloud={handleSaveCollectionToCloud}
                         onSavePreset={handleSavePreset}
                         onDeletePreset={handleDeletePreset}

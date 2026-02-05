@@ -89,6 +89,7 @@ window.usePrintCollection = () => {
                 url: file.url,
                 thumb: file.thumb || file.url,
                 article: article,
+                printName: file.print_name || file.printName || '',
                 positions: positions
             };
 
@@ -155,6 +156,17 @@ window.usePrintCollection = () => {
             }
             return prev.map(p => p.id === printId ? { ...p, article: newArticle } : p);
         });
+    }, []);
+
+    /**
+     * Обновить имя принта
+     * @param {String} printId - ID принта
+     * @param {String} newPrintName - новое имя принта
+     */
+    const updatePrintName = useCallback((printId, newPrintName) => {
+        setPrintCollection(prev =>
+            prev.map(p => p.id === printId ? { ...p, printName: newPrintName } : p)
+        );
     }, []);
 
     /**
@@ -249,6 +261,7 @@ window.usePrintCollection = () => {
         selectPrintInCollection,
         removePrintFromCollection,
         updateArticle,
+        updatePrintName,
         removeByFileName,
         getPrintsByIds,
         removePrintsByIds,

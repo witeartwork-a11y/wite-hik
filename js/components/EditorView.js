@@ -31,6 +31,7 @@ function EditorView({
     onSelectPrintInCollection,
     onRemovePrintFromCollection,
     onUpdateArticle,
+    onUpdatePrintName,
     onSaveCollectionToCloud,
     onSavePreset,
     onDeletePreset,
@@ -168,6 +169,7 @@ function EditorView({
                     onSelectPrint={onSelectPrintInCollection}
                     onRemovePrint={onRemovePrintFromCollection}
                     onUpdateArticle={onUpdateArticle}
+                    onUpdatePrintName={onUpdatePrintName}
                     onSaveToCloud={onSaveCollectionToCloud}
                     isSaving={isCloudSaving}
                     onSavePreset={onSavePreset}
