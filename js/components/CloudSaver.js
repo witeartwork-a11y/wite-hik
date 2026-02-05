@@ -6,6 +6,8 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     const [previewZoom, setPreviewZoom] = useState(1);
     const [busy, setBusy] = useState({ type: null, key: null });
     const [notification, setNotification] = useState(null);
+    const [editingArticleKey, setEditingArticleKey] = useState(null);
+    const [editingPrintNameValue, setEditingPrintNameValue] = useState('');
     const [useShortLinks, setUseShortLinks] = useState(() => {
         const saved = localStorage.getItem('cloud_copy_short_links');
         return saved === null ? true : saved === 'true';
@@ -59,8 +61,13 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                     article: article,
                     thumbnail: f.article_thumb || f.thumb || f.url,
                     mtime: f.mtime,
+                    print_name: f.print_name || '',
                     categories: {}
                 };
+            }
+
+            if (!articleMap[article].print_name && f.print_name) {
+                articleMap[article].print_name = f.print_name;
             }
             
             if (f.mtime > articleMap[article].mtime) articleMap[article].mtime = f.mtime;
@@ -147,6 +154,42 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
         navigator.clipboard.writeText(fullUrl);
         setNotification('Ссылка скопирована');
         setTimeout(() => setNotification(null), 2000);
+    };
+
+    const handleCopyArticle = async (article) => {
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(article);
+            } else {
+                const temp = document.createElement('textarea');
+                temp.value = article;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+            }
+            setNotification('Артикул скопирован');
+            setTimeout(() => setNotification(null), 2000);
+        } catch (e) {
+            console.warn('Не удалось скопировать артикул:', e);
+        }
+    };
+
+    const handleEditPrintName = (item) => {
+        setEditingArticleKey(item.key);
+        setEditingPrintNameValue(item.print_name || '');
+    };
+
+    const handleSavePrintName = async (item) => {
+        if (!password) return alert('Нет пароля для сохранения');
+        const val = editingPrintNameValue.trim();
+        const ok = await window.DataService.updateCloudArticleMeta(password, {
+            article: item.article,
+            printName: val
+        });
+        if (!ok) return alert('Не удалось сохранить имя принта');
+        setEditingArticleKey(null);
+        await refresh();
     };
 
     const handleToggleShortLinks = (value) => {
@@ -276,9 +319,44 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-white truncate text-lg">
-                                        {item.article}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-white truncate text-lg">
+                                            {item.article}
+                                        </h3>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleCopyArticle(item.article); }}
+                                            className="p-1.5 bg-slate-700 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-lg transition-all flex-shrink-0 shadow-sm border border-slate-600 hover:border-indigo-500 active:scale-95"
+                                            title="Скопировать артикул"
+                                        >
+                                            <window.Icon name="copy" className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                    {editingArticleKey === item.key ? (
+                                        <input
+                                            type="text"
+                                            value={editingPrintNameValue}
+                                            onChange={(e) => setEditingPrintNameValue(e.target.value)}
+                                            onBlur={() => handleSavePrintName(item)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleSavePrintName(item);
+                                                if (e.key === 'Escape') setEditingArticleKey(null);
+                                            }}
+                                            autoFocus
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="mt-1 w-full max-w-md bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white outline-none"
+                                            placeholder="Имя принта"
+                                        />
+                                    ) : (
+                                        <div
+                                            className="mt-1 flex items-center gap-2"
+                                            onClick={(e) => { e.stopPropagation(); handleEditPrintName(item); }}
+                                        >
+                                            <span className={`text-xs px-2 py-1 rounded ${item.print_name ? 'text-slate-200 bg-slate-900/50' : 'text-slate-500 bg-slate-900/30'}`}>
+                                                {item.print_name ? item.print_name : 'Имя принта'}
+                                            </span>
+                                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 hover-opacity-show" />
+                                        </div>
+                                    )}
                                     <p className="text-xs text-slate-400">
                                         {catCount} категоий · {totalFiles} файлов
                                     </p>

@@ -22,6 +22,7 @@ $actions = [
     'delete' => 'file_ops.php',
     'delete_category' => 'file_ops.php',
     'delete_article' => 'file_ops.php',
+    'update_cloud_meta' => 'cloud_meta.php',
     'list' => 'list.php',
     'upload' => 'upload.php',
     'cloud_products' => 'api_cloud.php',

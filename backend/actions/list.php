@@ -3,6 +3,9 @@
 
 $list = [];
 
+// Кэш метаданных артикула (print_name и т.д.)
+$articleMetaCache = [];
+
 // Сканируем ОБЫЧНЫЕ файлы
 $files = array_diff(scandir($UPLOADS_DIR), ['.', '..', 'cloud', 'assets', 'publication', 'source']);
 foreach ($files as $f) {
@@ -127,6 +130,15 @@ if (is_dir($CLOUD_DIR)) {
     foreach ($articlesDir as $article) {
         $articlePath = $CLOUD_DIR . '/' . $article;
         if (!is_dir($articlePath)) continue;
+
+        // Метаданные артикула (например, print_name)
+        if (!isset($articleMetaCache[$article])) {
+            $articleMetaFile = $articlePath . '/.meta.json';
+            $articleMetaCache[$article] = file_exists($articleMetaFile)
+                ? (json_decode(file_get_contents($articleMetaFile), true) ?: [])
+                : [];
+        }
+        $articleMeta = $articleMetaCache[$article];
         
         // $articlemtime = filemtime($articlePath); // Unused
         
@@ -184,6 +196,11 @@ if (is_dir($CLOUD_DIR)) {
                             $cloudItem['print_name'] = $meta['print_name'];
                         }
                     }
+                }
+
+                // Если нет print_name у файла, пробуем взять из метаданных артикула
+                if (empty($cloudItem['print_name']) && !empty($articleMeta['print_name'])) {
+                    $cloudItem['print_name'] = $articleMeta['print_name'];
                 }
                 
                 $list[] = $cloudItem;

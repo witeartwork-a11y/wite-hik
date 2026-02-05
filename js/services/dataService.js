@@ -270,4 +270,19 @@ window.DataService = {
             return false;
         }
     }
+    
+    // Обновить метаданные артикула в облаке
+    updateCloudArticleMeta: async (password, { article, printName }) => {
+        try {
+            const res = await fetch('/api.php?action=update_cloud_meta', {
+                method: 'POST',
+                body: JSON.stringify({ password, article, print_name: printName })
+            });
+            const data = await res.json();
+            return data.success;
+        } catch (e) {
+            console.error('Ошибка обновления метаданных артикула:', e);
+            return false;
+        }
+    },
 };
