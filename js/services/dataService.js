@@ -164,7 +164,7 @@ window.DataService = {
     },
 
     // Загрузить файл в облако
-    uploadToCloud: async (password, blob, fileName, article, category, printName, productName) => {
+    uploadToCloud: async (password, blob, fileName, article, category, printName, productName, sourceName) => {
         try {
             const formData = new FormData();
             formData.append('password', password);
@@ -176,6 +176,9 @@ window.DataService = {
             }
             if (productName) {
                 formData.append('product_name', productName);
+            }
+            if (sourceName) {
+                formData.append('source_name', sourceName);
             }
             formData.append('files[]', new File([blob], fileName, { type: 'image/png' }));
             

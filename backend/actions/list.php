@@ -195,15 +195,20 @@ if (is_dir($CLOUD_DIR)) {
                         if (!empty($meta['print_name'])) {
                             $cloudItem['print_name'] = $meta['print_name'];
                         }
+                        if (!empty($meta['source_name'])) {
+                            $cloudItem['source_name'] = $meta['source_name'];
+                        }
                     }
                 }
-
+                
                 // Если нет print_name у файла, пробуем взять из метаданных артикула
                 if (empty($cloudItem['print_name']) && !empty($articleMeta['print_name'])) {
                     $cloudItem['print_name'] = $articleMeta['print_name'];
                 }
-                
-                $list[] = $cloudItem;
+
+                // Если нет source_name у файла, пробуем взять из метаданных артикула
+                if (empty($cloudItem['source_name']) && !empty($articleMeta['source_name'])) {
+                    $cloudItem['source_name'] = $articleMeta['source_name'];
             }
         }
     }

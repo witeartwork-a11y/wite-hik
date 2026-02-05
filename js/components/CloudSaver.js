@@ -62,12 +62,16 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                     thumbnail: f.article_thumb || f.thumb || f.url,
                     mtime: f.mtime,
                     print_name: f.print_name || '',
+                    source_name: f.source_name || '',
                     categories: {}
                 };
             }
 
             if (!articleMap[article].print_name && f.print_name) {
                 articleMap[article].print_name = f.print_name;
+            }
+            if (!articleMap[article].source_name && f.source_name) {
+                articleMap[article].source_name = f.source_name;
             }
             
             if (f.mtime > articleMap[article].mtime) articleMap[article].mtime = f.mtime;
@@ -175,9 +179,28 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
         }
     };
 
+    const handleCopyPrintName = async (name) => {
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(name);
+            } else {
+                const temp = document.createElement('textarea');
+                temp.value = name;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+            }
+            setNotification('Имя принта скопировано');
+            setTimeout(() => setNotification(null), 2000);
+        } catch (e) {
+            console.warn('Не удалось скопировать имя принта:', e);
+        }
+    };
+
     const handleEditPrintName = (item) => {
         setEditingArticleKey(item.key);
-        setEditingPrintNameValue(item.print_name || '');
+        setEditingPrintNameValue(item.print_name || item.source_name || '');
     };
 
     const handleSavePrintName = async (item) => {
@@ -319,47 +342,78 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="font-semibold text-white truncate text-lg">
-                                            {item.article}
-                                        </h3>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleCopyArticle(item.article); }}
-                                            className="p-1.5 bg-slate-700 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-lg transition-all flex-shrink-0 shadow-sm border border-slate-600 hover:border-indigo-500 active:scale-95"
-                                            title="Скопировать артикул"
-                                        >
-                                            <window.Icon name="copy" className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                    {editingArticleKey === item.key ? (
-                                        <input
-                                            type="text"
-                                            value={editingPrintNameValue}
-                                            onChange={(e) => setEditingPrintNameValue(e.target.value)}
-                                            onBlur={() => handleSavePrintName(item)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') handleSavePrintName(item);
-                                                if (e.key === 'Escape') setEditingArticleKey(null);
-                                            }}
-                                            autoFocus
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="mt-1 w-full max-w-md bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white outline-none"
-                                            placeholder="Имя принта"
-                                        />
-                                    ) : (
-                                        <div
-                                            className="mt-1 flex items-center gap-2"
-                                            onClick={(e) => { e.stopPropagation(); handleEditPrintName(item); }}
-                                        >
-                                            <span className={`text-xs px-2 py-1 rounded ${item.print_name ? 'text-slate-200 bg-slate-900/50' : 'text-slate-500 bg-slate-900/30'}`}>
-                                                {item.print_name ? item.print_name : 'Имя принта'}
-                                            </span>
-                                            <window.Icon name="pencil" className="w-3 h-3 text-slate-600 hover-opacity-show" />
+                                    <div className="flex items-center flex-wrap gap-3">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-semibold text-white truncate text-lg">
+                                                {item.article}
+                                            </h3>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleCopyArticle(item.article); }}
+                                                className="p-1.5 bg-slate-700 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-lg transition-all flex-shrink-0 shadow-sm border border-slate-600 hover:border-indigo-500 active:scale-95"
+                                                title="Скопировать артикул"
+                                            >
+                                                <window.Icon name="copy" className="w-3.5 h-3.5" />
+                                            </button>
                                         </div>
-                                    )}
-                                    <p className="text-xs text-slate-400">
-                                        {catCount} категоий · {totalFiles} файлов
-                                    </p>
+
+                                        {editingArticleKey === item.key ? (
+                                            <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                                <input
+                                                    type="text"
+                                                    value={editingPrintNameValue}
+                                                    onChange={(e) => setEditingPrintNameValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') handleSavePrintName(item);
+                                                        if (e.key === 'Escape') setEditingArticleKey(null);
+                                                    }}
+                                                    autoFocus
+                                                    className="w-48 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                                                    placeholder="Имя принта"
+                                                />
+                                                <button
+                                                    onClick={() => handleSavePrintName(item)}
+                                                    className="p-1.5 bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white rounded border border-indigo-500/30 transition-colors"
+                                                    title="Сохранить"
+                                                >
+                                                    <window.Icon name="check" className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setEditingArticleKey(null)}
+                                                    className="p-1.5 bg-slate-700 text-slate-400 hover:text-white rounded hover:bg-slate-600 transition-colors"
+                                                    title="Отмена"
+                                                >
+                                                    <window.Icon name="x" className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className="flex items-center gap-2 group/printname cursor-pointer"
+                                                onClick={(e) => { e.stopPropagation(); handleEditPrintName(item); }}
+                                            >
+                                                <span className={`text-sm px-2 py-0.5 rounded border ${item.print_name ? 'text-slate-200 bg-slate-800 border-slate-700' : 'text-slate-500 bg-slate-900/30 border-transparent border-dashed border-slate-700'}`}>
+                                                    {item.print_name || 'Имя принта...'}
+                                                </span>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleCopyPrintName(item.print_name || item.source_name || ''); }}
+                                                    className="p-1 text-slate-500 hover:text-indigo-400 opacity-0 group-hover/printname:opacity-100 transition-opacity"
+                                                    title="Копировать имя принта"
+                                                >
+                                                    <window.Icon name="copy" className="w-3 h-3" />
+                                                </button>
+                                                <window.Icon name="pencil" className="w-3 h-3 text-slate-600 opacity-0 group-hover/printname:opacity-100 transition-opacity" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-1 flex flex-col gap-0.5">
+                                        {item.source_name && (
+                                            <p className="text-[10px] text-slate-500 font-mono pl-0.5" title="Оригинальное имя файла">
+                                                src: {item.source_name}
+                                            </p>
+                                        )}
+                                        <p className="text-xs text-slate-400">
+                                            {catCount} категоий · {totalFiles} файлов
+                                        </p>
+                                    </div>
                                 </div>
 
                                 {/* Buttons */}

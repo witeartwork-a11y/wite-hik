@@ -151,7 +151,8 @@ window.CollectionService = {
                         printItem.article,
                         categoryFolder,
                         printItem.printName || printItem.print_name || printItem.name,
-                        prod.name
+                        prod.name,
+                        printItem.name
                     );
                 }
 

@@ -12,6 +12,7 @@ $article = $_POST['article'] ?? null;
 $category = $_POST['category'] ?? 'files';
 $printName = $_POST['print_name'] ?? null;
 $productName = $_POST['product_name'] ?? null;
+$sourceName = $_POST['source_name'] ?? null;
 $assetType = $_POST['assetType'] ?? null; 
 
 // Определяем папку
@@ -122,6 +123,9 @@ for ($i = 0; $i < $count; $i++) {
             if ($productName) {
                 $metaData['product_name'] = $productName;
             }
+            if ($sourceName) {
+                $metaData['source_name'] = $sourceName;
+            }
             
             if (!empty($metaData)) {
                 file_put_contents($finalPath . '.meta.json', json_encode($metaData));
@@ -130,6 +134,7 @@ for ($i = 0; $i < $count; $i++) {
                 // Copy to top level for frontend compatibility
                 if (isset($metaData['print_name'])) $uploadedItem['print_name'] = $metaData['print_name'];
                 if (isset($metaData['product_name'])) $uploadedItem['product_name'] = $metaData['product_name'];
+                if (isset($metaData['source_name'])) $uploadedItem['source_name'] = $metaData['source_name'];
             }
 
         }
