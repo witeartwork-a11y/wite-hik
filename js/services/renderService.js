@@ -174,8 +174,10 @@ window.RenderService = {
             window.RenderService.applyMask(tempCtx, mask, width, height);
 
             // Копируем результат на основной холст
-            ctx.globalCompositeOperation = 'source-over';
+            // Используем режим наложения из настроек товара
+            ctx.globalCompositeOperation = product.blendMode || 'source-over';
             ctx.drawImage(tempCanvas, 0, 0);
+            ctx.globalCompositeOperation = 'source-over';
         }
 
         // Слой 3: Оверлей поверх всего
