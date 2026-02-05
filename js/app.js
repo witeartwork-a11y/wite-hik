@@ -478,9 +478,6 @@ function App() {
 
             alert(`Готово! ${printsToSave.length} принт(ов) сохранено в облако.`);
             
-            // Очищаем коллекцию после успешного сохранения
-            removePrintsByIds(printIds);
-            
             await init();
         } catch (e) {
             console.error(e);
@@ -489,7 +486,7 @@ function App() {
             setIsCloudSaving(false);
             setCloudProgress({ total: 0, done: 0, current: '' });
         }
-    }, [auth.password, cloudMode, activeTab, products, transforms, productTransforms, printCollection, init, getPrintsByIds, removePrintsByIds]);
+    }, [auth.password, cloudMode, activeTab, products, transforms, productTransforms, printCollection, init, getPrintsByIds]);
 
     const handleSaveToCloud = useCallback(async (arg) => {
         if (!selectedPrint) return alert('Выберите принт для сохранения');

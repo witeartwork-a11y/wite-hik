@@ -6,6 +6,10 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     const [previewZoom, setPreviewZoom] = useState(1);
     const [busy, setBusy] = useState({ type: null, key: null });
     const [notification, setNotification] = useState(null);
+    const [useShortLinks, setUseShortLinks] = useState(() => {
+        const saved = localStorage.getItem('cloud_copy_short_links');
+        return saved === null ? true : saved === 'true';
+    });
     const [filter, setFilter] = useState('');
     const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
 
@@ -134,15 +138,20 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     };
 
     const handleCopyLink = (url, file) => {
-        // Используем короткую ссылку для товаров, полную для всех остальных
+        // Переключатель: короткая/полная ссылка
         let linkToCopy = url;
-        if (file && file.category === 'products' && file.short_url) {
+        if (useShortLinks && file && file.category === 'products' && file.short_url) {
             linkToCopy = file.short_url;
         }
-        const fullUrl = window.location.origin + linkToCopy;
+        const fullUrl = /^https?:\/\//i.test(linkToCopy) ? linkToCopy : (window.location.origin + linkToCopy);
         navigator.clipboard.writeText(fullUrl);
         setNotification('Ссылка скопирована');
         setTimeout(() => setNotification(null), 2000);
+    };
+
+    const handleToggleShortLinks = (value) => {
+        setUseShortLinks(value);
+        localStorage.setItem('cloud_copy_short_links', value ? 'true' : 'false');
     };
 
     const refresh = async () => {
@@ -210,6 +219,18 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
     return (
         <div className="space-y-6 pb-10">
             {header}
+            <div className="flex items-center justify-between gap-3 bg-slate-900/40 border border-slate-700 rounded-lg px-3 py-2">
+                <div className="text-xs text-slate-400">Копирование ссылок</div>
+                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
+                    <input
+                        type="checkbox"
+                        className="accent-indigo-500"
+                        checked={useShortLinks}
+                        onChange={(e) => handleToggleShortLinks(e.target.checked)}
+                    />
+                    <span>Короткая для товаров</span>
+                </label>
+            </div>
             <div className="space-y-3">
                 {items.map(item => {
                     const totalFiles = Object.values(item.categories).flat().length;
