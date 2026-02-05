@@ -20,6 +20,8 @@ header('Content-Type: application/json');
 define('EXCEL_UPLOAD_DIR', __DIR__ . '/../uploads/excel/');
 define('EXCEL_HISTORY_DIR', __DIR__ . '/../uploads/excel/history/');
 define('EXCEL_DATA_DIR', __DIR__ . '/../data/excel/');
+define('EXCEL_DATA_TEMPLATES_DIR', __DIR__ . '/../data/excel/templates/');
+define('EXCEL_DATA_HISTORY_DIR', __DIR__ . '/../data/excel/history/');
 
 // Создаем директории если их нет
 if (!is_dir(EXCEL_UPLOAD_DIR)) {
@@ -30,6 +32,12 @@ if (!is_dir(EXCEL_HISTORY_DIR)) {
 }
 if (!is_dir(EXCEL_DATA_DIR)) {
     mkdir(EXCEL_DATA_DIR, 0755, true);
+}
+if (!is_dir(EXCEL_DATA_TEMPLATES_DIR)) {
+    mkdir(EXCEL_DATA_TEMPLATES_DIR, 0755, true);
+}
+if (!is_dir(EXCEL_DATA_HISTORY_DIR)) {
+    mkdir(EXCEL_DATA_HISTORY_DIR, 0755, true);
 }
 
 // Настройка обработки ошибок для возврата JSON даже при фатальных сбоях
@@ -143,8 +151,9 @@ function handleUpload() {
         'is_export' => $isExport
     ];
 
+    $metaDir = $isExport ? EXCEL_DATA_HISTORY_DIR : EXCEL_DATA_TEMPLATES_DIR;
     file_put_contents(
-        EXCEL_DATA_DIR . $fileId . '.json',
+        $metaDir . $fileId . '.json',
         json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
     );
 
@@ -179,6 +188,55 @@ function getExcelSheets($filePath) {
     }
 }
 
+function getMetadataPath($fileId) {
+    // Проверяем в новой структуре (templates)
+    $path = EXCEL_DATA_TEMPLATES_DIR . $fileId . '.json';
+    if (file_exists($path)) return $path;
+
+    // Проверяем в истории
+    $path = EXCEL_DATA_HISTORY_DIR . $fileId . '.json';
+    if (file_exists($path)) return $path;
+
+    // Проверяем в старом месте (для совместимости)
+    $path = EXCEL_DATA_DIR . $fileId . '.json';
+    if (file_exists($path)) return $path;
+
+    return null;
+}
+
+function getActualFilePath($metadata) {
+    // Определяем имя файла
+    $fileName = $metadata['fileName'] ?? basename($metadata['filePath'] ?? '');
+    
+    // Если имени нет - беда
+    if (empty($fileName)) return null;
+
+    // Определяем папку на основе типа файла (экспорт или шаблон)
+    $isExport = isset($metadata['is_export']) && ($metadata['is_export'] === true || $metadata['is_export'] === 'true');
+    
+    $dir = $isExport ? EXCEL_HISTORY_DIR : EXCEL_UPLOAD_DIR;
+    $path = $dir . $fileName;
+
+    // Если файл найден по расчетному пути - отлично
+    if (file_exists($path)) {
+        return $path;
+    }
+
+    // Запасной вариант: проверяем путь из метаданных (если он валидный абсолютный)
+    if (isset($metadata['filePath']) && file_exists($metadata['filePath'])) {
+         return $metadata['filePath'];
+    }
+
+    // Еще попытка: ищем в противоположной папке (вдруг перепутали флаг)
+    $altDir = $isExport ? EXCEL_UPLOAD_DIR : EXCEL_HISTORY_DIR;
+    $altPath = $altDir . $fileName;
+    if (file_exists($altPath)) {
+        return $altPath;
+    }
+
+    return null;
+}
+
 function getSheet() {
     $fileId = $_GET['file'] ?? '';
     $sheetIndex = $_GET['sheet'] ?? 0;
@@ -188,27 +246,35 @@ function getSheet() {
     }
 
     // Загружаем метаданные
-    $metadataPath = EXCEL_DATA_DIR . $fileId . '.json';
-    if (!file_exists($metadataPath)) {
+    $metadataPath = getMetadataPath($fileId);
+    if (!$metadataPath) {
         throw new Exception('Файл не найден');
     }
 
     $metadata = json_decode(file_get_contents($metadataPath), true);
-    $filePath = $metadata['filePath'];
+    
+    // Получаем реальный путь к файлу динамически
+    $filePath = getActualFilePath($metadata);
 
-    if (!file_exists($filePath)) {
-        throw new Exception('Файл Excel не найден');
+    if (!$filePath) {
+        throw new Exception('Файл Excel не найден на диске (путь: ' . ($metadata['filePath'] ?? 'unknown') . ')');
     }
 
     // Если нужна клиентская обработка для некоторых файлов
     $clientSideParsing = true; // FORCE client side parsing to avoid memory usage on just reading headers
 
     if ($clientSideParsing) {
-         $urlBase = ($metadata['is_export'] ?? false) ? '../uploads/excel/history/' : '../uploads/excel/';
+         // Исправляем URL для клиентского парсинга
+         $isExport = isset($metadata['is_export']) && ($metadata['is_export'] === true || $metadata['is_export'] === 'true');
+         $urlBase = $isExport ? '../uploads/excel/history/' : '../uploads/excel/';
+         
+         // Убедимся, что имя файла корректное
+         $fileName = $metadata['fileName'] ?? basename($filePath);
+         
          echo json_encode([
             'success' => true,
             'clientSideParsingRequired' => true,
-            'fileUrl' => $urlBase . basename($filePath),
+            'fileUrl' => $urlBase . $fileName,
             'message' => 'Switching to client-side parsing for performance'
         ]);
         return;
@@ -270,16 +336,18 @@ function saveExcel() {
     }
 
     // Загружаем метаданные исходного файла
-    $metadataPath = EXCEL_DATA_DIR . $fileId . '.json';
-    if (!file_exists($metadataPath)) {
+    $metadataPath = getMetadataPath($fileId);
+    if (!$metadataPath) {
         throw new Exception('Файл не найден');
     }
 
     $metadata = json_decode(file_get_contents($metadataPath), true);
-    $filePath = $metadata['filePath'];
+    
+    // Получаем реальный путь
+    $filePath = getActualFilePath($metadata);
 
-    if (!file_exists($filePath)) {
-        throw new Exception('Файл Excel не найден');
+    if (!$filePath) {
+        throw new Exception('Файл Excel не найден для сохранения');
     }
 
     try {
@@ -337,7 +405,7 @@ function saveExcel() {
             $metadata['size'] = filesize($filePath);
             
             file_put_contents(
-                EXCEL_DATA_DIR . $fileId . '.json',
+                $metadataPath, // Используем тот же путь, где нашли файл
                 json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
             );
 
@@ -376,7 +444,7 @@ function saveExcel() {
             ];
             
             file_put_contents(
-                EXCEL_DATA_DIR . $newFileId . '.json',
+                EXCEL_DATA_HISTORY_DIR . $newFileId . '.json',
                 json_encode($newMetadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
             );
 
@@ -394,7 +462,22 @@ function saveExcel() {
 
 function listFiles() {
     $files = [];
-    $dataFiles = glob(EXCEL_DATA_DIR . '*.json');
+    
+    // Сканируем все директории
+    $dirs = [EXCEL_DATA_DIR, EXCEL_DATA_TEMPLATES_DIR, EXCEL_DATA_HISTORY_DIR];
+    $dataFiles = [];
+    
+    foreach ($dirs as $dir) {
+        if (is_dir($dir)) {
+            $found = glob($dir . '*.json');
+            if ($found) {
+                $dataFiles = array_merge($dataFiles, $found);
+            }
+        }
+    }
+    
+    // Удаляем дубликаты (если вдруг есть)
+    $dataFiles = array_unique($dataFiles);
 
     foreach ($dataFiles as $file) {
         $basename = basename($file);
@@ -406,17 +489,25 @@ function listFiles() {
         
         if (!$metadata) continue;
 
+        // Получаем актуальный путь
+        $actualPath = getActualFilePath($metadata);
+
         // Auto-cleanup: Check if actual file exists
-        if (!isset($metadata['filePath']) || !file_exists($metadata['filePath'])) {
-            // Remove metadata file
-            unlink($file);
-            // Remove data file if exists
-            $dataFile = str_replace('.json', '_data.json', $file);
-            if (file_exists($dataFile)) {
-                unlink($dataFile);
-            }
-            continue;
+        if (!$actualPath) {
+            // Файл реально потерян - чистим
+            // Но делаем это осторожно, только если нет пути из getActualFilePath
+            // unlink($file); // Временно отключим автоудаление, чтобы не терять конфиги при сбоях путей
+            // continue;
         }
+
+        // Обновляем путь в метаданных, если он отличается (самолечение)
+        if ($actualPath && isset($metadata['filePath']) && $metadata['filePath'] !== $actualPath) {
+            $metadata['filePath'] = $actualPath;
+            // Можно сохранить обновленный путь, но пока просто используем его
+        }
+
+        // Если файла нет, помечаем его как потерянный, но отдаем в список (чтобы юзер видел)
+        $fileExists = ($actualPath !== null);
 
         $isExport = isset($metadata['is_export']) && $metadata['is_export'];
         $urlBase = $isExport ? '../uploads/excel/history/' : '../uploads/excel/';
@@ -430,7 +521,8 @@ function listFiles() {
             'size' => $metadata['size'] ?? 0, // Return raw bytes to JS
             'formattedSize' => formatBytes($metadata['size'] ?? 0),
             'url' => $urlBase . $metadata['fileName'],
-            'is_export' => $isExport
+            'is_export' => $isExport,
+            'missing' => !$fileExists 
         ];
     }
 
@@ -452,8 +544,8 @@ function deleteFile() {
         throw new Exception('Не указан файл');
     }
 
-    $metadataPath = EXCEL_DATA_DIR . $fileId . '.json';
-    if (!file_exists($metadataPath)) {
+    $metadataPath = getMetadataPath($fileId);
+    if (!$metadataPath) {
         throw new Exception('Файл не найден');
     }
 

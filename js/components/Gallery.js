@@ -98,6 +98,10 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     };
 
     const handleLinkRemote = async (file) => {
+        if (!file.imageUrl) {
+             alert('URL изображения отсутствует');
+             return;
+        }
         setIsUploading(true);
         try {
             const baseUrl = witeApiUrl.replace(/\/$/, '');
@@ -133,6 +137,10 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
 
     const handleImportFromRemote = async (file) => {
         // if (!confirm(`Импортировать "${file.prompt || 'image'}" в галерею?`)) return;
+        if (!file.imageUrl) {
+             alert('URL изображения отсутствует');
+             return;
+        }
         
         setIsUploading(true);
         try {
@@ -421,6 +429,8 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                 
                                 // Fallback if still no path
                                 if (!thumbPath) thumbPath = file.imageUrl;
+
+                                if (!thumbPath) return null;
 
                                 const thumbUrl = thumbPath.startsWith('http') ? thumbPath : `${baseUrl}${thumbPath.startsWith('/') ? '' : '/'}${thumbPath}`;
                                 
