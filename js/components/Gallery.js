@@ -9,6 +9,8 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
     const [selectedFiles, setSelectedFiles] = useState(new Set());
     const [filedFiles, setFiledFiles] = useState(new Set()); 
     const [areFoldersLoading, setAreFoldersLoading] = useState(true);
+    const [previewFile, setPreviewFile] = useState(null);
+    const [previewZoom, setPreviewZoom] = useState(1);
 
     // Wite AI Integration State
     const [isWiteAiMode, setIsWiteAiMode] = useState(false);
@@ -191,6 +193,28 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
             fileList.forEach(file => filed.add(file));
         });
         setFiledFiles(filed);
+    };
+
+    const getFileUrl = (file) => file.url || file.thumb || file.imageUrl || '';
+
+    const handleCopyFileUrl = async (file) => {
+        const url = getFileUrl(file);
+        if (!url) return alert('Ссылка недоступна');
+
+        const absoluteUrl = url.startsWith('http')
+            ? url
+            : `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`;
+
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(absoluteUrl);
+                alert('Ссылка скопирована');
+            } else {
+                prompt('Скопируйте ссылку:', absoluteUrl);
+            }
+        } catch (e) {
+            prompt('Скопируйте ссылку:', absoluteUrl);
+        }
     };
 
     const toggleSelect = (fileName) => {
@@ -515,6 +539,8 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                         <div className="masonry-grid pb-20">
                             {displayedFiles.map((file) => {
                                 const isSelected = selectedFiles.has(file.name);
+                                const fileUrl = getFileUrl(file);
+                                const canPreview = Boolean(fileUrl);
                                 
                                 return (
                                     <div 
@@ -548,6 +574,33 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                                                         <window.Icon name="plus" className="w-5 h-5" />
                                                     </button>
                                                 )}
+                                                <button 
+                                                    onClick={() => { if (canPreview) { setPreviewFile({ ...file, url: fileUrl }); setPreviewZoom(1); } }}
+                                                    className={`p-2 rounded-lg text-white shadow-lg transform hover:scale-105 transition-all ${canPreview ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-800/60 cursor-not-allowed opacity-60'}`}
+                                                    title="Предпросмотр"
+                                                    disabled={!canPreview}
+                                                >
+                                                    <window.Icon name="external-link" className="w-5 h-5" />
+                                                </button>
+                                                <a
+                                                    href={fileUrl || '#'}
+                                                    download
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={(e) => { e.stopPropagation(); if (!fileUrl) e.preventDefault(); }}
+                                                    className={`p-2 rounded-lg text-white shadow-lg transform hover:scale-105 transition-all ${fileUrl ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-800/60 cursor-not-allowed opacity-60'}`}
+                                                    title="Скачать"
+                                                >
+                                                    <window.Icon name="image-down" className="w-5 h-5" />
+                                                </a>
+                                                <button 
+                                                    onClick={() => handleCopyFileUrl(file)}
+                                                    className={`p-2 rounded-lg text-white shadow-lg transform hover:scale-105 transition-all ${fileUrl ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-800/60 cursor-not-allowed opacity-60'}`}
+                                                    title="Скопировать ссылку"
+                                                    disabled={!fileUrl}
+                                                >
+                                                    <window.Icon name="link" className="w-5 h-5" />
+                                                </button>
                                                 <button 
                                                     onClick={() => handleRename(file)}
                                                     className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white shadow-lg transform hover:scale-105 transition-all"
@@ -641,6 +694,26 @@ window.Gallery = ({ files, auth, init, onAddToCollection, onDeleteFile, activeSu
                         Отмена
                     </button>
                  </div>
+            )}
+            {previewFile && (
+                <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 fade-in" onClick={() => { setPreviewFile(null); setPreviewZoom(1); }}>
+                    <div className="bg-slate-900 rounded-xl max-w-5xl w-full max-h-[90vh] p-4 border border-slate-700 relative" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold text-white truncate">{previewFile.name || 'Предпросмотр'}</h3>
+                            <button onClick={() => { setPreviewFile(null); setPreviewZoom(1); }} className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white">
+                                <window.Icon name="x" className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="flex items-center justify-center max-h-[75vh] overflow-auto">
+                            <img src={previewFile.url} alt={previewFile.name || 'preview'} style={{ transform: `scale(${previewZoom})`, transition: 'transform 0.2s' }} className="max-w-full max-h-full object-contain" />
+                        </div>
+                        <div className="flex items-center justify-center gap-2 mt-4">
+                            <button onClick={() => setPreviewZoom(Math.max(0.5, previewZoom - 0.2))} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 text-sm">-</button>
+                            <span className="text-xs text-slate-400 w-14 text-center">{Math.round(previewZoom * 100)}%</span>
+                            <button onClick={() => setPreviewZoom(Math.min(3, previewZoom + 0.2))} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 text-sm">+</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
