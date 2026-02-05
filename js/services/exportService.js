@@ -72,7 +72,7 @@ window.ExportService = {
 
             const safeName = selectedPrint.name.split('.')[0];
             const prefix = prod.defaultPrefix || prod.name;
-            const fileName = `${prefix}_${safeName}.png`;
+            const fileName = `${prefix}-${safeName}.png`;
 
             return { fileName, blob };
         });
