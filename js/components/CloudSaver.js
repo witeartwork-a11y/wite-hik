@@ -404,15 +404,16 @@ window.CloudSaver = ({ files, password, onChanged, activeSubTab, onSubTabChange 
                                             </div>
                                         )}
                                     </div>
-                                    <div className="mt-1 flex flex-col gap-0.5">
+                                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                                        <span>{catCount} категоий · {totalFiles} файлов</span>
                                         {item.source_name && (
-                                            <p className="text-[10px] text-slate-500 font-mono pl-0.5" title="Оригинальное имя файла">
-                                                src: {item.source_name}
-                                            </p>
+                                            <>
+                                                <span className="text-slate-600">|</span>
+                                                <span className="text-slate-500 font-mono truncate max-w-[200px]" title={`Оригинальное имя: ${item.source_name}`}>
+                                                    src: {item.source_name}
+                                                </span>
+                                            </>
                                         )}
-                                        <p className="text-xs text-slate-400">
-                                            {catCount} категоий · {totalFiles} файлов
-                                        </p>
                                     </div>
                                 </div>
 

@@ -201,14 +201,17 @@ if (is_dir($CLOUD_DIR)) {
                     }
                 }
                 
-                // Если нет print_name у файла, пробуем взять из метаданных артикула
-                if (empty($cloudItem['print_name']) && !empty($articleMeta['print_name'])) {
+                // Метаданные артикула имеют приоритет для имени принта (если оно менялось глобально)
+                if (!empty($articleMeta['print_name'])) {
                     $cloudItem['print_name'] = $articleMeta['print_name'];
                 }
-
-                // Если нет source_name у файла, пробуем взять из метаданных артикула
-                if (empty($cloudItem['source_name']) && !empty($articleMeta['source_name'])) {
+                
+                // Source name также может быть глобальным
+                if (!empty($articleMeta['source_name'])) {
                     $cloudItem['source_name'] = $articleMeta['source_name'];
+                } elseif (empty($cloudItem['source_name']) && !empty($articleMeta['source_name'])) {
+                     // Fallback check (redundant given above but harmless)
+                     $cloudItem['source_name'] = $articleMeta['source_name'];
                 }
 
                 $list[] = $cloudItem;
